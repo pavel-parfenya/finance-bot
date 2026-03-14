@@ -6,7 +6,10 @@ import { buildContainer } from "./di/container";
 
 async function main(): Promise<void> {
   console.log("Подключение к базе данных...");
-  const dataSource = createDataSource(config.databaseUrl);
+  const dataSource = createDataSource({
+    url: config.databaseUrl,
+    ssl: config.databaseSsl,
+  });
   await dataSource.initialize();
   console.log("База данных подключена.");
 

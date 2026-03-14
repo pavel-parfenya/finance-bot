@@ -5,12 +5,22 @@ import { WorkspaceMember } from "./entities/workspace-member.entity";
 import { Subscription } from "./entities/subscription.entity";
 import { Transaction } from "./entities/transaction.entity";
 
-export function createDataSource(url: string): DataSource {
+export interface DataSourceOptions {
+  url: string;
+  ssl?: boolean;
+}
+
+export function createDataSource(options: DataSourceOptions | string): DataSource {
+  const url = typeof options === "string" ? options : options.url;
+  const ssl = typeof options === "string" ? undefined : options.ssl;
   return new DataSource({
     type: "postgres",
     url,
     entities: [User, Workspace, WorkspaceMember, Subscription, Transaction],
     synchronize: true,
     logging: false,
+    ...(ssl !== undefined && {
+      ssl: ssl ? { rejectUnauthorized: false } : false,
+    }),
   });
 }

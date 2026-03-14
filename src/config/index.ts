@@ -29,6 +29,13 @@ export const config = {
   webhookUrl: mode === "webhook" ? getWebhookUrl() : "",
   webhookSecret: process.env["WEBHOOK_SECRET"] ?? "",
   databaseUrl: requireEnv("DATABASE_URL"),
+  /** SSL для PostgreSQL. По умолчанию: false для localhost, true для облачных БД. Явно: DATABASE_SSL=true|false */
+  databaseSsl:
+    process.env["DATABASE_SSL"] === "true"
+      ? true
+      : process.env["DATABASE_SSL"] === "false"
+        ? false
+        : !requireEnv("DATABASE_URL").includes("localhost"),
   telegram: {
     botToken: requireEnv("TELEGRAM_BOT_TOKEN"),
   },
