@@ -13,7 +13,7 @@ export function formatExpense(expense: Expense): string {
   const { dateStr, timeStr } = formatDateTime(expense.date);
 
   return [
-    "Расход записан!",
+    "Расход добавлен:",
     "",
     `Дата:      ${dateStr}`,
     `Время:     ${timeStr}`,
@@ -22,5 +22,8 @@ export function formatExpense(expense: Expense): string {
     `Категория: ${expense.category}`,
     `Сумма:     ${expense.amount} ${expense.currency}`,
     `Магазин:   ${expense.store}`,
+    "",
+    "Запишется через 30 сек.",
+    "Нажмите «Отмена», чтобы отменить.",
   ].join("\n");
 }

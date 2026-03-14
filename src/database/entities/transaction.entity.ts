@@ -1,0 +1,57 @@
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from "typeorm";
+import { Workspace } from "./workspace.entity";
+import { User } from "./user.entity";
+
+@Entity("transactions")
+export class Transaction {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  workspaceId: number;
+
+  @Column()
+  userId: number;
+
+  @Column({ type: "date" })
+  date: Date;
+
+  @Column({ type: "varchar", length: 10 })
+  time: string;
+
+  @Column({ type: "varchar" })
+  description: string;
+
+  @Column({ type: "varchar" })
+  category: string;
+
+  @Column({ type: "decimal", precision: 12, scale: 2 })
+  amount: number;
+
+  @Column({ type: "varchar", length: 10 })
+  currency: string;
+
+  @Column({ type: "varchar" })
+  store: string;
+
+  @Column({ type: "varchar" })
+  personDisplayName: string;
+
+  @ManyToOne(() => Workspace)
+  @JoinColumn({ name: "workspaceId" })
+  workspace: Workspace;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: "userId" })
+  user: User;
+
+  @CreateDateColumn()
+  createdAt: Date;
+}

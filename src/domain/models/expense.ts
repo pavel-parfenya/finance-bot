@@ -24,12 +24,15 @@ export enum ExpenseCategory {
   Other = "Другое",
 }
 
-export interface Expense {
-  date: Date;
+export interface ParsedExpense {
   description: string;
   category: ExpenseCategory;
   amount: number;
   currency: string;
   store: string;
+}
+
+export interface Expense extends ParsedExpense {
+  date: Date;
   username: string;
 }

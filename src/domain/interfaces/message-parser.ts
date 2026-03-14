@@ -1,5 +1,5 @@
-import { Expense } from "../models/expense";
+import { ParsedExpense } from "../models/expense";
 
 export interface IMessageParser {
-  parse(text: string): Promise<Omit<Expense, "username">>;
+  parse(text: string): Promise<ParsedExpense>;
 }

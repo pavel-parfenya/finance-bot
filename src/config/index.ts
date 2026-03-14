@@ -28,6 +28,7 @@ export const config = {
   webhookPath: "/webhook",
   webhookUrl: mode === "webhook" ? getWebhookUrl() : "",
   webhookSecret: process.env["WEBHOOK_SECRET"] ?? "",
+  databaseUrl: requireEnv("DATABASE_URL"),
   telegram: {
     botToken: requireEnv("TELEGRAM_BOT_TOKEN"),
   },
@@ -36,14 +37,13 @@ export const config = {
   },
   whisper: {
     apiKey: requireEnv("WHISPER_API_KEY"),
-    baseUrl:
-      process.env["WHISPER_BASE_URL"] ?? "https://api.groq.com/openai/v1",
+    baseUrl: process.env["WHISPER_BASE_URL"] ?? "https://api.groq.com/openai/v1",
   },
   googleSheets: {
-    spreadsheetId: requireEnv("GOOGLE_SHEETS_SPREADSHEET_ID"),
-    worksheetName: process.env["GOOGLE_SHEETS_WORKSHEET_NAME"] ?? "Расходы",
     serviceAccountEmail: requireEnv("GOOGLE_SERVICE_ACCOUNT_EMAIL"),
     privateKey: requireEnv("GOOGLE_PRIVATE_KEY").replace(/\\n/g, "\n"),
+    /** ID шаблона таблицы с листом «Транзакции». Если задан — кнопка ведёт на «Сделать копию». */
+    templateSheetId: process.env["TEMPLATE_SHEET_ID"] ?? null,
   },
 } as const;
 

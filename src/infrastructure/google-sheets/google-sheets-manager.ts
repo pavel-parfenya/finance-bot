@@ -1,7 +1,9 @@
 import { GoogleSpreadsheetWorksheet } from "google-spreadsheet";
-import { IExpenseRepository } from "../../domain/interfaces";
+import { ISheetManager } from "../../domain/interfaces";
 import { Expense } from "../../domain/models";
 import { GoogleSheetsClient } from "./google-sheets-client";
+
+const WORKSHEET_NAME = "Транзакции";
 
 const HEADERS = [
   "Дата",
@@ -17,13 +19,15 @@ const HEADERS = [
 const HEADER_BG = { red: 0.102, green: 0.137, blue: 0.494 };
 const HEADER_FG = { red: 1, green: 1, blue: 1 };
 
-export class GoogleSheetsExpenseRepository implements IExpenseRepository {
-  private styled = false;
-
+export class GoogleSheetsManager implements ISheetManager {
   constructor(private readonly client: GoogleSheetsClient) {}
 
-  async save(expense: Expense): Promise<void> {
-    const sheet = await this.getSheet();
+  async initSheet(sheetId: string): Promise<void> {
+    await this.getOrCreateSheet(sheetId);
+  }
+
+  async appendExpense(sheetId: string, expense: Expense): Promise<void> {
+    const sheet = await this.getOrCreateSheet(sheetId);
 
     const time = expense.date.toLocaleTimeString("ru-RU", {
       hour: "2-digit",
@@ -31,50 +35,41 @@ export class GoogleSheetsExpenseRepository implements IExpenseRepository {
     });
 
     await sheet.addRow({
-      "Дата": expense.date.toISOString().split("T")[0],
-      "Время": time,
-      "Личность": expense.username,
-      "Описание": expense.description,
-      "Категория": expense.category,
-      "Сумма": expense.amount,
-      "Валюта": expense.currency,
-      "Магазин": expense.store,
+      Дата: expense.date.toISOString().split("T")[0],
+      Время: time,
+      Личность: expense.username,
+      Описание: expense.description,
+      Категория: expense.category,
+      Сумма: expense.amount,
+      Валюта: expense.currency,
+      Магазин: expense.store,
     });
   }
 
-  private async getSheet(): Promise<GoogleSpreadsheetWorksheet> {
-    const doc = await this.client.getDocument();
-    let sheet = doc.sheetsByTitle[this.client.worksheetName];
+  private async getOrCreateSheet(sheetId: string): Promise<GoogleSpreadsheetWorksheet> {
+    const doc = await this.client.getDocument(sheetId);
+    let sheet = doc.sheetsByTitle[WORKSHEET_NAME];
 
     if (!sheet) {
       sheet = await doc.addSheet({
-        title: this.client.worksheetName,
+        title: WORKSHEET_NAME,
         headerValues: HEADERS,
       });
       await this.applyHeaderStyle(sheet);
-      this.styled = true;
+      return sheet;
     }
 
     await sheet.loadHeaderRow();
-
     const hasHeaders = HEADERS.every((h) => sheet!.headerValues.includes(h));
     if (!hasHeaders) {
       await sheet.setHeaderRow(HEADERS);
       await this.applyHeaderStyle(sheet);
-      this.styled = true;
-    }
-
-    if (!this.styled) {
-      await this.applyHeaderStyle(sheet);
-      this.styled = true;
     }
 
     return sheet;
   }
 
-  private async applyHeaderStyle(
-    sheet: GoogleSpreadsheetWorksheet
-  ): Promise<void> {
+  private async applyHeaderStyle(sheet: GoogleSpreadsheetWorksheet): Promise<void> {
     await sheet.loadCells({
       startRowIndex: 0,
       endRowIndex: 1,

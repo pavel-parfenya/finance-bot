@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { IMessageParser } from "../../domain/interfaces";
-import { Expense, ExpenseCategory } from "../../domain/models";
+import { ParsedExpense, ExpenseCategory } from "../../domain/models";
 
 const DEEPSEEK_BASE_URL = "https://api.deepseek.com";
 
@@ -31,7 +31,7 @@ const SYSTEM_PROMPT = `Ты — финансовый ассистент, кот�
   - штраф, госпошлина, налог → "Налоги и сборы"
 - Всегда возвращай валидный JSON без markdown-обёрток.`;
 
-interface ParsedExpense {
+interface RawParsed {
   description: string;
   category: string;
   amount: number;
@@ -49,7 +49,7 @@ export class DeepSeekMessageParser implements IMessageParser {
     });
   }
 
-  async parse(text: string): Promise<Omit<Expense, "username">> {
+  async parse(text: string): Promise<ParsedExpense> {
     const response = await this.client.chat.completions.create({
       model: "deepseek-chat",
       temperature: 0,
@@ -65,10 +65,9 @@ export class DeepSeekMessageParser implements IMessageParser {
       throw new Error("Пустой ответ от DeepSeek");
     }
 
-    const parsed: ParsedExpense = JSON.parse(content);
+    const parsed: RawParsed = JSON.parse(content);
 
     return {
-      date: new Date(),
       description: parsed.description,
       category: this.resolveCategory(parsed.category),
       amount: parsed.amount,

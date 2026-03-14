@@ -4,3 +4,28 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-finance}:${DB_PASSWORD:-finance}@postgres:5432/${DB_NAME:-finance_bot}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-finance}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-finance}
+      POSTGRES_DB: ${DB_NAME:-finance_bot}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-finance}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  pgdata:

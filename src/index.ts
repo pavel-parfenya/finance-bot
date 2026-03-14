@@ -1,9 +1,16 @@
+import "reflect-metadata";
 import { createServer, IncomingMessage, ServerResponse } from "node:http";
 import { config } from "./config";
+import { createDataSource } from "./database/data-source";
 import { buildContainer } from "./di/container";
 
 async function main(): Promise<void> {
-  const { bot } = buildContainer(config);
+  console.log("Подключение к базе данных...");
+  const dataSource = createDataSource(config.databaseUrl);
+  await dataSource.initialize();
+  console.log("База данных подключена.");
+
+  const { bot } = buildContainer(config, dataSource);
   await bot.init();
 
   if (config.mode === "webhook") {

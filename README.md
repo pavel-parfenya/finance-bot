@@ -39,11 +39,12 @@ src/
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a project (or use an existing one)
-3. Enable the **Google Sheets API**
+3. **Включите оба API** (APIs & Services → Library):
+   - **Google Sheets API**
+   - **Google Drive API** (нужен для создания новых таблиц и выдачи доступа)
 4. Create a **Service Account** and download the JSON key
 5. Copy the `client_email` and `private_key` from the JSON key
-6. Create a Google Sheet and share it with the service account email (Editor role)
-7. Copy the spreadsheet ID from the URL: `https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/edit`
+6. Для привязки своей таблицы: откройте её → «Поделиться» → добавьте email сервисного аккаунта как редактора
 
 ## Setup
 
@@ -79,20 +80,55 @@ npm run build
 npm start
 ```
 
-## Usage
+## Инструкция для пользователей бота
 
-Send the bot a text or voice message like:
+Бот доступен по команде **/help** в Telegram. Краткая версия:
 
-- "I bought 3 packs of eggs for $3 at the Market"
-- "Paid $45 for a taxi to the airport"
-- "Netflix subscription $15"
+### Как начать
 
-The bot will parse the message, categorize it, and add a row to your Google Sheet with columns:
+Можно сразу отправлять текстовые или голосовые сообщения о тратах — они сохраняются в базу данных. Таблицу можно подключить позже.
 
-| Date | Description | Category | Amount | Currency | Store |
-|---|---|---|---|---|---|
-| 2026-03-08 | 3 packs of eggs | Groceries | 3 | USD | Market |
+### Как создать таблицу
 
-### Categories
+1. Нажмите кнопку «Создать таблицу» в /start
+2. Или перейдите на [sheets.new](https://sheets.new) и создайте таблицу вручную
+3. Таблица откроется в Google Sheets
 
-Groceries, Transport, Entertainment, Healthcare, Utilities, Dining, Shopping, Education, Housing, Personal Care, Other
+### Как добавить бота в таблицу
+
+1. Откройте вашу таблицу в Google Sheets
+2. Нажмите «Настройки доступа» (или «Поделиться»)
+3. В поле «Добавить пользователей» вставьте **email бота** (показан в /start и /help)
+4. Выберите роль **«Редактор»**
+5. Нажмите «Готово»
+
+### Как подключить таблицу к боту
+
+После добавления бота в таблицу отправьте команду:
+
+```
+/link https://docs.google.com/spreadsheets/d/ВАШ_ID/edit
+```
+
+Ссылку скопируйте из адресной строки браузера при открытой таблице.
+
+### Что происходит с тратами до подключения таблицы
+
+Все траты сохраняются в базу. Когда вы подключите таблицу через /link, все ранее сохранённые записи автоматически перенесутся в неё.
+
+### Команды
+
+| Команда | Описание |
+|---------|----------|
+| /start | Главное меню |
+| /help | Подробная инструкция |
+| /link | Подключить таблицу |
+| /invite @username | Пригласить участника (только для владельца) |
+
+### Примеры сообщений о тратах
+
+- «Купил 3 пачки яиц за 5 BYN в Евроопте»
+- «Такси в аэропорт 45 долларов»
+- «Подписка Netflix 15 рублей»
+
+Трата записывается через 30 сек. Кнопка «Отмена» отменяет запись.
