@@ -9,6 +9,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: [];
+  "settings-changed": [];
 }>();
 
 const defaultCurrency = ref("");
@@ -26,6 +27,7 @@ watch(
 async function onCurrencyChange() {
   const data = await setDefaultCurrency(defaultCurrency.value);
   if (data.error) alert(data.error);
+  else emit("settings-changed");
 }
 </script>
 

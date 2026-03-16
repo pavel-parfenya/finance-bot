@@ -12,6 +12,7 @@ const activeTab = ref<Tab>("table");
 const settingsOpen = ref(false);
 const filtersOpen = ref(false);
 const filters = ref<TransactionFilters>({});
+const refreshTrigger = ref(0);
 
 const activeFiltersCount = computed(() => {
   let n = 0;
@@ -109,12 +110,21 @@ function setTab(t: Tab) {
         v-show="activeTab === 'table'"
         v-model:filters="filters"
         v-model:filters-open="filtersOpen"
+        :active-tab="activeTab"
+        :refresh-trigger="refreshTrigger"
       />
-      <AnalyticsView v-show="activeTab === 'analytics'" />
-      <InviteView v-show="activeTab === 'invite'" />
+      <AnalyticsView
+        v-show="activeTab === 'analytics'"
+        :refresh-trigger="refreshTrigger"
+      />
+      <InviteView v-show="activeTab === 'invite'" @member-added="refreshTrigger++" />
     </main>
 
-    <SettingsModal :open="settingsOpen" @close="settingsOpen = false" />
+    <SettingsModal
+      :open="settingsOpen"
+      @close="settingsOpen = false"
+      @settings-changed="refreshTrigger++"
+    />
   </div>
 </template>
 
@@ -154,7 +164,7 @@ function setTab(t: Tab) {
 }
 .tabs-row {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 8px;
   margin-bottom: 20px;
 }
@@ -170,7 +180,6 @@ function setTab(t: Tab) {
 .btn-filters-icon {
   flex-shrink: 0;
   width: 40px;
-  height: 40px;
   min-width: 40px;
   display: flex;
   align-items: center;
@@ -179,11 +188,15 @@ function setTab(t: Tab) {
   font-size: 18px;
   color: var(--tg-theme-button-color, #238636);
   background: var(--tg-theme-secondary-bg-color, rgba(35, 134, 54, 0.12));
-  border: 1px solid rgba(35, 134, 54, 0.3);
+  border: none;
   border-radius: var(--radius);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  outline: none;
   position: relative;
+}
+.btn-filters-icon:focus {
+  outline: none;
 }
 .btn-filters-icon:active {
   opacity: 0.9;

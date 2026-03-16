@@ -17,6 +17,8 @@ const PAGE_SIZE = 20;
 const props = defineProps<{
   filters: TransactionFilters;
   filtersOpen: boolean;
+  activeTab?: string;
+  refreshTrigger?: number;
 }>();
 
 const emit = defineEmits<{
@@ -44,7 +46,8 @@ async function loadCategories() {
   if (!data.error && data.categories) categories.value = data.categories;
 }
 
-async function loadTable(reset = true) {
+async function loadTable(filtersOverride?: TransactionFilters, reset = true) {
+  const filters = filtersOverride ?? props.filters;
   if (reset) {
     loading.value = true;
     transactions.value = [];
@@ -52,7 +55,7 @@ async function loadTable(reset = true) {
   }
   error.value = null;
   const offset = reset ? 0 : transactions.value.length;
-  const data = await fetchTransactions(props.filters, {
+  const data = await fetchTransactions(filters, {
     limit: PAGE_SIZE,
     offset,
   });
@@ -75,12 +78,13 @@ async function loadTable(reset = true) {
 async function loadMore() {
   if (loadingMore.value || !hasMore.value || loading.value) return;
   loadingMore.value = true;
-  await loadTable(false);
+  await loadTable(undefined, false);
 }
 
-function applyFilters() {
+function applyFilters(filters: TransactionFilters) {
+  emit("update:filters", filters);
   emit("update:filtersOpen", false);
-  loadTable(true);
+  loadTable(filters, true);
 }
 
 function openEdit(tx: TransactionDto) {
@@ -110,7 +114,7 @@ async function onDelete(tx: TransactionDto) {
 let observer: IntersectionObserver | null = null;
 
 onMounted(() => {
-  loadTable(true);
+  loadTable(undefined, true);
   loadMembers();
   observer = new IntersectionObserver(
     (entries) => {
@@ -154,8 +158,20 @@ watch(
 
 watch(
   () => props.filters,
-  () => loadTable(true),
+  () => loadTable(undefined, true),
   { deep: true }
+);
+
+watch(
+  () => props.activeTab,
+  (tab) => {
+    if (tab === "table") loadMembers();
+  }
+);
+
+watch(
+  () => props.refreshTrigger,
+  () => loadMembers()
 );
 </script>
 
@@ -167,7 +183,7 @@ watch(
       @update:model-value="(v) => emit('update:filters', v)"
       :categories="categories"
       :members="members"
-      @apply="applyFilters"
+      @apply="(filters) => applyFilters(filters)"
     />
     <div v-if="loading" class="loading">Загрузка...</div>
     <div v-else-if="error" class="error">{{ error }}</div>

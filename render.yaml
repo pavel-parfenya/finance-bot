@@ -7,6 +7,8 @@ services:
     envVars:
       - key: MODE
         value: webhook
+      - key: DATABASE_URL
+        sync: false
       - key: WEBHOOK_SECRET
         generateValue: true
       - key: TELEGRAM_BOT_TOKEN

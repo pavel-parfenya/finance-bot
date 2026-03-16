@@ -4,6 +4,10 @@ import { getDefaultPeriodDates } from "@/utils/format";
 import AnalyticsChart from "@/components/AnalyticsChart.vue";
 import { fetchAnalytics } from "@/api/client";
 
+const props = defineProps<{
+  refreshTrigger?: number;
+}>();
+
 const period = ref("current");
 const startDate = ref("");
 const endDate = ref("");
@@ -60,6 +64,11 @@ watch([period, startDate, endDate], () => {
     loadAnalytics();
   }
 });
+
+watch(
+  () => props.refreshTrigger,
+  () => loadAnalytics()
+);
 </script>
 
 <template>
@@ -158,6 +167,10 @@ watch([period, startDate, endDate], () => {
   font-size: 14px;
 }
 .total-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 20px;
   padding: 16px;
   background: var(--tg-theme-secondary-bg-color, #f0f2f5);
@@ -167,7 +180,6 @@ watch([period, startDate, endDate], () => {
 .total-period {
   font-size: 13px;
   color: var(--tg-theme-hint-color, #65676b);
-  margin-bottom: 4px;
 }
 .total-sum {
   font-size: 15px;

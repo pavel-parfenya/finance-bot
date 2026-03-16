@@ -11,7 +11,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   "update:modelValue": [value: TransactionFilters];
-  apply: [];
+  apply: [value: TransactionFilters];
 }>();
 
 const local = ref<TransactionFilters>({ ...props.modelValue });
@@ -23,6 +23,13 @@ watch(
   { deep: true }
 );
 
+function normalizeFilters(v: TransactionFilters): TransactionFilters {
+  const out = { ...v };
+  if (out.userId === "" || out.userId === undefined) out.userId = undefined;
+  else out.userId = Number(out.userId);
+  return out;
+}
+
 function reset() {
   local.value = {
     period: "all",
@@ -33,16 +40,15 @@ function reset() {
     userId: undefined,
     search: undefined,
   };
-  emit("update:modelValue", local.value);
-  emit("apply");
+  const v = normalizeFilters(local.value);
+  emit("update:modelValue", v);
+  emit("apply", v);
 }
 
 function apply() {
-  const v = { ...local.value };
-  if (v.userId === "" || v.userId === undefined) v.userId = undefined;
-  else v.userId = Number(v.userId);
+  const v = normalizeFilters({ ...local.value });
   emit("update:modelValue", v);
-  emit("apply");
+  emit("apply", v);
 }
 
 const showPeriodDates = () => local.value.period === "period";

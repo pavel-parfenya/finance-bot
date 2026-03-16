@@ -3,6 +3,8 @@ import { ref, onMounted } from "vue";
 import type { WorkspaceMember } from "@finance-bot/shared";
 import { fetchWorkspaceInfo, inviteUser } from "@/api/client";
 
+const emit = defineEmits<{ "member-added": [] }>();
+
 const isOwner = ref(false);
 const members = ref<WorkspaceMember[]>([]);
 const error = ref<string | null>(null);
@@ -37,7 +39,8 @@ async function doInvite() {
   }
   alert("Пользователь добавлен!");
   inviteUsername.value = "";
-  load();
+  await load();
+  emit("member-added");
 }
 
 onMounted(load);
