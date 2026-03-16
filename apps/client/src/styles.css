@@ -1,0 +1,21 @@
+:root {
+  --radius: 12px;
+  --gap: 12px;
+  --safe: env(safe-area-inset-bottom, 0);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 16px;
+  padding-bottom: calc(16px + var(--safe));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--tg-theme-bg-color, #fafbfc);
+  color: var(--tg-theme-text-color, #1c1e21);
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}

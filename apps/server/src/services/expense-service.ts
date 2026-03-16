@@ -1,0 +1,43 @@
+import { IMessageParser, ISpeechRecognizer } from "../domain/interfaces";
+import { InvalidExpenseError } from "../domain/errors";
+import { Expense } from "../domain/models";
+
+function validateParsed(parsed: { amount: number; description: string }): void {
+  if (parsed.amount <= 0) {
+    throw new InvalidExpenseError();
+  }
+  if (!parsed.description?.trim()) {
+    throw new InvalidExpenseError();
+  }
+}
+
+export class ExpenseService {
+  constructor(
+    private readonly parser: IMessageParser,
+    private readonly recognizer: ISpeechRecognizer
+  ) {}
+
+  async parseText(
+    text: string,
+    username: string,
+    defaultCurrency?: string | null
+  ): Promise<Expense> {
+    const parsed = await this.parser.parse(text, { defaultCurrency });
+    validateParsed(parsed);
+    return {
+      ...parsed,
+      date: new Date(),
+      username,
+    };
+  }
+
+  async parseVoice(
+    audioBuffer: Buffer,
+    mimeType: string,
+    username: string,
+    defaultCurrency?: string | null
+  ): Promise<Expense> {
+    const text = await this.recognizer.recognize(audioBuffer, mimeType);
+    return this.parseText(text, username, defaultCurrency);
+  }
+}

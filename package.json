@@ -1,36 +1,29 @@
 {
   "name": "finance-bot",
   "version": "1.0.0",
+  "private": true,
   "description": "Telegram bot that parses expense messages and logs them to Google Sheets",
-  "main": "dist/index.js",
+  "workspaces": ["packages/*", "apps/*"],
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "tsx watch src/index.ts",
-    "lint": "eslint src/",
-    "lint:fix": "eslint src/ --fix",
-    "format": "prettier --write \"src/**/*.ts\"",
-    "format:check": "prettier --check \"src/**/*.ts\"",
+    "build": "npm run build -w @finance-bot/shared && npm run build -w apps-client && npm run build -w apps-server",
+    "build:server": "npm run build -w @finance-bot/shared && npm run build -w apps-server",
+    "start": "npm run start -w apps-server",
+    "dev": "concurrently \"npm run dev -w apps-server\" \"npm run dev -w apps-client\"",
+    "dev:server": "npm run dev -w apps-server",
+    "dev:client": "npm run dev -w apps-client",
+    "lint": "eslint packages/shared apps/server apps/client/src",
+    "lint:fix": "eslint packages/shared apps/server apps/client --fix",
+    "format": "prettier --write \"packages/**/*.ts\" \"apps/**/*.{ts,vue}\"",
+    "format:check": "prettier --check \"packages/**/*.ts\" \"apps/**/*.{ts,vue}\"",
     "prepare": "husky"
   },
   "lint-staged": {
-    "*.ts": [
-      "eslint --fix",
-      "prettier --write"
-    ]
+    "*.ts": ["eslint --fix", "prettier --write"],
+    "*.vue": ["prettier --write"]
   },
-  "dependencies": {
-    "dotenv": "^16.4.7",
-    "google-auth-library": "^9.15.1",
-    "google-spreadsheet": "^4.1.4",
-    "googleapis": "^171.4.0",
-    "grammy": "^1.35.0",
-    "openai": "^4.85.4",
-    "pg": "^8.20.0",
-    "reflect-metadata": "^0.2.2",
-    "typeorm": "^0.3.28"
-  },
+  "dependencies": {},
   "devDependencies": {
+    "concurrently": "^9.1.0",
     "@eslint/js": "^9.15.0",
     "@types/node": "^22.13.5",
     "eslint": "^9.16.0",

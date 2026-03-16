@@ -1,0 +1,24 @@
+import { Context } from "grammy";
+import { BotDeps } from "../bot";
+import { resolveUser } from "../utils";
+
+export function createHelpHandler(_deps: BotDeps) {
+  return async (ctx: Context): Promise<void> => {
+    const user = await resolveUser(ctx, _deps.userService);
+    if (!user) return;
+
+    const text =
+      "📖 ИНСТРУКЦИЯ\n\n" +
+      "▫️ Как начать\n" +
+      "Отправляйте текстовые или голосовые сообщения о тратах — бот сохранит их.\n\n" +
+      "▫️ Примеры\n" +
+      "• Купил 3 пачки яиц за 5 BYN в Евроопте\n" +
+      "• Обед 15 руб в столовой\n\n" +
+      "▫️ Команды\n" +
+      "/start — главное меню\n" +
+      "/help — эта инструкция\n\n" +
+      "Откройте приложение «Мои расходы» для просмотра истории, аналитики и приглашения участников.";
+
+    await ctx.reply(text);
+  };
+}
