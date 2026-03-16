@@ -9,10 +9,10 @@ function formatDateTime(date: Date): { dateStr: string; timeStr: string } {
   return { dateStr, timeStr };
 }
 
-export function formatExpense(expense: Expense): string {
+export function formatExpense(expense: Expense, includeConfirmHint = true): string {
   const { dateStr, timeStr } = formatDateTime(expense.date);
 
-  return [
+  const lines = [
     "Расход добавлен:",
     "",
     `Дата:      ${dateStr}`,
@@ -22,8 +22,9 @@ export function formatExpense(expense: Expense): string {
     `Категория: ${expense.category}`,
     `Сумма:     ${expense.amount} ${expense.currency}`,
     `Магазин:   ${expense.store}`,
-    "",
-    "Запишется через 30 сек.",
-    "Нажмите «Отмена», чтобы отменить.",
-  ].join("\n");
+  ];
+  if (includeConfirmHint) {
+    lines.push("", "Запишется через 30 сек.", "Нажмите «Отмена», чтобы отменить.");
+  }
+  return lines.join("\n");
 }

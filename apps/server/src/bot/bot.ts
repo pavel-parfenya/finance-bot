@@ -4,9 +4,11 @@ import { WorkspaceService } from "../services/workspace-service";
 import { ExpenseService } from "../services/expense-service";
 import { createStartHandler } from "./handlers/start-handler";
 import { createHelpHandler } from "./handlers/help-handler";
+import { createAppHandler } from "./handlers/app-handler";
 import { createTextHandler } from "./handlers/text-handler";
 import { createVoiceHandler } from "./handlers/voice-handler";
 import { createCancelExpenseHandler } from "./handlers/cancel-expense-handler";
+import { createCurrencyHandler, SET_CURRENCY_PREFIX } from "./handlers/currency-handler";
 import { TransactionRepository } from "../repositories/transaction-repository";
 import { InvitationRepository } from "../repositories/invitation-repository";
 import { createInviteHandler } from "./handlers/invite-handler";
@@ -17,7 +19,7 @@ export interface BotDeps {
   expenseService: ExpenseService;
   transactionRepo: TransactionRepository;
   invitationRepo: InvitationRepository;
-  /** URL Telegram Mini App для просмотра расходов (пусто — кнопка не показывается) */
+  /** URL Telegram Mini App для просмотра расходов */
   miniAppUrl: string;
 }
 
@@ -26,7 +28,9 @@ export function createBot(token: string, deps: BotDeps): Bot {
 
   bot.command("start", createStartHandler(deps));
   bot.command("help", createHelpHandler(deps));
+  bot.command("app", createAppHandler(deps));
   bot.callbackQuery(["cancel_expense", "save_expense"], createCancelExpenseHandler(deps));
+  bot.callbackQuery(new RegExp(`^${SET_CURRENCY_PREFIX}`), createCurrencyHandler(deps));
   bot.callbackQuery(
     /^invite_(accept|decline|transfer|delete):(\d+)$/,
     createInviteHandler(deps)

@@ -24,13 +24,19 @@ export function scheduleSave(
   userId: number,
   workspaceId: number,
   expense: Expense,
-  transactionRepo: TransactionRepository
+  transactionRepo: TransactionRepository,
+  onAutoSave?: (
+    chatId: number,
+    messageId: number,
+    expense: Expense
+  ) => void | Promise<void>
 ): void {
   const k = key(chatId, messageId);
   const timeoutId = setTimeout(async () => {
     store.delete(k);
     try {
       await transactionRepo.save(workspaceId, userId, expense);
+      await onAutoSave?.(chatId, messageId, expense);
     } catch (err) {
       console.error("Ошибка сохранения расхода:", err);
     }
@@ -54,18 +60,21 @@ export function cancelPending(chatId: number, messageId: number): boolean {
   return true;
 }
 
-/** Сохраняет расход сразу и отменяет отложенное сохранение. */
-export async function saveNow(chatId: number, messageId: number): Promise<boolean> {
+/** Сохраняет расход сразу и отменяет отложенное сохранение. Возвращает expense при успехе. */
+export async function saveNow(
+  chatId: number,
+  messageId: number
+): Promise<{ saved: boolean; expense?: Expense }> {
   const k = key(chatId, messageId);
   const entry = store.get(k);
-  if (!entry) return false;
+  if (!entry) return { saved: false };
   clearTimeout(entry.timeoutId);
   store.delete(k);
   try {
     await entry.transactionRepo.save(entry.workspaceId, entry.userId, entry.expense);
-    return true;
+    return { saved: true, expense: entry.expense };
   } catch (err) {
     console.error("Ошибка немедленного сохранения расхода:", err);
-    return false;
+    return { saved: false };
   }
 }

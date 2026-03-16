@@ -41,7 +41,21 @@ export function createTextHandler(deps: BotDeps) {
         user.id,
         workspace.id,
         expense,
-        deps.transactionRepo
+        deps.transactionRepo,
+        async (chatId, messageId, expense) => {
+          try {
+            await ctx.api.editMessageText(
+              chatId,
+              messageId,
+              formatExpense(expense, false),
+              {
+                reply_markup: { inline_keyboard: [] },
+              }
+            );
+          } catch {
+            // Сообщение могло быть удалено (Отмена) или уже отредактировано
+          }
+        }
       );
     } catch (error) {
       if (error instanceof InvalidExpenseError) {

@@ -34,16 +34,10 @@ async function main(): Promise<void> {
   const container = buildContainer(config, dataSource);
   await container.bot.init();
 
-  const miniAppUrl = config.publicBaseUrl ? `${config.publicBaseUrl}/app` : "";
-  if (miniAppUrl) {
-    await container.bot.api.setChatMenuButton({
-      menu_button: {
-        type: "web_app",
-        text: "Open",
-        web_app: { url: miniAppUrl },
-      },
-    });
-  }
+  // Меню-кнопка отключена — выбор валюты и приложение доступны через /start
+  await container.bot.api.setChatMenuButton({
+    menu_button: { type: "default" },
+  });
 
   if (config.mode === "webhook") {
     await startWebhook(container);

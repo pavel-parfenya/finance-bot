@@ -1,6 +1,7 @@
 import { InlineKeyboard } from "grammy";
 import { Context } from "grammy";
 import { BotDeps } from "../bot";
+import { formatExpense } from "../format";
 import { cancelPending, saveNow } from "../pending-expense-store";
 
 export const CANCEL_CALLBACK = "cancel_expense";
@@ -32,14 +33,17 @@ export function createCancelExpenseHandler(_deps: BotDeps) {
     const messageId = msg.message_id;
 
     if (data === SAVE_NOW_CALLBACK) {
-      const saved = await saveNow(chatId, messageId);
+      const result = await saveNow(chatId, messageId);
       await ctx.answerCallbackQuery({
-        text: saved ? "Сохранено!" : "Уже сохранено или отменено.",
+        text: result.saved ? "Сохранено!" : "Уже сохранено или отменено.",
       });
-      if (saved) {
-        await ctx.api.editMessageReplyMarkup(chatId, messageId, {
-          reply_markup: { inline_keyboard: [] },
-        });
+      if (result.saved && result.expense) {
+        await ctx.api.editMessageText(
+          chatId,
+          messageId,
+          formatExpense(result.expense, false),
+          { reply_markup: { inline_keyboard: [] } }
+        );
       }
       return;
     }
