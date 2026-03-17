@@ -1,0 +1,66 @@
+<Teleport to="body">
+  <div v-if="open" class="modal-overlay" @click.self="emit('close')">
+    <div class="modal">
+    <div class="modal-header">
+      <h3>Участники</h3>
+      <button
+        type="button"
+        class="btn-close"
+        title="Закрыть"
+        @click="emit('close')"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="info-block">
+      <p>
+        Здесь указаны участники, которые видят ваши траты и могут вносить свои.
+        У вас общие разделы <strong>Траты</strong> и <strong>Аналитика</strong>,
+        но к остальным разделам у них доступа нет.
+      </p>
+    </div>
+
+    <div v-if="isOwner" class="invite-section">
+      <div class="invite-form">
+        <input
+          v-model="inviteUsername"
+          type="text"
+          placeholder="@username"
+          autocomplete="off"
+        />
+        <button type="button" :disabled="inviting" @click="doInvite">
+          Пригласить
+        </button>
+      </div>
+      <div class="invite-hint">
+        Участник должен сначала написать боту /start
+      </div>
+    </div>
+    <div v-else-if="error" class="error-text">{{ error }}</div>
+
+    <div v-if="members.length > 0" class="members-list">
+      <div v-for="m in members" :key="m.userId" class="member-row">
+        <div class="member-avatar">
+          {{ (m.username || '?')[0].toUpperCase() }}
+        </div>
+        <span class="member-name">
+          {{ m.username ? `@${m.username}` : 'Пользователь' }}
+        </span>
+        <span v-if="m.role === 'owner'" class="role-badge">владелец</span>
+      </div>
+    </div>
+    <div v-else-if="!error" class="empty-text">Пока нет участников</div>
+  </div>
+  </div>
+</Teleport>

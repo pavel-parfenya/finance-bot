@@ -113,7 +113,7 @@ async function startPolling(container: ReturnType<typeof buildContainer>) {
       res.writeHead(200, { "Content-Type": "text/plain" }).end("OK");
       return;
     }
-    if (req.method === "GET" && req.url === "/app") {
+    if (req.method === "GET" && (req.url === "/app" || req.url?.startsWith("/app/"))) {
       res.writeHead(200, { "Content-Type": "text/html" }).end(getAppHtml());
       return;
     }
@@ -415,7 +415,7 @@ async function startWebhook(container: ReturnType<typeof buildContainer>) {
       return;
     }
 
-    if (req.method === "GET" && req.url === "/app") {
+    if (req.method === "GET" && (req.url === "/app" || req.url?.startsWith("/app/"))) {
       res.writeHead(200, { "Content-Type": "text/html" }).end(getAppHtml());
       return;
     }
