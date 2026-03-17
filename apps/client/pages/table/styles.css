@@ -1,0 +1,36 @@
+.loading,
+.empty {
+  padding: 32px 24px;
+  text-align: center;
+  color: var(--tg-theme-hint-color, #65676b);
+  font-size: 15px;
+}
+
+.error {
+  padding: 14px 16px;
+  background: rgba(248, 81, 73, 0.15);
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  color: #f85149;
+  font-size: 14px;
+}
+
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.load-more-sentinel {
+  height: 1px;
+  width: 100%;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loading-more {
+  padding: 16px;
+  text-align: center;
+  color: var(--tg-theme-hint-color, #65676b);
+  font-size: 14px;
+}

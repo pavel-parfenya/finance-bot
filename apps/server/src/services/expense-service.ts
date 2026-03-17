@@ -31,13 +31,17 @@ export class ExpenseService {
     };
   }
 
+  async recognizeVoice(audioBuffer: Buffer, mimeType: string): Promise<string> {
+    return this.recognizer.recognize(audioBuffer, mimeType);
+  }
+
   async parseVoice(
     audioBuffer: Buffer,
     mimeType: string,
     username: string,
     defaultCurrency?: string | null
   ): Promise<Expense> {
-    const text = await this.recognizer.recognize(audioBuffer, mimeType);
+    const text = await this.recognizeVoice(audioBuffer, mimeType);
     return this.parseText(text, username, defaultCurrency);
   }
 }

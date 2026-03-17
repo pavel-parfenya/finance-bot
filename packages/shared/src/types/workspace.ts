@@ -5,6 +5,7 @@ export interface WorkspaceMember {
 }
 
 export interface WorkspaceInfo {
+  userId?: number;
   isOwner?: boolean;
   members?: WorkspaceMember[];
   error?: string;

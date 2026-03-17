@@ -27,7 +27,11 @@ export class UserService {
   }
 
   async findByUsername(username: string): Promise<User | null> {
-    return this.repo.findOneBy({ username });
+    const normalized = username.replace(/^@/, "").toLowerCase();
+    return this.repo
+      .createQueryBuilder("u")
+      .where("LOWER(u.username) = :name", { name: normalized })
+      .getOne();
   }
 
   async getDefaultCurrency(userId: number): Promise<string | null> {

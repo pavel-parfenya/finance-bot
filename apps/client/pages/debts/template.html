@@ -1,0 +1,215 @@
+<div>
+  <div v-if="loading" class="loading">Загрузка...</div>
+  <div v-else-if="error" class="error">{{ error }}</div>
+  <template v-else>
+    <button
+      type="button"
+      class="btn-add-debt"
+      @click="showForm = !showForm"
+    >
+      {{ showForm ? 'Отмена' : '+ Добавить долг' }}
+    </button>
+
+    <div v-if="showForm" class="debt-form">
+      <div class="form-row">
+        <label>
+          <input type="radio" :value="true" v-model="formIAmCreditor" />
+          Мне должны
+        </label>
+        <label>
+          <input type="radio" :value="false" v-model="formIAmCreditor" />
+          Я должен
+        </label>
+      </div>
+      <input
+        v-model="formName"
+        type="text"
+        placeholder="Имя"
+        class="form-input"
+      />
+      <div class="form-row-inline">
+        <input
+          v-model="formAmount"
+          type="number"
+          step="0.01"
+          min="0"
+          placeholder="Сумма"
+          class="form-input"
+        />
+        <select v-model="formCurrency" class="form-select form-select-currency">
+          <option v-for="c in CURRENCIES" :key="c" :value="c">{{ c }}</option>
+        </select>
+      </div>
+      <input
+        v-model="formDeadline"
+        type="date"
+        placeholder="Дедлайн"
+        class="form-input"
+      />
+      <div class="form-field">
+        <label class="form-label">
+          {{ formIAmCreditor ? 'Привязать должника (@username)' : 'Привязать кредитора (@username)' }}
+          <span
+            class="label-info-wrap"
+            @click.stop="toggleTooltip('create')"
+          >
+            <span class="label-info">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+            </span>
+            <div v-if="tooltipOpen === 'create'" class="tooltip-popover">
+              Любой пользователь Telegram. Должен написать боту /start.
+            </div>
+          </span>
+        </label>
+        <input
+          v-model="formLinkedUsername"
+          type="text"
+          placeholder="@username"
+          class="form-input"
+          autocomplete="off"
+        />
+      </div>
+      <button type="button" class="btn-submit" @click="submitDebt">
+        Сохранить
+      </button>
+    </div>
+
+    <div v-if="creditorDebts.length > 0" class="debt-section">
+      <h3 class="section-title">Мне должны</h3>
+      <div
+        v-for="d in creditorDebts"
+        :key="d.id"
+        class="debt-card"
+        :class="{ editable: d.isMain }"
+        @click="openEdit(d)"
+      >
+        <div class="debt-info">
+          <div class="debt-name">{{ d.debtorName }}</div>
+          <div class="debt-amount">{{ d.amount }} {{ d.currency }}</div>
+          <div v-if="d.repaidAmount > 0" class="debt-repaid">
+            возвращено {{ d.repaidAmount }} {{ d.currency }}
+          </div>
+        </div>
+        <div v-if="d.deadline" class="debt-meta">до {{ d.deadline }}</div>
+        <button
+          v-if="d.isMain"
+          type="button"
+          class="btn-del-debt"
+          @click.stop="removeDebt(d.id)"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+
+    <div v-if="debtorDebts.length > 0" class="debt-section">
+      <h3 class="section-title">Я должен</h3>
+      <div
+        v-for="d in debtorDebts"
+        :key="d.id"
+        class="debt-card"
+        :class="{ editable: d.isMain }"
+        @click="openEdit(d)"
+      >
+        <div class="debt-info">
+          <div class="debt-name">{{ d.creditorName }}</div>
+          <div class="debt-amount">{{ d.amount }} {{ d.currency }}</div>
+          <div v-if="d.repaidAmount > 0" class="debt-repaid">
+            возвращено {{ d.repaidAmount }} {{ d.currency }}
+          </div>
+        </div>
+        <div v-if="d.deadline" class="debt-meta">до {{ d.deadline }}</div>
+        <button
+          v-if="d.isMain"
+          type="button"
+          class="btn-del-debt"
+          @click.stop="removeDebt(d.id)"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+
+    <div v-if="debts.length === 0" class="empty">Нет долгов</div>
+
+    <div v-if="editingDebt" class="modal-overlay" @click.self="closeEdit">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>Изменить долг</h3>
+          <button type="button" class="btn-close" @click="closeEdit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div class="edit-form">
+          <label class="form-label">Имя</label>
+          <input v-model="editName" type="text" class="form-input" />
+
+          <div class="form-field">
+            <label class="form-label">
+              {{ editingDebt?.isCreditor ? 'Привязать должника (@username)' : 'Привязать кредитора (@username)' }}
+              <span
+                class="label-info-wrap"
+                @click.stop="toggleTooltip('edit')"
+              >
+                <span class="label-info">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="16" x2="12" y2="12" />
+                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                  </svg>
+                </span>
+                <div v-if="tooltipOpen === 'edit'" class="tooltip-popover">
+                  Любой пользователь Telegram. Оставьте пустым, чтобы отвязать.
+                </div>
+              </span>
+            </label>
+            <input
+              v-model="editLinkedUsername"
+              type="text"
+              placeholder="@username"
+              class="form-input"
+              autocomplete="off"
+            />
+          </div>
+
+          <label class="form-label">Сумма</label>
+          <div class="form-row-inline">
+            <input
+              v-model="editAmount"
+              type="number"
+              step="0.01"
+              min="0"
+              class="form-input"
+            />
+            <select v-model="editCurrency" class="form-select form-select-currency">
+              <option v-for="c in CURRENCIES" :key="c" :value="c">{{ c }}</option>
+            </select>
+          </div>
+
+          <label class="form-label">Возвращено</label>
+          <input
+            v-model="editRepaid"
+            type="number"
+            step="0.01"
+            min="0"
+            class="form-input"
+          />
+
+          <label class="form-label">Дедлайн</label>
+          <input v-model="editDeadline" type="date" class="form-input" />
+
+          <button type="button" class="btn-submit" @click="saveEdit">
+            Сохранить
+          </button>
+        </div>
+      </div>
+    </div>
+  </template>
+</div>

@@ -8,3 +8,4 @@ export {
 } from "./subscription.entity";
 export { Transaction } from "./transaction.entity";
 export { Invitation, InvitationStatus } from "./invitation.entity";
+export { Debt, DebtStatus } from "./debt.entity";

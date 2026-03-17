@@ -1,10 +1,13 @@
 import { DataSource } from "typeorm";
 import { Config } from "../config";
 import { DeepSeekMessageParser } from "../infrastructure/deepseek/deepseek-message-parser";
+import { DeepSeekDebtParser } from "../infrastructure/deepseek/deepseek-debt-parser";
 import { WhisperSpeechRecognizer } from "../infrastructure/whisper/whisper-speech-recognizer";
 import { TransactionRepository } from "../repositories/transaction-repository";
 import { InvitationRepository } from "../repositories/invitation-repository";
+import { DebtRepository } from "../repositories/debt-repository";
 import { UserService } from "../services/user-service";
+import { DebtService } from "../services/debt-service";
 import { WorkspaceService } from "../services/workspace-service";
 import { ExpenseService } from "../services/expense-service";
 import { createBot } from "../bot/bot";
@@ -17,6 +20,8 @@ export interface AppContainer {
   expenseService: ExpenseService;
   transactionRepo: TransactionRepository;
   invitationRepo: InvitationRepository;
+  debtService: DebtService;
+  debtRepo: DebtRepository;
 }
 
 export function buildContainer(config: Config, dataSource: DataSource): AppContainer {
@@ -28,8 +33,11 @@ export function buildContainer(config: Config, dataSource: DataSource): AppConta
 
   const transactionRepo = new TransactionRepository(dataSource);
   const invitationRepo = new InvitationRepository(dataSource);
+  const debtRepo = new DebtRepository(dataSource);
   const userService = new UserService(dataSource);
   const workspaceService = new WorkspaceService(dataSource);
+  const debtService = new DebtService(debtRepo, userService);
+  const debtParser = new DeepSeekDebtParser(config.deepseek.apiKey);
   const expenseService = new ExpenseService(parser, recognizer);
 
   const miniAppUrl = config.publicBaseUrl ? `${config.publicBaseUrl}/app` : "";
@@ -40,6 +48,8 @@ export function buildContainer(config: Config, dataSource: DataSource): AppConta
     expenseService,
     transactionRepo,
     invitationRepo,
+    debtService,
+    debtParser,
     miniAppUrl,
   });
 
@@ -50,5 +60,7 @@ export function buildContainer(config: Config, dataSource: DataSource): AppConta
     expenseService,
     transactionRepo,
     invitationRepo,
+    debtService,
+    debtRepo,
   };
 }

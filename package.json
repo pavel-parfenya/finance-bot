@@ -11,10 +11,10 @@
     "dev": "concurrently \"npm run dev -w apps-server\" \"npm run dev -w apps-client\"",
     "dev:server": "npm run dev -w apps-server",
     "dev:client": "npm run dev -w apps-client",
-    "lint": "eslint packages/shared apps/server apps/client/src",
+    "lint": "eslint packages/shared apps/server apps/client",
     "lint:fix": "eslint packages/shared apps/server apps/client --fix",
-    "format": "prettier --write \"packages/**/*.ts\" \"apps/**/*.{ts,vue}\"",
-    "format:check": "prettier --check \"packages/**/*.ts\" \"apps/**/*.{ts,vue}\"",
+    "format": "prettier --write \"packages/**/*.ts\" \"apps/**/*.{ts,vue,html,css}\"",
+    "format:check": "prettier --check \"packages/**/*.ts\" \"apps/**/*.{ts,vue,html,css}\"",
     "prepare": "husky"
   },
   "lint-staged": {

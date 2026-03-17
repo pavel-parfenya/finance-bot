@@ -12,6 +12,7 @@ import { createCurrencyHandler, SET_CURRENCY_PREFIX } from "./handlers/currency-
 import { TransactionRepository } from "../repositories/transaction-repository";
 import { InvitationRepository } from "../repositories/invitation-repository";
 import { createInviteHandler } from "./handlers/invite-handler";
+import { createDebtCallbackHandler } from "./handlers/debt-handler";
 
 export interface BotDeps {
   userService: UserService;
@@ -19,6 +20,8 @@ export interface BotDeps {
   expenseService: ExpenseService;
   transactionRepo: TransactionRepository;
   invitationRepo: InvitationRepository;
+  debtService: import("../services/debt-service").DebtService;
+  debtParser: import("../infrastructure/deepseek/deepseek-debt-parser").DeepSeekDebtParser;
   /** URL Telegram Mini App для просмотра расходов */
   miniAppUrl: string;
 }
@@ -34,6 +37,10 @@ export function createBot(token: string, deps: BotDeps): Bot {
   bot.callbackQuery(
     /^invite_(accept|decline|transfer|delete):(\d+)$/,
     createInviteHandler(deps)
+  );
+  bot.callbackQuery(
+    /^debt_(confirm|reject|repaid_add|repaid_skip):/,
+    createDebtCallbackHandler(deps)
   );
 
   bot.on("message:text", createTextHandler(deps));

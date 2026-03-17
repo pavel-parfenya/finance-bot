@@ -1,0 +1,94 @@
+.filters-panel {
+  margin-bottom: 12px;
+  padding: 14px;
+  background: var(--tg-theme-secondary-bg-color, #f0f2f5);
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.filter-group {
+  margin-bottom: 12px;
+}
+
+.filter-group:last-of-type {
+  margin-bottom: 0;
+}
+
+.filter-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--tg-theme-hint-color);
+  margin-bottom: 6px;
+}
+
+.filter-select,
+.filter-input {
+  width: 100%;
+  padding: 10px 14px;
+  min-height: 44px;
+  font-size: 15px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--tg-theme-bg-color);
+  color: var(--tg-theme-text-color);
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238b949e' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+.filter-input {
+  background-image: none;
+  padding-right: 14px;
+}
+
+.filters-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.btn-filter-reset,
+.btn-filter-apply {
+  flex: 1;
+  min-height: 44px;
+  padding: 10px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-filter-reset {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--tg-theme-text-color);
+}
+
+.btn-filter-apply {
+  background: var(--tg-theme-button-color);
+  color: var(--tg-theme-button-text-color);
+}
+
+.period-dates {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.period-dates input {
+  flex: 1;
+  min-height: 44px;
+  padding: 10px 14px;
+  font-size: 15px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--tg-theme-bg-color);
+  color: var(--tg-theme-text-color);
+}

@@ -1,0 +1,46 @@
+<div>
+  <div class="analytics-controls">
+    <select
+      v-model="period"
+      @change="period === 'period' && setDefaultPeriod()"
+    >
+      <option value="current">Текущий месяц</option>
+      <option value="prev">Предыдущий месяц</option>
+      <option value="period">Период</option>
+    </select>
+    <div v-show="showPeriodDates()" class="period-dates">
+      <input v-model="startDate" type="date" placeholder="Начало" />
+      <input v-model="endDate" type="date" placeholder="Конец" />
+    </div>
+  </div>
+  <div v-if="loading" class="loading">Загрузка...</div>
+  <div v-else-if="error" class="error">{{ error }}</div>
+  <div v-else-if="byCategory.length === 0" class="empty">
+    Нет трат за выбранный период
+  </div>
+  <div v-else>
+    <div class="total-row">
+      <div v-if="periodLabel" class="total-period">{{ periodLabel }}</div>
+      <div class="total-sum">
+        Итого: {{ totalInDefault }} {{ defaultCurrency }}
+      </div>
+    </div>
+    <div v-if="byCurrency.length > 0" class="by-currency-wrap">
+      <div class="currency-title">По валютам</div>
+      <div v-for="c in byCurrency" :key="c.currency" class="currency-row">
+        <span>{{ c.currency }}</span>
+        <span>{{ c.amount }} {{ c.currency }}</span>
+      </div>
+    </div>
+    <AnalyticsChart
+      :labels="byCategory.map((x) => x.category)"
+      :data="byCategory.map((x) => parseFloat(x.amount))"
+    />
+    <div class="category-list">
+      <div v-for="c in byCategory" :key="c.category" class="row">
+        <span>{{ c.category }}</span>
+        <span>{{ c.amount }} {{ defaultCurrency }}</span>
+      </div>
+    </div>
+  </div>
+</div>

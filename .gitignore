@@ -3,3 +3,5 @@ dist/
 .env
 credentials.json
 *.js.map
+.nuxt/
+.output/

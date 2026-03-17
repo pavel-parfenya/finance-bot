@@ -1,0 +1,88 @@
+.card {
+  background: var(--tg-theme-secondary-bg-color, #fff);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.card-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-desc {
+  font-weight: 500;
+  margin-bottom: 4px;
+  word-break: break-word;
+}
+
+.card-meta {
+  font-size: 13px;
+  color: var(--tg-theme-hint-color, #65676b);
+}
+
+.card-amount {
+  font-weight: 700;
+  font-size: 17px;
+  white-space: nowrap;
+  color: var(--tg-theme-button-color, #1877f2);
+}
+
+.card-amount .currency {
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.85;
+  margin-left: 2px;
+}
+
+.card-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.btn-del,
+.btn-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.btn-del svg,
+.btn-edit svg {
+  width: 14px;
+  height: 14px;
+}
+
+.btn-del {
+  background: rgba(248, 81, 73, 0.12);
+  color: #f85149;
+}
+
+.btn-del:active {
+  opacity: 0.8;
+}
+
+.btn-edit {
+  background: rgba(88, 166, 255, 0.12);
+  color: #58a6ff;
+}
+
+.btn-edit:active {
+  opacity: 0.8;
+}

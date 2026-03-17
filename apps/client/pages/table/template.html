@@ -1,0 +1,36 @@
+<div>
+  <FiltersPanel
+    v-if="filtersOpen"
+    :model-value="filters"
+    :categories="categories"
+    :members="members"
+    @apply="applyFilters"
+  />
+  <div v-if="loading" class="loading">Загрузка...</div>
+  <div v-else-if="error" class="error">{{ error }}</div>
+  <div v-else-if="transactions.length === 0" class="empty">
+    Пока нет записей. Добавляйте траты в боте!
+  </div>
+  <div v-else class="card-list">
+    <TransactionCard
+      v-for="t in transactions"
+      :key="t.id"
+      :transaction="t"
+      @edit="openEdit"
+      @delete="onDelete"
+    />
+    <div
+      v-if="hasMore && !loadingMore"
+      ref="loadMoreSentinel"
+      class="load-more-sentinel"
+      aria-hidden="true"
+    />
+    <div v-if="loadingMore" class="loading-more">Загрузка...</div>
+  </div>
+  <EditModal
+    v-if="editingTx"
+    :transaction="editingTx"
+    @close="closeEdit"
+    @saved="onSaved"
+  />
+</div>

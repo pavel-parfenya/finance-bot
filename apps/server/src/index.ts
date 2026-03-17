@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { createServer, IncomingMessage, ServerResponse } from "node:http";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { config } from "./config";
 import { createDataSource } from "./database/data-source";
@@ -12,14 +12,48 @@ const CLIENT_DIST = join(ROOT, "apps", "client", "dist");
 const LEGACY_APP = join(ROOT, "public", "app.html");
 
 function getAppHtml(): string {
-  const indexHtml = join(CLIENT_DIST, "index.html");
-  if (existsSync(indexHtml)) {
-    return readFileSync(indexHtml, "utf-8");
-  }
-  if (existsSync(LEGACY_APP)) {
-    return readFileSync(LEGACY_APP, "utf-8");
+  for (const candidate of [
+    join(CLIENT_DIST, "index.html"),
+    join(CLIENT_DIST, "200.html"),
+    LEGACY_APP,
+  ]) {
+    if (existsSync(candidate)) return readFileSync(candidate, "utf-8");
   }
   return "<!DOCTYPE html><html><body>Mini App not built. Run npm run build.</body></html>";
+}
+
+function getMimeType(ext: string): string {
+  const types: Record<string, string> = {
+    js: "application/javascript",
+    mjs: "application/javascript",
+    css: "text/css",
+    ico: "image/x-icon",
+    svg: "image/svg+xml",
+    png: "image/png",
+    jpg: "image/jpeg",
+    woff: "font/woff",
+    woff2: "font/woff2",
+    json: "application/json",
+  };
+  return types[ext] ?? "application/octet-stream";
+}
+
+function tryServeStatic(url: string, res: ServerResponse): boolean {
+  const safePath = url.split("?")[0];
+  if (safePath.includes("..")) return false;
+  const filePath = join(CLIENT_DIST, safePath.slice(1));
+  if (existsSync(filePath)) {
+    try {
+      if (statSync(filePath).isDirectory()) return false;
+    } catch {
+      return false;
+    }
+    const ext = filePath.split(".").pop() ?? "";
+    res.writeHead(200, { "Content-Type": getMimeType(ext) });
+    res.end(readFileSync(filePath));
+    return true;
+  }
+  return false;
 }
 
 async function main(): Promise<void> {
@@ -53,8 +87,14 @@ async function main(): Promise<void> {
 }
 
 async function startPolling(container: ReturnType<typeof buildContainer>) {
-  const { bot, userService, workspaceService, transactionRepo, invitationRepo } =
-    container;
+  const {
+    bot,
+    userService,
+    workspaceService,
+    transactionRepo,
+    invitationRepo,
+    debtRepo,
+  } = container;
   console.log("Запуск бота в режиме polling...");
   await bot.api.deleteWebhook();
 
@@ -63,6 +103,7 @@ async function startPolling(container: ReturnType<typeof buildContainer>) {
     workspaceService,
     transactionRepo,
     invitationRepo,
+    debtRepo,
     bot,
     botToken: config.telegram.botToken,
   });
@@ -77,22 +118,8 @@ async function startPolling(container: ReturnType<typeof buildContainer>) {
       return;
     }
     if (req.method === "GET" && req.url?.startsWith("/assets/")) {
-      const assetPath = join(CLIENT_DIST, req.url.slice(1));
-      if (existsSync(assetPath)) {
-        const ext = assetPath.split(".").pop() ?? "";
-        const ct =
-          ext === "js"
-            ? "application/javascript"
-            : ext === "css"
-              ? "text/css"
-              : ext === "ico"
-                ? "image/x-icon"
-                : "application/octet-stream";
-        res.writeHead(200, { "Content-Type": ct });
-        res.end(readFileSync(assetPath));
-      } else {
-        res.writeHead(404).end();
-      }
+      if (tryServeStatic(req.url, res)) return;
+      res.writeHead(404).end();
       return;
     }
     if (
@@ -271,11 +298,86 @@ async function startPolling(container: ReturnType<typeof buildContainer>) {
       }
       return;
     }
+    if (req.method === "GET" && req.url === "/api/debts") {
+      const initData =
+        (req.headers["x-telegram-init-data"] as string) ??
+        (req.headers["x-init-data"] as string) ??
+        "";
+      try {
+        const result = await api.handleDebts(initData);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(result));
+      } catch (err) {
+        console.error("API error:", err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Внутренняя ошибка сервера" }));
+      }
+      return;
+    }
+    if (req.method === "POST" && req.url === "/api/debts") {
+      const initData =
+        (req.headers["x-telegram-init-data"] as string) ??
+        (req.headers["x-init-data"] as string) ??
+        "";
+      try {
+        const body = await readBody(req);
+        const result = await api.handleCreateDebt(initData, JSON.parse(body));
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(result));
+      } catch (err) {
+        console.error("API error:", err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Внутренняя ошибка сервера" }));
+      }
+      return;
+    }
+    if (req.method === "PATCH" && req.url?.startsWith("/api/debts/")) {
+      const initData =
+        (req.headers["x-telegram-init-data"] as string) ??
+        (req.headers["x-init-data"] as string) ??
+        "";
+      try {
+        const id = req.url.replace("/api/debts/", "");
+        const body = await readBody(req);
+        const result = await api.handleUpdateDebt(initData, id, JSON.parse(body));
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(result));
+      } catch (err) {
+        console.error("API error:", err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Внутренняя ошибка сервера" }));
+      }
+      return;
+    }
+    if (req.method === "DELETE" && req.url?.startsWith("/api/debts/")) {
+      const initData =
+        (req.headers["x-telegram-init-data"] as string) ??
+        (req.headers["x-init-data"] as string) ??
+        "";
+      try {
+        const id = req.url.replace("/api/debts/", "");
+        const result = await api.handleDeleteDebt(initData, id);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(result));
+      } catch (err) {
+        console.error("API error:", err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Внутренняя ошибка сервера" }));
+      }
+      return;
+    }
+    if (req.method === "GET" && req.url && !req.url.startsWith("/api/")) {
+      if (tryServeStatic(req.url, res)) return;
+      res.writeHead(200, { "Content-Type": "text/html" }).end(getAppHtml());
+      return;
+    }
     res.writeHead(404).end();
   });
 
   server.listen(config.port, () => {
-    console.log(`HTTP-сервер на порту ${config.port} (/app, /api/transactions)`);
+    console.log(
+      `HTTP-сервер на порту ${config.port} (/app, /api/transactions, /api/debts)`
+    );
   });
 
   await bot.start({ onStart: () => console.log("Бот запущен (polling)!") });
@@ -283,8 +385,14 @@ async function startPolling(container: ReturnType<typeof buildContainer>) {
 
 async function startWebhook(container: ReturnType<typeof buildContainer>) {
   const { port, webhookPath, webhookUrl, webhookSecret } = config;
-  const { bot, userService, workspaceService, transactionRepo, invitationRepo } =
-    container;
+  const {
+    bot,
+    userService,
+    workspaceService,
+    transactionRepo,
+    invitationRepo,
+    debtRepo,
+  } = container;
 
   await bot.api.setWebhook(webhookUrl, {
     secret_token: webhookSecret || undefined,
@@ -296,6 +404,7 @@ async function startWebhook(container: ReturnType<typeof buildContainer>) {
     workspaceService,
     transactionRepo,
     invitationRepo,
+    debtRepo,
     bot,
     botToken: config.telegram.botToken,
   });
@@ -311,22 +420,8 @@ async function startWebhook(container: ReturnType<typeof buildContainer>) {
       return;
     }
     if (req.method === "GET" && req.url?.startsWith("/assets/")) {
-      const assetPath = join(CLIENT_DIST, req.url.slice(1));
-      if (existsSync(assetPath)) {
-        const ext = assetPath.split(".").pop() ?? "";
-        const ct =
-          ext === "js"
-            ? "application/javascript"
-            : ext === "css"
-              ? "text/css"
-              : ext === "ico"
-                ? "image/x-icon"
-                : "application/octet-stream";
-        res.writeHead(200, { "Content-Type": ct });
-        res.end(readFileSync(assetPath));
-      } else {
-        res.writeHead(404).end();
-      }
+      if (tryServeStatic(req.url, res)) return;
+      res.writeHead(404).end();
       return;
     }
 
@@ -497,6 +592,74 @@ async function startWebhook(container: ReturnType<typeof buildContainer>) {
           initData,
           defaultCurrency ?? ""
         );
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(result));
+      } catch (err) {
+        console.error("API error:", err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Внутренняя ошибка сервера" }));
+      }
+      return;
+    }
+    if (req.method === "GET" && req.url === "/api/debts") {
+      const initData =
+        (req.headers["x-telegram-init-data"] as string) ??
+        (req.headers["x-init-data"] as string) ??
+        "";
+      try {
+        const result = await api.handleDebts(initData);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(result));
+      } catch (err) {
+        console.error("API error:", err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Внутренняя ошибка сервера" }));
+      }
+      return;
+    }
+    if (req.method === "POST" && req.url === "/api/debts") {
+      const initData =
+        (req.headers["x-telegram-init-data"] as string) ??
+        (req.headers["x-init-data"] as string) ??
+        "";
+      try {
+        const body = await readBody(req);
+        const result = await api.handleCreateDebt(initData, JSON.parse(body));
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(result));
+      } catch (err) {
+        console.error("API error:", err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Внутренняя ошибка сервера" }));
+      }
+      return;
+    }
+    if (req.method === "PATCH" && req.url?.startsWith("/api/debts/")) {
+      const initData =
+        (req.headers["x-telegram-init-data"] as string) ??
+        (req.headers["x-init-data"] as string) ??
+        "";
+      try {
+        const id = req.url.replace("/api/debts/", "");
+        const body = await readBody(req);
+        const result = await api.handleUpdateDebt(initData, id, JSON.parse(body));
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(result));
+      } catch (err) {
+        console.error("API error:", err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Внутренняя ошибка сервера" }));
+      }
+      return;
+    }
+    if (req.method === "DELETE" && req.url?.startsWith("/api/debts/")) {
+      const initData =
+        (req.headers["x-telegram-init-data"] as string) ??
+        (req.headers["x-init-data"] as string) ??
+        "";
+      try {
+        const id = req.url.replace("/api/debts/", "");
+        const result = await api.handleDeleteDebt(initData, id);
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(result));
       } catch (err) {
@@ -528,6 +691,11 @@ async function startWebhook(container: ReturnType<typeof buildContainer>) {
       return;
     }
 
+    if (req.method === "GET" && req.url && !req.url.startsWith("/api/")) {
+      if (tryServeStatic(req.url, res)) return;
+      res.writeHead(200, { "Content-Type": "text/html" }).end(getAppHtml());
+      return;
+    }
     res.writeHead(404).end();
   });
 

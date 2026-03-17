@@ -5,6 +5,7 @@ import { WorkspaceMember } from "./entities/workspace-member.entity";
 import { Subscription } from "./entities/subscription.entity";
 import { Transaction } from "./entities/transaction.entity";
 import { Invitation } from "./entities/invitation.entity";
+import { Debt } from "./entities/debt.entity";
 
 export interface DataSourceOptions {
   url: string;
@@ -17,7 +18,15 @@ export function createDataSource(options: DataSourceOptions | string): DataSourc
   return new DataSource({
     type: "postgres",
     url,
-    entities: [User, Workspace, WorkspaceMember, Subscription, Transaction, Invitation],
+    entities: [
+      User,
+      Workspace,
+      WorkspaceMember,
+      Subscription,
+      Transaction,
+      Invitation,
+      Debt,
+    ],
     synchronize: true,
     logging: false,
     ...(ssl !== undefined && {

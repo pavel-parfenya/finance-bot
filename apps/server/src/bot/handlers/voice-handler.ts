@@ -1,10 +1,8 @@
 import { Context } from "grammy";
 import { BotDeps } from "../bot";
 import { resolveUser, getUserDisplayName } from "../utils";
-import { formatExpense } from "../format";
-import { createSaveNowKeyboard } from "./cancel-expense-handler";
-import { scheduleSave } from "../pending-expense-store";
-import { InvalidExpenseError } from "../../domain/errors";
+import { parseMessage } from "../message-router";
+import { handleParsedMessage } from "./message-handler";
 
 const INVALID_REPLY =
   "Не удалось внести данные: информация невалидная (указана нулевая сумма или не распознано описание).";
@@ -16,8 +14,6 @@ export function createVoiceHandler(deps: BotDeps) {
 
     const user = await resolveUser(ctx, deps.userService);
     if (!user) return;
-
-    const workspace = await deps.workspaceService.getOrCreateWorkspaceForUser(user.id);
 
     await ctx.reply("Распознаю голосовое сообщение...");
 
@@ -36,44 +32,29 @@ export function createVoiceHandler(deps: BotDeps) {
 
       const displayName = getUserDisplayName(ctx);
       const defaultCurrency = await deps.userService.getDefaultCurrency(user.id);
-      const expense = await deps.expenseService.parseVoice(
-        buffer,
-        mimeType,
-        displayName,
-        defaultCurrency
-      );
 
-      const msg = await ctx.reply(formatExpense(expense), {
-        reply_markup: createSaveNowKeyboard(),
+      const text = await deps.expenseService.recognizeVoice(buffer, mimeType);
+
+      const parsed = await parseMessage(text, displayName, defaultCurrency, {
+        debtParser: deps.debtParser,
+        expenseService: deps.expenseService,
       });
 
-      scheduleSave(
-        msg.chat.id,
-        msg.message_id,
-        user.id,
-        workspace.id,
-        expense,
-        deps.transactionRepo,
-        async (chatId, messageId, expense) => {
-          try {
-            await ctx.api.editMessageText(
-              chatId,
-              messageId,
-              formatExpense(expense, false),
-              {
-                reply_markup: { inline_keyboard: [] },
-              }
-            );
-          } catch {
-            // Сообщение могло быть удалено (Отмена) или уже отредактировано
-          }
-        }
-      );
-    } catch (error) {
-      if (error instanceof InvalidExpenseError) {
+      if (!parsed) {
         await ctx.reply(INVALID_REPLY);
         return;
       }
+
+      if (parsed.type === "expense") {
+        await ctx.reply("Обрабатываю ваш расход...");
+      }
+
+      await handleParsedMessage(ctx, parsed, deps, {
+        userId: user.id,
+        displayName,
+        originalText: text,
+      });
+    } catch (error) {
       console.error("Ошибка обработки голосового сообщения:", error);
       await ctx.reply(
         "Не удалось обработать голосовое сообщение. Попробуйте ещё раз или отправьте текстом."

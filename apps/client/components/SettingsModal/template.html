@@ -1,0 +1,40 @@
+<div v-if="open" class="modal-overlay" @click.self="emit('close')">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Настройки</h3>
+      <button
+        type="button"
+        class="btn-close"
+        title="Закрыть"
+        @click="emit('close')"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+    <div class="settings-block">
+      <label for="default-currency">Валюта по умолчанию</label>
+      <select
+        id="default-currency"
+        v-model="defaultCurrency"
+        class="select-styled"
+        @change="onCurrencyChange"
+      >
+        <option value="">Не задана</option>
+        <option v-for="c in CURRENCIES" :key="c" :value="c">{{ c }}</option>
+      </select>
+      <div class="settings-hint">
+        Используется при редактировании записей и новых тратах
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,10 +1,8 @@
 import { Context } from "grammy";
 import { BotDeps } from "../bot";
 import { resolveUser, getUserDisplayName } from "../utils";
-import { formatExpense } from "../format";
-import { createSaveNowKeyboard } from "./cancel-expense-handler";
-import { scheduleSave } from "../pending-expense-store";
-import { InvalidExpenseError } from "../../domain/errors";
+import { parseMessage } from "../message-router";
+import { handleParsedMessage } from "./message-handler";
 
 const INVALID_REPLY =
   "Не удалось внести данные: информация невалидная (указана нулевая сумма или не распознано описание).";
@@ -18,54 +16,34 @@ export function createTextHandler(deps: BotDeps) {
     const user = await resolveUser(ctx, deps.userService);
     if (!user) return;
 
-    const workspace = await deps.workspaceService.getOrCreateWorkspaceForUser(user.id);
+    const displayName = getUserDisplayName(ctx);
+    const defaultCurrency = await deps.userService.getDefaultCurrency(user.id);
 
-    await ctx.reply("Обрабатываю ваш расход...");
+    const parsed = await parseMessage(text, displayName, defaultCurrency, {
+      debtParser: deps.debtParser,
+      expenseService: deps.expenseService,
+    });
+
+    if (!parsed) {
+      await ctx.reply(INVALID_REPLY);
+      return;
+    }
+
+    if (parsed.type === "expense") {
+      await ctx.reply("Обрабатываю ваш расход...");
+    }
 
     try {
-      const displayName = getUserDisplayName(ctx);
-      const defaultCurrency = await deps.userService.getDefaultCurrency(user.id);
-      const expense = await deps.expenseService.parseText(
-        text,
+      await handleParsedMessage(ctx, parsed, deps, {
+        userId: user.id,
         displayName,
-        defaultCurrency
-      );
-
-      const msg = await ctx.reply(formatExpense(expense), {
-        reply_markup: createSaveNowKeyboard(),
+        originalText: text,
       });
-
-      scheduleSave(
-        msg.chat.id,
-        msg.message_id,
-        user.id,
-        workspace.id,
-        expense,
-        deps.transactionRepo,
-        async (chatId, messageId, expense) => {
-          try {
-            await ctx.api.editMessageText(
-              chatId,
-              messageId,
-              formatExpense(expense, false),
-              {
-                reply_markup: { inline_keyboard: [] },
-              }
-            );
-          } catch {
-            // Сообщение могло быть удалено (Отмена) или уже отредактировано
-          }
-        }
-      );
     } catch (error) {
-      if (error instanceof InvalidExpenseError) {
-        await ctx.reply(INVALID_REPLY);
-        return;
-      }
-      console.error("Ошибка обработки текстового сообщения:", error);
+      console.error("Ошибка обработки сообщения:", error);
       await ctx.reply(
         "Не удалось обработать сообщение. Попробуйте ещё раз, например:\n" +
-          "«Купил 3 пачки яиц за 5 BYN в Евроопте»"
+          "«Купил 3 пачки яиц за 5 BYN в Евроопте» или «Одолжил Саше 100р»"
       );
     }
   };

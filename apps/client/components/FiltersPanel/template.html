@@ -1,0 +1,60 @@
+<div class="filters-panel" role="region" aria-label="Фильтры">
+  <div class="filter-group">
+    <label class="filter-label">Период</label>
+    <select
+      v-model="local.period"
+      class="filter-select"
+      @change="showPeriodDates() && setDefaultPeriod()"
+    >
+      <option value="all">Все время</option>
+      <option value="current">Текущий месяц</option>
+      <option value="prev">Предыдущий месяц</option>
+      <option value="period">Период</option>
+    </select>
+    <div v-show="showPeriodDates()" class="period-dates">
+      <input v-model="local.startDate" type="date" placeholder="Начало" />
+      <input v-model="local.endDate" type="date" placeholder="Конец" />
+    </div>
+  </div>
+  <div class="filter-group">
+    <label class="filter-label">Категория</label>
+    <select v-model="local.category" class="filter-select">
+      <option value="">Все</option>
+      <option v-for="c in categories" :key="c" :value="c">{{ c }}</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label class="filter-label">Кто добавил</label>
+    <select v-model="local.userId" class="filter-select">
+      <option value="">Все</option>
+      <option v-for="m in members" :key="m.userId" :value="m.userId">
+        {{ m.username ? `@${m.username}` : `Участник #${m.userId}` }}
+      </option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label class="filter-label">Валюта</label>
+    <select v-model="local.currency" class="filter-select">
+      <option value="">Все</option>
+      <option v-for="c in CURRENCIES" :key="c" :value="c">{{ c }}</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label class="filter-label">Поиск</label>
+    <input
+      v-model="local.search"
+      type="text"
+      class="filter-input"
+      placeholder="По описанию..."
+      autocomplete="off"
+    />
+  </div>
+  <div class="filters-actions">
+    <button type="button" class="btn-filter-reset" @click="reset">
+      Сбросить
+    </button>
+    <button type="button" class="btn-filter-apply" @click="apply">
+      Применить
+    </button>
+  </div>
+</div>
