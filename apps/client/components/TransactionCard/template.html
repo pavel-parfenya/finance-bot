@@ -2,11 +2,9 @@
   <div class="card-main">
     <div class="card-desc">{{ transaction.description || '' }}</div>
     <div class="card-meta">
-      {{ formatDate(transaction.date) }}
-      <template v-if="transaction.category">
-        · {{ transaction.category }}
-      </template>
+      {{ formatDate(transaction.date) }} {{ formatTime(transaction.date) }}
     </div>
+    <div v-if="transaction.category" class="card-category">{{ transaction.category }}</div>
   </div>
   <div class="card-actions">
     <span class="card-amount">

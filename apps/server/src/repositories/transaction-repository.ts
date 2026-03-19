@@ -17,12 +17,20 @@ export class TransactionRepository {
     const time = expense.date.toLocaleTimeString("ru-RU", {
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "UTC",
     });
 
+    const utcDate = new Date(
+      Date.UTC(
+        expense.date.getUTCFullYear(),
+        expense.date.getUTCMonth(),
+        expense.date.getUTCDate()
+      )
+    );
     const transaction = this.repo.create({
       workspaceId,
       userId,
-      date: expense.date,
+      date: utcDate,
       time,
       description: expense.description,
       category: expense.category,
@@ -106,6 +114,7 @@ export class TransactionRepository {
       tx.time = updates.date.toLocaleTimeString("ru-RU", {
         hour: "2-digit",
         minute: "2-digit",
+        timeZone: "UTC",
       });
     }
     return this.repo.save(tx);

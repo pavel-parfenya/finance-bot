@@ -22,8 +22,10 @@ export default defineComponent({
         category.value = t.category ?? "";
         amount.value = t.amount ?? "";
         currency.value = (t.currency ?? "BYN").toUpperCase();
-        const d = (t.date ?? "").toString().split("T")[0];
-        date.value = d ?? "";
+        const d = new Date((t.date ?? "").toString());
+        date.value = !isNaN(d.getTime())
+          ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+          : "";
       },
       { immediate: true }
     );

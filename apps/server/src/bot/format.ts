@@ -1,22 +1,16 @@
 import { Expense } from "../domain/models";
 
-function formatDateTime(date: Date): { dateStr: string; timeStr: string } {
-  const dateStr = date.toISOString().split("T")[0];
-  const timeStr = date.toLocaleTimeString("ru-RU", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  return { dateStr, timeStr };
+function formatDate(date: Date): string {
+  return date.toISOString().split("T")[0];
 }
 
 export function formatExpense(expense: Expense, includeConfirmHint = true): string {
-  const { dateStr, timeStr } = formatDateTime(expense.date);
+  const dateStr = formatDate(expense.date);
 
   const lines = [
     "Расход добавлен:",
     "",
     `Дата:      ${dateStr}`,
-    `Время:     ${timeStr}`,
     `Личность:  ${expense.username}`,
     `Описание:  ${expense.description}`,
     `Категория: ${expense.category}`,

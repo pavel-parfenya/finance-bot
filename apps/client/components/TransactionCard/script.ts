@@ -1,6 +1,6 @@
 import { defineComponent } from "vue";
 import type { TransactionDto } from "@finance-bot/shared";
-import { formatDate } from "~/utils/format";
+import { formatDate, formatTime } from "~/utils/format";
 
 export default defineComponent({
   props: {
@@ -11,6 +11,6 @@ export default defineComponent({
   },
   emits: ["edit", "delete"],
   setup(props, { emit }) {
-    return { emit, formatDate };
+    return { emit, formatDate, formatTime };
   },
 });

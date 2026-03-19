@@ -39,6 +39,9 @@ export async function handleParsedMessage(
     }
 
     case "expense": {
+      if (ctx.message?.date) {
+        parsed.data.date = new Date(ctx.message.date * 1000);
+      }
       const workspace = await deps.workspaceService.getOrCreateWorkspaceForUser(userId);
       const msg = await ctx.reply(formatExpense(parsed.data), {
         reply_markup: createSaveNowKeyboard(),
