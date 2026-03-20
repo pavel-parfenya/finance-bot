@@ -46,7 +46,7 @@ export function createBot(token: string, depsWithoutBot: BotDeps): Bot {
   bot.command("app", createAppHandler(deps));
   bot.command("test_analytics", createTestAnalyticsHandler(deps));
   bot.command("app_stats", createAppStatsHandler(deps));
-  bot.callbackQuery(["cancel_expense", "save_expense"], createCancelExpenseHandler(deps));
+  bot.callbackQuery(["cancel_expense", "save_expense"], createCancelExpenseHandler());
   bot.callbackQuery(new RegExp(`^${SET_CURRENCY_PREFIX}`), createCurrencyHandler(deps));
   bot.callbackQuery(
     /^invite_(accept|decline|transfer|delete):(\d+)$/,
