@@ -16,7 +16,7 @@ export default defineComponent({
   emits: ["close", "settings-changed"],
   setup(props, { emit }) {
     const defaultCurrency = ref("");
-    const analyticsEnabled = ref(true);
+    const analyticsEnabled = ref(false);
     const analyticsVoice = ref("official");
 
     watch(
@@ -26,7 +26,7 @@ export default defineComponent({
           const data = await fetchUserSettings();
           if (!data.error) {
             defaultCurrency.value = data.defaultCurrency ?? "";
-            analyticsEnabled.value = data.analyticsEnabled ?? true;
+            analyticsEnabled.value = data.analyticsEnabled ?? false;
             analyticsVoice.value = data.analyticsVoice ?? "official";
           }
         }

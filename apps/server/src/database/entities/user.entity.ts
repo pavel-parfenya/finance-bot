@@ -22,7 +22,7 @@ export class User {
   @Column({ type: "varchar", length: 10, nullable: true })
   defaultCurrency: string | null;
 
-  @Column({ type: "boolean", default: true })
+  @Column({ type: "boolean", default: false })
   analyticsEnabled: boolean;
 
   @Column({ type: "varchar", length: 20, default: "official" })

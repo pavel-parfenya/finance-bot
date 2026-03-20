@@ -55,7 +55,7 @@ export class UserService {
 
   async getAnalyticsEnabled(userId: number): Promise<boolean> {
     const user = await this.repo.findOneBy({ id: userId });
-    return user?.analyticsEnabled ?? true;
+    return user?.analyticsEnabled ?? false;
   }
 
   async getAnalyticsVoice(userId: number): Promise<string> {
