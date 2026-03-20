@@ -49,6 +49,8 @@ export const config = {
     apiKey: requireEnv("WHISPER_API_KEY"),
     baseUrl: process.env["WHISPER_BASE_URL"] ?? "https://api.groq.com/openai/v1",
   },
+  /** @username для доступа к /app-stats (без @) */
+  superAdminUsername: process.env["SUPER_ADMIN_USERNAME"]?.replace(/^@/, "") ?? null,
   get publicBaseUrl(): string {
     const explicit = process.env["PUBLIC_BASE_URL"];
     if (explicit) return explicit.replace(/\/$/, "");

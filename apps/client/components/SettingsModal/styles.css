@@ -78,3 +78,16 @@
   color: var(--tg-theme-hint-color);
   margin-top: 8px;
 }
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--tg-theme-button-color);
+}

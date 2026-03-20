@@ -4,6 +4,7 @@ import { BotDeps } from "../bot";
 import { formatExpense } from "../format";
 import { createSaveNowKeyboard } from "./cancel-expense-handler";
 import { scheduleSave } from "../pending-expense-store";
+import { triggerAnalyticsAfterTransaction } from "../analytics-trigger";
 import type { ParsedMessage } from "../message-router";
 
 export async function handleParsedMessage(
@@ -38,6 +39,29 @@ export async function handleParsedMessage(
       break;
     }
 
+    case "purchase_advice": {
+      if (!deps.purchaseAdviceService) {
+        await ctx.reply("Сервис советов временно недоступен.");
+        return;
+      }
+      await ctx.reply("Анализирую твои траты...");
+      try {
+        const workspaceIds = await deps.workspaceService.getWorkspaceIdsForUser(userId);
+        const voice = await deps.userService.getAnalyticsVoice(userId);
+        const advice = await deps.purchaseAdviceService.getAdvice(
+          userId,
+          workspaceIds,
+          parsed.data,
+          voice
+        );
+        await ctx.reply(advice);
+      } catch (err) {
+        console.error("Purchase advice error:", err);
+        await ctx.reply("Не удалось проанализировать. Попробуй позже.");
+      }
+      return;
+    }
+
     case "expense": {
       if (ctx.message?.date) {
         parsed.data.date = new Date(ctx.message.date * 1000);
@@ -65,7 +89,17 @@ export async function handleParsedMessage(
           } catch {
             /* ignore */
           }
-        }
+        },
+        deps.bot
+          ? (uid, wid) =>
+              triggerAnalyticsAfterTransaction(uid, wid, {
+                analyticsInsightService: deps.analyticsInsightService,
+                userService: deps.userService,
+                workspaceService: deps.workspaceService,
+                bot: deps.bot!,
+                monthlyReportGenerator: deps.monthlyReportGenerator,
+              })
+          : undefined
       );
       break;
     }

@@ -12,6 +12,7 @@ import type {
   DebtUpdateRequest,
 } from "@finance-bot/shared";
 import { buildPeriodRange } from "@finance-bot/shared";
+import { aggregateByCategoryAndCurrency } from "../analytics/aggregate-transactions";
 import type { UserService } from "../services/user-service";
 import type { WorkspaceService } from "../services/workspace-service";
 import type { TransactionRepository } from "../repositories/transaction-repository";
@@ -190,38 +191,14 @@ export function createMiniAppApi(deps: MiniAppDeps) {
       rates["USD"] = 1;
     }
 
-    const byCurrencyMap = new Map<string, number>();
-    const byCategoryMap = new Map<string, number>();
-    const defRate = rates[defaultCurrency] ?? 1;
-
-    for (const t of transactions) {
-      const amt = Number(t.amount);
-      const cur = t.currency || "USD";
-      const r = rates[cur] ?? 1;
-      const amtInDefault = (amt / r) * defRate;
-
-      byCurrencyMap.set(cur, (byCurrencyMap.get(cur) || 0) + amt);
-      const key = t.category || "Без категории";
-      byCategoryMap.set(key, (byCategoryMap.get(key) || 0) + amtInDefault);
-    }
-
-    let totalInDefault = 0;
-    for (const [, sum] of byCategoryMap) {
-      totalInDefault += sum;
-    }
-
-    const byCurrency = Array.from(byCurrencyMap.entries())
-      .map(([currency, amount]) => ({ currency, amount: String(amount.toFixed(2)) }))
-      .sort((a, b) => Number(b.amount) - Number(a.amount));
-
-    const byCategory = Array.from(byCategoryMap.entries())
-      .map(([category, amount]) => ({ category, amount: String(amount.toFixed(2)) }))
-      .sort((a, b) => Number(b.amount) - Number(a.amount));
+    const aggregated = aggregateByCategoryAndCurrency(
+      transactions,
+      rates,
+      defaultCurrency
+    );
 
     return {
-      byCategory,
-      byCurrency,
-      totalInDefault: totalInDefault.toFixed(2),
+      ...aggregated,
       defaultCurrency,
       periodLabel,
     };
@@ -305,24 +282,40 @@ export function createMiniAppApi(deps: MiniAppDeps) {
     return { userId: resolved.userId, isOwner, members };
   }
 
-  async function handleGetUserSettings(
-    initDataRaw: string
-  ): Promise<{ defaultCurrency?: string | null; error?: string }> {
+  async function handleGetUserSettings(initDataRaw: string): Promise<{
+    defaultCurrency?: string | null;
+    analyticsEnabled?: boolean;
+    analyticsVoice?: string;
+    error?: string;
+  }> {
     const resolved = await resolveUser(initDataRaw, deps);
     if ("error" in resolved) return { error: resolved.error };
 
-    const defaultCurrency = await deps.userService.getDefaultCurrency(resolved.userId);
-    return { defaultCurrency };
+    const [defaultCurrency, analyticsEnabled, analyticsVoice] = await Promise.all([
+      deps.userService.getDefaultCurrency(resolved.userId),
+      deps.userService.getAnalyticsEnabled(resolved.userId),
+      deps.userService.getAnalyticsVoice(resolved.userId),
+    ]);
+
+    return {
+      defaultCurrency: defaultCurrency ?? null,
+      analyticsEnabled,
+      analyticsVoice: analyticsVoice ?? "official",
+    };
   }
 
-  async function handleSetDefaultCurrency(
+  async function handleUpdateUserSettings(
     initDataRaw: string,
-    currency: string
+    updates: {
+      defaultCurrency?: string | null;
+      analyticsEnabled?: boolean;
+      analyticsVoice?: string;
+    }
   ): Promise<{ ok?: boolean; error?: string }> {
     const resolved = await resolveUser(initDataRaw, deps);
     if ("error" in resolved) return { error: resolved.error };
 
-    await deps.userService.setDefaultCurrency(resolved.userId, currency?.trim() || null);
+    await deps.userService.updateUserSettings(resolved.userId, updates);
     return { ok: true };
   }
 
@@ -791,6 +784,6 @@ export function createMiniAppApi(deps: MiniAppDeps) {
     handleInvite,
     handleWorkspaceInfo,
     handleGetUserSettings,
-    handleSetDefaultCurrency,
+    handleUpdateUserSettings,
   };
 }

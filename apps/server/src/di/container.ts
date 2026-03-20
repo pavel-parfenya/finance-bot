@@ -10,6 +10,11 @@ import { UserService } from "../services/user-service";
 import { DebtService } from "../services/debt-service";
 import { WorkspaceService } from "../services/workspace-service";
 import { ExpenseService } from "../services/expense-service";
+import { AnalyticsInsightService } from "../services/analytics-insight-service";
+import { PurchaseAdviceService } from "../services/purchase-advice-service";
+import { AppStatsService } from "../services/app-stats-service";
+import { DeepSeekPurchaseAdviceParser } from "../infrastructure/deepseek/deepseek-purchase-advice";
+import { DeepSeekMonthlyReport } from "../infrastructure/deepseek/deepseek-monthly-report";
 import { createBot } from "../bot/bot";
 import { Bot } from "grammy";
 
@@ -22,6 +27,10 @@ export interface AppContainer {
   invitationRepo: InvitationRepository;
   debtService: DebtService;
   debtRepo: DebtRepository;
+  analyticsInsightService: AnalyticsInsightService;
+  purchaseAdviceService: PurchaseAdviceService;
+  monthlyReportGenerator: DeepSeekMonthlyReport;
+  appStatsService: AppStatsService;
 }
 
 export function buildContainer(config: Config, dataSource: DataSource): AppContainer {
@@ -39,6 +48,14 @@ export function buildContainer(config: Config, dataSource: DataSource): AppConta
   const debtService = new DebtService(debtRepo, userService);
   const debtParser = new DeepSeekDebtParser(config.deepseek.apiKey);
   const expenseService = new ExpenseService(parser, recognizer);
+  const analyticsInsightService = new AnalyticsInsightService({ transactionRepo });
+  const purchaseAdviceParser = new DeepSeekPurchaseAdviceParser(config.deepseek.apiKey);
+  const purchaseAdviceService = new PurchaseAdviceService({
+    transactionRepo,
+    purchaseAdviceParser,
+  });
+  const monthlyReportGenerator = new DeepSeekMonthlyReport(config.deepseek.apiKey);
+  const appStatsService = new AppStatsService(dataSource);
 
   const miniAppUrl = config.publicBaseUrl ? `${config.publicBaseUrl}/app` : "";
 
@@ -51,6 +68,12 @@ export function buildContainer(config: Config, dataSource: DataSource): AppConta
     debtService,
     debtParser,
     miniAppUrl,
+    analyticsInsightService,
+    purchaseAdviceService,
+    purchaseAdviceParser,
+    monthlyReportGenerator,
+    appStatsService,
+    superAdminUsername: config.superAdminUsername,
   });
 
   return {
@@ -62,5 +85,9 @@ export function buildContainer(config: Config, dataSource: DataSource): AppConta
     invitationRepo,
     debtService,
     debtRepo,
+    analyticsInsightService,
+    purchaseAdviceService,
+    monthlyReportGenerator,
+    appStatsService,
   };
 }

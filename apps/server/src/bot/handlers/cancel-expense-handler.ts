@@ -3,6 +3,7 @@ import { Context } from "grammy";
 import { BotDeps } from "../bot";
 import { formatExpense } from "../format";
 import { cancelPending, saveNow } from "../pending-expense-store";
+import { triggerAnalyticsAfterTransaction } from "../analytics-trigger";
 
 export const CANCEL_CALLBACK = "cancel_expense";
 export const SAVE_NOW_CALLBACK = "save_expense";
@@ -17,7 +18,7 @@ export function createSaveNowKeyboard(): InlineKeyboard {
     .text("Отмена", CANCEL_CALLBACK);
 }
 
-export function createCancelExpenseHandler(_deps: BotDeps) {
+export function createCancelExpenseHandler(deps: BotDeps) {
   return async (ctx: Context): Promise<void> => {
     const cq = ctx.callbackQuery;
     if (!cq) return;
@@ -33,7 +34,17 @@ export function createCancelExpenseHandler(_deps: BotDeps) {
     const messageId = msg.message_id;
 
     if (data === SAVE_NOW_CALLBACK) {
-      const result = await saveNow(chatId, messageId);
+      const onSaved = deps.bot
+        ? (uid: number, wid: number) =>
+            triggerAnalyticsAfterTransaction(uid, wid, {
+              analyticsInsightService: deps.analyticsInsightService,
+              userService: deps.userService,
+              workspaceService: deps.workspaceService,
+              bot: deps.bot!,
+              monthlyReportGenerator: deps.monthlyReportGenerator,
+            })
+        : undefined;
+      const result = await saveNow(chatId, messageId, onSaved);
       await ctx.answerCallbackQuery({
         text: result.saved ? "Сохранено!" : "Уже сохранено или отменено.",
       });

@@ -16,6 +16,7 @@
     "google-spreadsheet": "^4.1.4",
     "googleapis": "^171.4.0",
     "grammy": "^1.35.0",
+    "node-cron": "^4.2.1",
     "openai": "^4.85.4",
     "pg": "^8.20.0",
     "reflect-metadata": "^0.2.2",

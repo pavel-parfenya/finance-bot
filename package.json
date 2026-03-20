@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "description": "Telegram bot that parses expense messages and logs them to Google Sheets",
-  "workspaces": ["packages/*", "apps/*"],
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
     "build": "npm run build -w @finance-bot/shared && npm run build -w apps-client && npm run build -w apps-server",
     "build:server": "npm run build -w @finance-bot/shared && npm run build -w apps-server",
@@ -18,14 +21,22 @@
     "prepare": "husky"
   },
   "lint-staged": {
-    "*.ts": ["eslint --fix", "prettier --write"],
-    "*.vue": ["prettier --write"]
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.vue": [
+      "prettier --write"
+    ]
   },
-  "dependencies": {},
+  "dependencies": {
+    "node-cron": "^4.2.1"
+  },
   "devDependencies": {
-    "concurrently": "^9.1.0",
     "@eslint/js": "^9.15.0",
     "@types/node": "^22.13.5",
+    "@types/node-cron": "^3.0.11",
+    "concurrently": "^9.1.0",
     "eslint": "^9.16.0",
     "eslint-config-prettier": "^9.1.0",
     "husky": "^9.1.7",

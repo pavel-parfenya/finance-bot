@@ -22,6 +22,7 @@ export function createTextHandler(deps: BotDeps) {
     const parsed = await parseMessage(text, displayName, defaultCurrency, {
       debtParser: deps.debtParser,
       expenseService: deps.expenseService,
+      purchaseAdviceParser: deps.purchaseAdviceParser,
     });
 
     if (!parsed) {

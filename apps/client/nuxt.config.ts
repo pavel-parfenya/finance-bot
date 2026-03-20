@@ -37,6 +37,4 @@ export default defineNuxtConfig({
   typescript: {
     strict: true,
   },
-
-  compatibilityDate: "2026-03-17",
 });

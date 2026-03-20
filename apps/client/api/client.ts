@@ -116,15 +116,23 @@ export async function fetchUserSettings(): Promise<UserSettings> {
   return res.json();
 }
 
-export async function setDefaultCurrency(
-  currency: string
-): Promise<{ ok?: boolean; error?: string }> {
+export async function updateUserSettings(updates: {
+  defaultCurrency?: string | null;
+  analyticsEnabled?: boolean;
+  analyticsVoice?: string;
+}): Promise<{ ok?: boolean; error?: string }> {
   const res = await fetch(`${BASE}/api/user/settings`, {
     method: "PATCH",
     headers: { ...headers(), "Content-Type": "application/json" },
-    body: JSON.stringify({ defaultCurrency: currency }),
+    body: JSON.stringify(updates),
   });
   return res.json();
+}
+
+export async function setDefaultCurrency(
+  currency: string
+): Promise<{ ok?: boolean; error?: string }> {
+  return updateUserSettings({ defaultCurrency: currency });
 }
 
 export async function fetchDebts(): Promise<{

@@ -6,6 +6,7 @@ import { config } from "./config";
 import { createDataSource } from "./database/data-source";
 import { buildContainer } from "./di/container";
 import { createMiniAppApi } from "./server/mini-app-api";
+import { startAnalyticsCron } from "./bot/analytics-cron";
 
 const ROOT = join(process.cwd(), "..", "..");
 const CLIENT_DIST = join(ROOT, "apps", "client", "dist");
@@ -67,6 +68,14 @@ async function main(): Promise<void> {
 
   const container = buildContainer(config, dataSource);
   await container.bot.init();
+
+  startAnalyticsCron({
+    analyticsInsightService: container.analyticsInsightService,
+    userService: container.userService,
+    workspaceService: container.workspaceService,
+    bot: container.bot,
+    monthlyReportGenerator: container.monthlyReportGenerator,
+  });
 
   const miniAppUrl = config.publicBaseUrl ? `${config.publicBaseUrl}/app` : "";
   if (miniAppUrl) {
@@ -284,11 +293,12 @@ async function startPolling(container: ReturnType<typeof buildContainer>) {
         "";
       try {
         const body = await readBody(req);
-        const { defaultCurrency } = JSON.parse(body) as { defaultCurrency?: string };
-        const result = await api.handleSetDefaultCurrency(
-          initData,
-          defaultCurrency ?? ""
-        );
+        const updates = JSON.parse(body) as {
+          defaultCurrency?: string | null;
+          analyticsEnabled?: boolean;
+          analyticsVoice?: string;
+        };
+        const result = await api.handleUpdateUserSettings(initData, updates);
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(result));
       } catch (err) {
@@ -587,11 +597,12 @@ async function startWebhook(container: ReturnType<typeof buildContainer>) {
         "";
       try {
         const body = await readBody(req);
-        const { defaultCurrency } = JSON.parse(body) as { defaultCurrency?: string };
-        const result = await api.handleSetDefaultCurrency(
-          initData,
-          defaultCurrency ?? ""
-        );
+        const updates = JSON.parse(body) as {
+          defaultCurrency?: string | null;
+          analyticsEnabled?: boolean;
+          analyticsVoice?: string;
+        };
+        const result = await api.handleUpdateUserSettings(initData, updates);
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(result));
       } catch (err) {
