@@ -29,8 +29,7 @@ export function scheduleSave(
     chatId: number,
     messageId: number,
     expense: Expense
-  ) => void | Promise<void>,
-  onTransactionSaved?: (userId: number, workspaceId: number) => void | Promise<void>
+  ) => void | Promise<void>
 ): void {
   const k = key(chatId, messageId);
   const timeoutId = setTimeout(async () => {
@@ -38,7 +37,6 @@ export function scheduleSave(
     try {
       await transactionRepo.save(workspaceId, userId, expense);
       await onAutoSave?.(chatId, messageId, expense);
-      await onTransactionSaved?.(userId, workspaceId);
     } catch (err) {
       console.error("Ошибка сохранения расхода:", err);
     }
@@ -65,8 +63,7 @@ export function cancelPending(chatId: number, messageId: number): boolean {
 /** Сохраняет расход сразу и отменяет отложенное сохранение. Возвращает expense при успехе. */
 export async function saveNow(
   chatId: number,
-  messageId: number,
-  onTransactionSaved?: (userId: number, workspaceId: number) => void | Promise<void>
+  messageId: number
 ): Promise<{ saved: boolean; expense?: Expense; userId?: number; workspaceId?: number }> {
   const k = key(chatId, messageId);
   const entry = store.get(k);
@@ -75,7 +72,6 @@ export async function saveNow(
   store.delete(k);
   try {
     await entry.transactionRepo.save(entry.workspaceId, entry.userId, entry.expense);
-    await onTransactionSaved?.(entry.userId, entry.workspaceId);
     return {
       saved: true,
       expense: entry.expense,

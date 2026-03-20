@@ -98,14 +98,14 @@ export class DeepSeekMessageParser implements IMessageParser {
     if (/белорусск|бел\.?\s*руб|byn/i.test(lower)) return "BYN";
     if (/российск|росийск|рос\.?\s*руб|руб\s*рф/i.test(lower)) return "RUB";
 
-    // Generic "рубли" → используем defaultCurrency или RUB
+    // Generic "рубли" → используем defaultCurrency или BYN (приоритет для неоднозначных рублей)
     const isGenericRubles = cur === "RUBLES" || /^руб(л(ей|я|и)?)?$/i.test(cur);
     if (isGenericRubles) {
       if (defaultCurrency === "BYN" || defaultCurrency === "RUB") return defaultCurrency;
-      return "RUB";
+      return "BYN";
     }
 
-    return cur || "RUB";
+    return cur || "BYN";
   }
 
   private resolveCategory(raw: string): ExpenseCategory {

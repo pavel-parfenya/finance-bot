@@ -90,7 +90,7 @@ export class DeepSeekDebtParser {
     if (/белорусск|бел\.?\s*руб|byn/i.test(lower)) return "BYN";
     if (/российск|росийск|рос\.?\s*руб|руб\s*рф/i.test(lower)) return "RUB";
 
-    // Generic "рубли" (RUBLES от LLM или RUB при "руб"/"р" в тексте) → по defaultCurrency
+    // Generic "рубли" (RUBLES от LLM или RUB при "руб"/"р" в тексте) → по defaultCurrency или BYN (приоритет для неоднозначных)
     const hasGenericRubles =
       c === "RUBLES" ||
       /^руб(л(ей|я|и)?)?$/i.test(c) ||
@@ -99,11 +99,11 @@ export class DeepSeekDebtParser {
     if (hasGenericRubles) {
       const def = (defaultCurrency || "").toUpperCase();
       if (def === "BYN" || def === "RUB") return def;
-      return "RUB";
+      return "BYN";
     }
 
     // Явные коды валют — возвращаем как есть
     if (["BYN", "RUB", "USD", "EUR"].includes(c)) return c;
-    return defaultCurrency || "RUB";
+    return defaultCurrency || "BYN";
   }
 }

@@ -4,7 +4,6 @@ import { BotDeps } from "../bot";
 import { formatExpense } from "../format";
 import { createSaveNowKeyboard } from "./cancel-expense-handler";
 import { scheduleSave } from "../pending-expense-store";
-import { triggerAnalyticsAfterTransaction } from "../analytics-trigger";
 import type { ParsedMessage } from "../message-router";
 
 export async function handleParsedMessage(
@@ -89,17 +88,7 @@ export async function handleParsedMessage(
           } catch {
             /* ignore */
           }
-        },
-        deps.bot
-          ? (uid, wid) =>
-              triggerAnalyticsAfterTransaction(uid, wid, {
-                analyticsInsightService: deps.analyticsInsightService,
-                userService: deps.userService,
-                workspaceService: deps.workspaceService,
-                bot: deps.bot!,
-                monthlyReportGenerator: deps.monthlyReportGenerator,
-              })
-          : undefined
+        }
       );
       break;
     }
