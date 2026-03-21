@@ -60,11 +60,13 @@ export async function fetchCategories(): Promise<{
 export async function fetchAnalytics(
   period: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  userId?: number
 ): Promise<AnalyticsResponse> {
   const params = new URLSearchParams({ period });
   if (startDate) params.set("startDate", startDate);
   if (endDate) params.set("endDate", endDate);
+  if (userId) params.set("userId", String(userId));
   const res = await fetch(`${BASE}/api/transactions/analytics?${params}`, {
     headers: headers(),
   });
@@ -105,6 +107,18 @@ export async function inviteUser(
     method: "POST",
     headers: { ...headers(), "Content-Type": "application/json" },
     body: JSON.stringify({ username }),
+  });
+  return res.json();
+}
+
+export async function setMemberFullAccess(
+  targetUserId: number,
+  fullAccess: boolean
+): Promise<{ ok?: boolean; error?: string }> {
+  const res = await fetch(`${BASE}/api/workspace/member/${targetUserId}/full-access`, {
+    method: "PATCH",
+    headers: { ...headers(), "Content-Type": "application/json" },
+    body: JSON.stringify({ fullAccess }),
   });
   return res.json();
 }

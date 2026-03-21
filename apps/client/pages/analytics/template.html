@@ -12,6 +12,15 @@
       <input v-model="startDate" type="date" placeholder="Начало" />
       <input v-model="endDate" type="date" placeholder="Конец" />
     </div>
+    <div v-if="showPersonFilter()" class="filter-group">
+      <label class="filter-label">Участник</label>
+      <select v-model="userIdFilter" class="filter-select">
+        <option value="">Все</option>
+        <option v-for="m in members" :key="m.userId" :value="String(m.userId)">
+          {{ m.username ? `@${m.username}` : `Участник #${m.userId}` }}
+        </option>
+      </select>
+    </div>
   </div>
   <div v-if="loading" class="loading">Загрузка...</div>
   <div v-else-if="error" class="error">{{ error }}</div>

@@ -1,6 +1,7 @@
 import { defineComponent, ref, watch, onMounted } from "vue";
+import type { WorkspaceMember } from "@finance-bot/shared";
 import { getDefaultPeriodDates } from "~/utils/format";
-import { fetchAnalytics } from "~/api/client";
+import { fetchAnalytics, fetchWorkspaceInfo } from "~/api/client";
 import { useAppState } from "~/composables/useAppState";
 
 export default defineComponent({
@@ -10,6 +11,8 @@ export default defineComponent({
     const period = ref("current");
     const startDate = ref("");
     const endDate = ref("");
+    const userIdFilter = ref<string>("");
+    const members = ref<WorkspaceMember[]>([]);
     const loading = ref(true);
     const error = ref<string | null>(null);
     const byCategory = ref<Array<{ category: string; amount: string }>>([]);
@@ -17,6 +20,8 @@ export default defineComponent({
     const totalInDefault = ref("0");
     const defaultCurrency = ref("USD");
     const periodLabel = ref("");
+
+    const showPersonFilter = () => members.value.length > 1;
 
     function showPeriodDates() {
       return period.value === "period";
@@ -28,16 +33,23 @@ export default defineComponent({
       endDate.value = end;
     }
 
+    async function loadMembers() {
+      const data = await fetchWorkspaceInfo();
+      if (!data.error) members.value = data.members ?? [];
+    }
+
     async function loadAnalytics() {
       if (period.value === "period" && (!startDate.value || !endDate.value)) {
         setDefaultPeriod();
       }
       loading.value = true;
       error.value = null;
+      const uid = userIdFilter.value ? parseInt(userIdFilter.value, 10) : undefined;
       const data = await fetchAnalytics(
         period.value,
         startDate.value || undefined,
-        endDate.value || undefined
+        endDate.value || undefined,
+        uid && !isNaN(uid) ? uid : undefined
       );
       loading.value = false;
       if (data.error) {
@@ -55,10 +67,11 @@ export default defineComponent({
 
     onMounted(() => {
       setDefaultPeriod();
+      loadMembers();
       loadAnalytics();
     });
 
-    watch([period, startDate, endDate], () => {
+    watch([period, startDate, endDate, userIdFilter], () => {
       if (period.value === "period" && startDate.value && endDate.value) {
         loadAnalytics();
       } else if (period.value !== "period") {
@@ -66,12 +79,18 @@ export default defineComponent({
       }
     });
 
-    watch(refreshTrigger, () => loadAnalytics());
+    watch(refreshTrigger, () => {
+      loadMembers();
+      loadAnalytics();
+    });
 
     return {
       period,
       startDate,
       endDate,
+      userIdFilter,
+      members,
+      showPersonFilter,
       loading,
       error,
       byCategory,

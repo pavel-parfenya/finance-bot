@@ -192,11 +192,14 @@ async function startPolling(container: ReturnType<typeof buildContainer>) {
           const periodType = u.searchParams.get("period") ?? "current";
           const startDate = u.searchParams.get("startDate") ?? "";
           const endDate = u.searchParams.get("endDate") ?? "";
+          const userIdParam = u.searchParams.get("userId");
+          const userIdNum = userIdParam ? parseInt(userIdParam, 10) : undefined;
           const result = await api.handleAnalytics(
             initData,
             periodType,
             startDate || undefined,
-            endDate || undefined
+            endDate || undefined,
+            userIdNum && !isNaN(userIdNum) ? userIdNum : undefined
           );
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify(result));
@@ -229,6 +232,34 @@ async function startPolling(container: ReturnType<typeof buildContainer>) {
         } else {
           res.writeHead(404).end();
         }
+      } catch (err) {
+        console.error("API error:", err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Внутренняя ошибка сервера" }));
+      }
+      return;
+    }
+    if (
+      req.method === "PATCH" &&
+      req.url?.match(/^\/api\/workspace\/member\/\d+\/full-access$/)
+    ) {
+      const initData =
+        (req.headers["x-telegram-init-data"] as string) ??
+        (req.headers["x-init-data"] as string) ??
+        "";
+      try {
+        const match = req.url!.match(/^\/api\/workspace\/member\/(\d+)\/full-access$/);
+        if (!match) return;
+        const body = await readBody(req);
+        const { fullAccess } = JSON.parse(body) as { fullAccess?: boolean };
+        const targetUserId = parseInt(match[1], 10);
+        const result = await api.handleSetMemberFullAccess(
+          initData,
+          targetUserId,
+          fullAccess === true
+        );
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(result));
       } catch (err) {
         console.error("API error:", err);
         res.writeHead(500, { "Content-Type": "application/json" });
@@ -496,11 +527,14 @@ async function startWebhook(container: ReturnType<typeof buildContainer>) {
           const periodType = u.searchParams.get("period") ?? "current";
           const startDate = u.searchParams.get("startDate") ?? "";
           const endDate = u.searchParams.get("endDate") ?? "";
+          const userIdParam = u.searchParams.get("userId");
+          const userIdNum = userIdParam ? parseInt(userIdParam, 10) : undefined;
           const result = await api.handleAnalytics(
             initData,
             periodType,
             startDate || undefined,
-            endDate || undefined
+            endDate || undefined,
+            userIdNum && !isNaN(userIdNum) ? userIdNum : undefined
           );
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify(result));
@@ -533,6 +567,34 @@ async function startWebhook(container: ReturnType<typeof buildContainer>) {
         } else {
           res.writeHead(404).end();
         }
+      } catch (err) {
+        console.error("API error:", err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Внутренняя ошибка сервера" }));
+      }
+      return;
+    }
+    if (
+      req.method === "PATCH" &&
+      req.url?.match(/^\/api\/workspace\/member\/\d+\/full-access$/)
+    ) {
+      const initData =
+        (req.headers["x-telegram-init-data"] as string) ??
+        (req.headers["x-init-data"] as string) ??
+        "";
+      try {
+        const match = req.url!.match(/^\/api\/workspace\/member\/(\d+)\/full-access$/);
+        if (!match) return;
+        const body = await readBody(req);
+        const { fullAccess } = JSON.parse(body) as { fullAccess?: boolean };
+        const targetUserId = parseInt(match[1], 10);
+        const result = await api.handleSetMemberFullAccess(
+          initData,
+          targetUserId,
+          fullAccess === true
+        );
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(result));
       } catch (err) {
         console.error("API error:", err);
         res.writeHead(500, { "Content-Type": "application/json" });

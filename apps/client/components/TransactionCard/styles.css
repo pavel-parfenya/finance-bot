@@ -34,6 +34,12 @@
   margin-top: 2px;
 }
 
+.card-person {
+  font-size: 12px;
+  color: var(--tg-theme-hint-color, #65676b);
+  margin-top: 2px;
+}
+
 .card-amount {
   font-weight: 700;
   font-size: 17px;

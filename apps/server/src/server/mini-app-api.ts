@@ -33,7 +33,12 @@ async function resolveUser(
   initDataRaw: string,
   deps: MiniAppDeps
 ): Promise<
-  | { userId: number; workspaceIds: number[]; creatorDisplayName: string }
+  | {
+      userId: number;
+      workspaceIds: number[];
+      creatorDisplayName: string;
+      fullAccessWorkspaceIds: number[];
+    }
   | { error: string }
 > {
   if (!initDataRaw?.trim()) {
@@ -54,10 +59,29 @@ async function resolveUser(
     return { error: "Пользователь не зарегистрирован. Добавьте расходы в боте." };
   }
   const workspaceIds = await deps.workspaceService.getWorkspaceIdsForUser(user.id);
+  const fullAccessWorkspaceIds: number[] = [];
+  for (const wid of workspaceIds) {
+    const hasAccess = await deps.workspaceService.getMemberFullAccess(wid, user.id);
+    if (hasAccess) fullAccessWorkspaceIds.push(wid);
+  }
   const creatorDisplayName =
     parsed?.user?.firstName ||
     (parsed?.user?.username ? `@${parsed.user.username}` : "Пользователь");
-  return { userId: user.id, workspaceIds, creatorDisplayName };
+  return {
+    userId: user.id,
+    workspaceIds,
+    creatorDisplayName,
+    fullAccessWorkspaceIds,
+  };
+}
+
+function buildAccess(
+  workspaceIds: number[],
+  fullAccessWorkspaceIds: number[],
+  userId: number
+): { fullAccessWorkspaceIds: number[]; restrictToUserId: number } | undefined {
+  if (fullAccessWorkspaceIds.length >= workspaceIds.length) return undefined;
+  return { fullAccessWorkspaceIds, restrictToUserId: userId };
 }
 
 export function createMiniAppApi(deps: MiniAppDeps) {
@@ -76,6 +100,12 @@ export function createMiniAppApi(deps: MiniAppDeps) {
     const offset = Math.max(filters?.offset ?? 0, 0);
     const pagination = { limit: limit + 1, offset };
 
+    const access = buildAccess(
+      resolved.workspaceIds,
+      resolved.fullAccessWorkspaceIds,
+      resolved.userId
+    );
+
     const toDto = (
       t: Awaited<ReturnType<typeof transactionRepo.findByWorkspaceIds>>[number]
     ) => {
@@ -91,6 +121,8 @@ export function createMiniAppApi(deps: MiniAppDeps) {
         category: t.category,
         amount: String(t.amount),
         currency: t.currency,
+        personDisplayName:
+          (t as { personDisplayName?: string }).personDisplayName ?? undefined,
       };
     };
 
@@ -111,7 +143,8 @@ export function createMiniAppApi(deps: MiniAppDeps) {
           userId: filters.userId,
           search: filters.search,
         },
-        pagination
+        pagination,
+        access
       );
     } else {
       if (filters?.category || filters?.currency || filters?.userId || filters?.search) {
@@ -127,12 +160,14 @@ export function createMiniAppApi(deps: MiniAppDeps) {
             userId: filters.userId,
             search: filters.search,
           },
-          pagination
+          pagination,
+          access
         );
       } else {
         rows = await transactionRepo.findByWorkspaceIdsPaginated(
           resolved.workspaceIds,
-          pagination
+          pagination,
+          access
         );
       }
     }
@@ -157,7 +192,8 @@ export function createMiniAppApi(deps: MiniAppDeps) {
     initDataRaw: string,
     periodType: string,
     startDateParam?: string,
-    endDateParam?: string
+    endDateParam?: string,
+    userIdFilter?: number
   ): Promise<{
     byCategory?: Array<{ category: string; amount: string }>;
     byCurrency?: Array<{ currency: string; amount: string }>;
@@ -178,10 +214,19 @@ export function createMiniAppApi(deps: MiniAppDeps) {
       endDateParam
     );
 
+    const access = buildAccess(
+      resolved.workspaceIds,
+      resolved.fullAccessWorkspaceIds,
+      resolved.userId
+    );
+
     const transactions = await transactionRepo.findByWorkspaceIdsForPeriod(
       resolved.workspaceIds,
       start,
-      end
+      end,
+      { userId: userIdFilter },
+      undefined,
+      access
     );
 
     let rates: Record<string, number> = {};
@@ -266,7 +311,12 @@ export function createMiniAppApi(deps: MiniAppDeps) {
   async function handleWorkspaceInfo(initDataRaw: string): Promise<{
     userId?: number;
     isOwner?: boolean;
-    members?: Array<{ userId: number; username: string | null; role: string }>;
+    members?: Array<{
+      userId: number;
+      username: string | null;
+      role: string;
+      fullAccess: boolean;
+    }>;
     error?: string;
   }> {
     const resolved = await resolveUser(initDataRaw, deps);
@@ -280,6 +330,27 @@ export function createMiniAppApi(deps: MiniAppDeps) {
     );
     const members = await deps.workspaceService.getWorkspaceMembers(workspace.id);
     return { userId: resolved.userId, isOwner, members };
+  }
+
+  async function handleSetMemberFullAccess(
+    initDataRaw: string,
+    targetUserId: number,
+    fullAccess: boolean
+  ): Promise<{ ok?: boolean; error?: string }> {
+    const resolved = await resolveUser(initDataRaw, deps);
+    if ("error" in resolved) return { error: resolved.error };
+
+    const workspace = await deps.workspaceService.getWorkspaceForUser(resolved.userId);
+    if (!workspace) return { error: "Workspace не найден" };
+
+    const result = await deps.workspaceService.setMemberFullAccess(
+      workspace.id,
+      resolved.userId,
+      targetUserId,
+      fullAccess
+    );
+    if (!result.ok) return { error: result.error };
+    return { ok: true };
   }
 
   async function handleGetUserSettings(initDataRaw: string): Promise<{
@@ -332,6 +403,12 @@ export function createMiniAppApi(deps: MiniAppDeps) {
 
     const tx = await transactionRepo.findByIdAndWorkspaceIds(id, resolved.workspaceIds);
     if (!tx) return { error: "Транзакция не найдена или доступ запрещён" };
+    if (
+      !resolved.fullAccessWorkspaceIds.includes(tx.workspaceId) &&
+      tx.userId !== resolved.userId
+    ) {
+      return { error: "Доступ запрещён" };
+    }
 
     const toUpdate: {
       description?: string;
@@ -362,6 +439,7 @@ export function createMiniAppApi(deps: MiniAppDeps) {
         ? updated.date.toISOString().slice(0, 10)
         : String(updated.date).slice(0, 10);
     const isoUtc = `${datePart}T${updated.time}:00.000Z`;
+    const txWithPerson = updated as { personDisplayName?: string };
     return {
       transaction: {
         id: updated.id,
@@ -370,6 +448,7 @@ export function createMiniAppApi(deps: MiniAppDeps) {
         category: updated.category,
         amount: String(updated.amount),
         currency: updated.currency,
+        personDisplayName: txWithPerson.personDisplayName ?? undefined,
       },
     };
   }
@@ -386,6 +465,12 @@ export function createMiniAppApi(deps: MiniAppDeps) {
 
     const tx = await transactionRepo.findByIdAndWorkspaceIds(id, resolved.workspaceIds);
     if (!tx) return { error: "Транзакция не найдена или доступ запрещён" };
+    if (
+      !resolved.fullAccessWorkspaceIds.includes(tx.workspaceId) &&
+      tx.userId !== resolved.userId
+    ) {
+      return { error: "Доступ запрещён" };
+    }
 
     await transactionRepo.deleteById(id);
     return { ok: true };
@@ -397,7 +482,15 @@ export function createMiniAppApi(deps: MiniAppDeps) {
     const resolved = await resolveUser(initDataRaw, deps);
     if ("error" in resolved) return { error: resolved.error };
 
-    const categories = await transactionRepo.getUniqueCategories(resolved.workspaceIds);
+    const access = buildAccess(
+      resolved.workspaceIds,
+      resolved.fullAccessWorkspaceIds,
+      resolved.userId
+    );
+    const categories = await transactionRepo.getUniqueCategories(
+      resolved.workspaceIds,
+      access
+    );
     return { categories };
   }
 
@@ -783,6 +876,7 @@ export function createMiniAppApi(deps: MiniAppDeps) {
     handleDeleteDebt,
     handleInvite,
     handleWorkspaceInfo,
+    handleSetMemberFullAccess,
     handleGetUserSettings,
     handleUpdateUserSettings,
   };

@@ -21,4 +21,6 @@ export interface AnalyticsParams {
   period: string;
   startDate?: string;
   endDate?: string;
+  /** Фильтр по участнику (при 2+ в workspace) */
+  userId?: number;
 }

@@ -58,6 +58,14 @@
           {{ m.username ? `@${m.username}` : 'Пользователь' }}
         </span>
         <span v-if="m.role === 'owner'" class="role-badge">владелец</span>
+        <label v-else-if="isOwner" class="full-access-toggle">
+          <input
+            type="checkbox"
+            :checked="m.fullAccess"
+            @change="onFullAccessChange(m.userId, $event.target.checked)"
+          />
+          <span class="toggle-label">все транзакции</span>
+        </label>
       </div>
     </div>
     <div v-else-if="!error" class="empty-text">Пока нет участников</div>

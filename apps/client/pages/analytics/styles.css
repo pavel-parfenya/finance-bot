@@ -5,6 +5,27 @@
   margin-bottom: 20px;
 }
 
+.analytics-controls .filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.analytics-controls .filter-label {
+  font-size: 13px;
+  color: var(--tg-theme-hint-color, #65676b);
+}
+
+.analytics-controls .filter-select {
+  padding: 12px 16px;
+  font-size: 15px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--tg-theme-secondary-bg-color, #f0f2f5);
+  color: var(--tg-theme-text-color);
+  width: 100%;
+}
+
 .analytics-controls select {
   padding: 12px 16px;
   font-size: 15px;

@@ -16,6 +16,7 @@
       v-for="t in transactions"
       :key="t.id"
       :transaction="t"
+      :show-person="members.length > 1"
       @edit="openEdit"
       @delete="onDelete"
     />

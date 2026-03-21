@@ -105,10 +105,12 @@ export class WorkspaceService {
     await this.memberRepo.delete({ workspaceId, userId });
   }
 
-  /** Список участников workspace с именами. */
+  /** Список участников workspace с именами и fullAccess. */
   async getWorkspaceMembers(
     workspaceId: number
-  ): Promise<Array<{ userId: number; username: string | null; role: string }>> {
+  ): Promise<
+    Array<{ userId: number; username: string | null; role: string; fullAccess: boolean }>
+  > {
     const members = await this.memberRepo.find({
       where: { workspaceId },
       relations: ["user"],
@@ -117,6 +119,41 @@ export class WorkspaceService {
       userId: m.userId,
       username: m.user?.username ?? null,
       role: m.role,
+      fullAccess: m.fullAccess ?? true,
     }));
+  }
+
+  /** Владелец меняет доступ участника: fullAccess=true — видит все, false — только свои. */
+  async setMemberFullAccess(
+    workspaceId: number,
+    ownerId: number,
+    targetUserId: number,
+    fullAccess: boolean
+  ): Promise<{ ok: boolean; error?: string }> {
+    const owner = await this.memberRepo.findOneBy({
+      workspaceId,
+      userId: ownerId,
+    });
+    if (!owner || owner.role !== WorkspaceRole.Owner) {
+      return { ok: false, error: "Только владелец может менять настройки доступа" };
+    }
+    const target = await this.memberRepo.findOneBy({
+      workspaceId,
+      userId: targetUserId,
+    });
+    if (!target) return { ok: false, error: "Участник не найден" };
+    if (target.role === WorkspaceRole.Owner) {
+      return { ok: false, error: "Нельзя менять доступ владельца" };
+    }
+    await this.memberRepo.update({ workspaceId, userId: targetUserId }, { fullAccess });
+    return { ok: true };
+  }
+
+  /** fullAccess для участника в workspace (владелец всегда true). */
+  async getMemberFullAccess(workspaceId: number, userId: number): Promise<boolean> {
+    const m = await this.memberRepo.findOneBy({ workspaceId, userId });
+    if (!m) return true;
+    if (m.role === WorkspaceRole.Owner) return true;
+    return m.fullAccess ?? true;
   }
 }

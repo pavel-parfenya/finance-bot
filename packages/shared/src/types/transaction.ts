@@ -5,6 +5,8 @@ export interface TransactionDto {
   category: string;
   amount: string;
   currency: string;
+  /** Кто добавил (показывать только при 2+ участниках) */
+  personDisplayName?: string;
 }
 
 export interface TransactionFilters {

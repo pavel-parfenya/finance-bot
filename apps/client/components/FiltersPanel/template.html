@@ -23,7 +23,7 @@
       <option v-for="c in categories" :key="c" :value="c">{{ c }}</option>
     </select>
   </div>
-  <div class="filter-group">
+  <div v-if="members.length > 1" class="filter-group">
     <label class="filter-label">Кто добавил</label>
     <select v-model="local.userId" class="filter-select">
       <option value="">Все</option>

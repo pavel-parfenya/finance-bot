@@ -1,6 +1,6 @@
 import { defineComponent, ref, watch } from "vue";
 import type { WorkspaceMember } from "@finance-bot/shared";
-import { fetchWorkspaceInfo, inviteUser } from "~/api/client";
+import { fetchWorkspaceInfo, inviteUser, setMemberFullAccess } from "~/api/client";
 
 export default defineComponent({
   props: {
@@ -46,6 +46,17 @@ export default defineComponent({
       emit("members-changed");
     }
 
+    async function onFullAccessChange(targetUserId: number, fullAccess: boolean) {
+      const data = await setMemberFullAccess(targetUserId, fullAccess);
+      if (data.error) {
+        alert(data.error);
+        return;
+      }
+      const m = members.value.find((x) => x.userId === targetUserId);
+      if (m) m.fullAccess = fullAccess;
+      emit("members-changed");
+    }
+
     watch(
       () => props.open,
       (open) => {
@@ -60,6 +71,7 @@ export default defineComponent({
       inviteUsername,
       inviting,
       doInvite,
+      onFullAccessChange,
       emit,
     };
   },

@@ -18,6 +18,10 @@ export class WorkspaceMember {
   @Column({ type: "enum", enum: WorkspaceRole })
   role: WorkspaceRole;
 
+  /** true = видит все транзакции workspace; false = только свои. Владелец всегда видит все. */
+  @Column({ type: "boolean", default: true })
+  fullAccess: boolean;
+
   @ManyToOne(() => Workspace, (w) => w.members)
   @JoinColumn({ name: "workspaceId" })
   workspace: Workspace;

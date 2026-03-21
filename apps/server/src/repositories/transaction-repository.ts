@@ -141,7 +141,8 @@ export class TransactionRepository {
       userId?: number;
       search?: string;
     },
-    pagination?: { limit: number; offset: number }
+    pagination?: { limit: number; offset: number },
+    access?: { fullAccessWorkspaceIds: number[]; restrictToUserId: number }
   ): Promise<Transaction[]> {
     if (workspaceIds.length === 0) return [];
     const qb = this.repo
@@ -149,6 +150,22 @@ export class TransactionRepository {
       .where("t.workspaceId IN (:...ids)", { ids: workspaceIds })
       .andWhere("t.date >= :start", { start })
       .andWhere("t.date <= :end", { end });
+
+    if (access && access.fullAccessWorkspaceIds.length < workspaceIds.length) {
+      if (access.fullAccessWorkspaceIds.length === 0) {
+        qb.andWhere("t.userId = :restrictUserId", {
+          restrictUserId: access.restrictToUserId,
+        });
+      } else {
+        qb.andWhere(
+          "(t.workspaceId IN (:...fullAccessIds) OR t.userId = :restrictUserId)",
+          {
+            fullAccessIds: access.fullAccessWorkspaceIds,
+            restrictUserId: access.restrictToUserId,
+          }
+        );
+      }
+    }
 
     if (filters?.category?.trim()) {
       qb.andWhere("t.category = :category", { category: filters.category.trim() });
@@ -174,30 +191,64 @@ export class TransactionRepository {
 
   async findByWorkspaceIdsPaginated(
     workspaceIds: number[],
-    pagination?: { limit: number; offset: number }
+    pagination?: { limit: number; offset: number },
+    access?: { fullAccessWorkspaceIds: number[]; restrictToUserId: number }
   ): Promise<Transaction[]> {
     if (workspaceIds.length === 0) return [];
     const qb = this.repo
       .createQueryBuilder("t")
-      .where("t.workspaceId IN (:...ids)", { ids: workspaceIds })
-      .orderBy("t.date", "DESC")
-      .addOrderBy("t.createdAt", "DESC");
+      .where("t.workspaceId IN (:...ids)", { ids: workspaceIds });
+
+    if (access && access.fullAccessWorkspaceIds.length < workspaceIds.length) {
+      if (access.fullAccessWorkspaceIds.length === 0) {
+        qb.andWhere("t.userId = :restrictUserId", {
+          restrictUserId: access.restrictToUserId,
+        });
+      } else {
+        qb.andWhere(
+          "(t.workspaceId IN (:...fullAccessIds) OR t.userId = :restrictUserId)",
+          {
+            fullAccessIds: access.fullAccessWorkspaceIds,
+            restrictUserId: access.restrictToUserId,
+          }
+        );
+      }
+    }
+
+    qb.orderBy("t.date", "DESC").addOrderBy("t.createdAt", "DESC");
     if (pagination) {
       qb.take(pagination.limit).skip(pagination.offset);
     }
     return qb.getMany();
   }
 
-  async getUniqueCategories(workspaceIds: number[]): Promise<string[]> {
+  async getUniqueCategories(
+    workspaceIds: number[],
+    access?: { fullAccessWorkspaceIds: number[]; restrictToUserId: number }
+  ): Promise<string[]> {
     if (workspaceIds.length === 0) return [];
-    const rows = await this.repo
+    const qb = this.repo
       .createQueryBuilder("t")
       .select("DISTINCT t.category", "category")
       .where("t.workspaceId IN (:...ids)", { ids: workspaceIds })
       .andWhere("t.category IS NOT NULL")
-      .andWhere("t.category != ''")
-      .orderBy("t.category", "ASC")
-      .getRawMany<{ category: string }>();
+      .andWhere("t.category != ''");
+    if (access && access.fullAccessWorkspaceIds.length < workspaceIds.length) {
+      if (access.fullAccessWorkspaceIds.length === 0) {
+        qb.andWhere("t.userId = :restrictUserId", {
+          restrictUserId: access.restrictToUserId,
+        });
+      } else {
+        qb.andWhere(
+          "(t.workspaceId IN (:...fullAccessIds) OR t.userId = :restrictUserId)",
+          {
+            fullAccessIds: access.fullAccessWorkspaceIds,
+            restrictUserId: access.restrictToUserId,
+          }
+        );
+      }
+    }
+    const rows = await qb.orderBy("t.category", "ASC").getRawMany<{ category: string }>();
     return rows.map((r) => r.category).filter(Boolean);
   }
 }

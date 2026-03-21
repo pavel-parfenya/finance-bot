@@ -8,6 +8,7 @@ export default defineComponent({
       type: Object as () => TransactionDto,
       required: true,
     },
+    showPerson: { type: Boolean, default: false },
   },
   emits: ["edit", "delete"],
   setup(props, { emit }) {
