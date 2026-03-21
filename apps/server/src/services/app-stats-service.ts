@@ -28,7 +28,7 @@ export class AppStatsService {
     const allUsers = await userRepo.find({ select: ["id"] });
     const emptyUsers = allUsers.filter((u) => !userIdsWithTx.has(u.id)).length;
 
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const since = new Date(Date.now() - 48 * 60 * 60 * 1000);
     const activeResult = await txRepo
       .createQueryBuilder("t")
       .select("COUNT(DISTINCT t.userId)", "count")
