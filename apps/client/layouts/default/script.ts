@@ -9,7 +9,7 @@ export default defineComponent({
     const settingsOpen = ref(false);
     const membersOpen = ref(false);
     const infoOpen = ref(false);
-    const showInfoBadge = ref(!localStorage.getItem("info_seen"));
+    const showInfoBadge = ref(false);
     const totalMembers = ref(0);
     const { filtersOpen, activeFiltersCount, triggerRefresh } = useAppState();
 
@@ -34,7 +34,10 @@ export default defineComponent({
       triggerRefresh();
     }
 
-    onMounted(loadMembersCount);
+    onMounted(() => {
+      loadMembersCount();
+      showInfoBadge.value = !localStorage.getItem("info_seen");
+    });
 
     watch(
       () => settingsOpen.value,

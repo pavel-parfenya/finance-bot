@@ -1,0 +1,83 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+}
+
+.modal {
+  background: var(--tg-theme-bg-color, #fff);
+  border-radius: var(--radius);
+  padding: 20px;
+  width: 100%;
+  max-width: 400px;
+  max-height: 80vh;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.btn-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: none;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--tg-theme-hint-color);
+}
+
+.btn-close svg {
+  width: 16px;
+  height: 16px;
+}
+
+.info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.info-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.info-section p {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--tg-theme-hint-color, #65676b);
+  line-height: 1.4;
+}
+
+.info-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.info-example {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: var(--tg-theme-secondary-bg-color, #f0f2f5);
+  color: var(--tg-theme-text-color);
+}
