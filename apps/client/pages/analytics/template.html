@@ -28,27 +28,58 @@
     Нет трат за выбранный период
   </div>
   <div v-else>
-    <div class="total-row">
-      <div v-if="periodLabel" class="total-period">{{ periodLabel }}</div>
-      <div class="total-sum">
-        Итого: {{ totalInDefault }} {{ defaultCurrency }}
+    <div class="summary-card">
+      <div v-if="hasIncome" class="summary-grid">
+        <div class="summary-cell summary-item-expense" title="Расходы">
+          <svg class="summary-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 18 13.5 8.5 8.5 13.5 1 6" />
+            <polyline points="17 18 23 18 23 12" />
+          </svg>
+          <span class="summary-value">{{ totalExpenseInDefault }} {{ defaultCurrency }}</span>
+        </div>
+        <div class="summary-cell summary-item-income" title="Доходы">
+          <svg class="summary-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+            <polyline points="17 6 23 6 23 12" />
+          </svg>
+          <span class="summary-value">{{ totalIncomeInDefault }} {{ defaultCurrency }}</span>
+        </div>
+        <div class="summary-cell summary-item-balance" title="Баланс">
+          <svg class="summary-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+            <line x1="1" y1="10" x2="23" y2="10" />
+            <path d="M12 15h4" />
+          </svg>
+          <span class="summary-value">{{ totalInDefault }} {{ defaultCurrency }}</span>
+        </div>
       </div>
-    </div>
-    <div v-if="byCurrency.length > 0" class="by-currency-wrap">
-      <div class="currency-title">По валютам</div>
-      <div v-for="c in byCurrency" :key="c.currency" class="currency-row">
-        <span>{{ c.currency }}</span>
-        <span>{{ c.amount }} {{ c.currency }}</span>
+      <div v-else class="summary-row">
+        <span class="summary-total">Итого: {{ totalInDefault }} {{ defaultCurrency }}</span>
+      </div>
+      <div v-if="hasIncome" class="income-bar-wrap">
+        <div class="income-bar">
+          <div
+            class="income-bar-segment income-bar-expenses"
+            :style="{ width: expensesPercent + '%' }"
+          />
+          <div
+            class="income-bar-segment income-bar-balance"
+            :style="{ width: balancePercent + '%' }"
+          />
+        </div>
       </div>
     </div>
     <AnalyticsChart
-      :labels="byCategory.map((x) => x.category)"
-      :data="byCategory.map((x) => parseFloat(x.amount))"
+      v-if="chartItems.length > 0"
+      :items="chartItems"
+      :format-as-percent="chartFormatAsPercent"
     />
     <div class="category-list">
-      <div v-for="c in byCategory" :key="c.category" class="row">
+      <div v-for="c in chartCategoryList" :key="c.category" class="row">
         <span>{{ c.category }}</span>
-        <span>{{ c.amount }} {{ defaultCurrency }}</span>
+        <span>
+          {{ c.percent ? c.percent + ' (' + c.amount + ' ' + defaultCurrency + ')' : c.amount + ' ' + defaultCurrency }}
+        </span>
       </div>
     </div>
   </div>

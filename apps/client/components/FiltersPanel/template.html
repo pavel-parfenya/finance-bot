@@ -17,6 +17,14 @@
     </div>
   </div>
   <div class="filter-group">
+    <label class="filter-label">Тип</label>
+    <select v-model="local.type" class="filter-select">
+      <option value="">Все</option>
+      <option value="expense">Расход</option>
+      <option value="income">Доход</option>
+    </select>
+  </div>
+  <div class="filter-group">
     <label class="filter-label">Категория</label>
     <select v-model="local.category" class="filter-select">
       <option value="">Все</option>

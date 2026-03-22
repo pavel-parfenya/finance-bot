@@ -47,6 +47,10 @@
   color: var(--tg-theme-button-color, #1877f2);
 }
 
+.card-income .card-amount {
+  color: #22c55e;
+}
+
 .card-amount .currency {
   font-size: 12px;
   font-weight: 500;

@@ -44,6 +44,9 @@ export class Transaction {
   @Column({ type: "varchar" })
   personDisplayName: string;
 
+  @Column({ type: "varchar", length: 10, default: "expense" })
+  type: string;
+
   @ManyToOne(() => Workspace)
   @JoinColumn({ name: "workspaceId" })
   workspace: Workspace;

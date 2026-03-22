@@ -38,6 +38,7 @@ export class TransactionRepository {
       currency: expense.currency,
       store: expense.store,
       personDisplayName: expense.username,
+      type: expense.type === "income" ? "income" : "expense",
     });
 
     return this.repo.save(transaction);
@@ -101,6 +102,7 @@ export class TransactionRepository {
       amount?: number;
       currency?: string;
       date?: Date;
+      type?: string;
     }
   ): Promise<Transaction | null> {
     const tx = await this.repo.findOneBy({ id });
@@ -109,6 +111,9 @@ export class TransactionRepository {
     if (updates.category !== undefined) tx.category = updates.category;
     if (updates.amount !== undefined) tx.amount = updates.amount;
     if (updates.currency !== undefined) tx.currency = updates.currency;
+    if (updates.type === "expense" || updates.type === "income") {
+      (tx as { type?: string }).type = updates.type;
+    }
     if (updates.date !== undefined) {
       tx.date = updates.date;
       tx.time = updates.date.toLocaleTimeString("ru-RU", {
@@ -139,6 +144,7 @@ export class TransactionRepository {
       category?: string;
       currency?: string;
       userId?: number;
+      type?: string;
       search?: string;
     },
     pagination?: { limit: number; offset: number },
@@ -176,6 +182,9 @@ export class TransactionRepository {
     if (filters?.userId) {
       qb.andWhere("t.userId = :userId", { userId: filters.userId });
     }
+    if (filters?.type === "expense" || filters?.type === "income") {
+      qb.andWhere("t.type = :type", { type: filters.type });
+    }
     if (filters?.search?.trim()) {
       qb.andWhere("t.description ILIKE :search", {
         search: `%${filters.search.trim()}%`,
@@ -192,12 +201,17 @@ export class TransactionRepository {
   async findByWorkspaceIdsPaginated(
     workspaceIds: number[],
     pagination?: { limit: number; offset: number },
-    access?: { fullAccessWorkspaceIds: number[]; restrictToUserId: number }
+    access?: { fullAccessWorkspaceIds: number[]; restrictToUserId: number },
+    filters?: { type?: string }
   ): Promise<Transaction[]> {
     if (workspaceIds.length === 0) return [];
     const qb = this.repo
       .createQueryBuilder("t")
       .where("t.workspaceId IN (:...ids)", { ids: workspaceIds });
+
+    if (filters?.type === "expense" || filters?.type === "income") {
+      qb.andWhere("t.type = :type", { type: filters.type });
+    }
 
     if (access && access.fullAccessWorkspaceIds.length < workspaceIds.length) {
       if (access.fullAccessWorkspaceIds.length === 0) {

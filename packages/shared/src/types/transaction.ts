@@ -1,3 +1,5 @@
+export type TransactionType = "expense" | "income";
+
 export interface TransactionDto {
   id: number;
   date: string;
@@ -5,6 +7,7 @@ export interface TransactionDto {
   category: string;
   amount: string;
   currency: string;
+  type: TransactionType;
   /** Кто добавил (показывать только при 2+ участниках) */
   personDisplayName?: string;
 }
@@ -16,6 +19,7 @@ export interface TransactionFilters {
   category?: string;
   currency?: string;
   userId?: number;
+  type?: TransactionType;
   search?: string;
   limit?: number;
   offset?: number;
@@ -32,4 +36,5 @@ export interface TransactionUpdateRequest {
   amount?: number;
   currency?: string;
   date?: string;
+  type?: TransactionType;
 }

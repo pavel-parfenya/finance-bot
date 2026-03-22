@@ -1,3 +1,14 @@
+export type TransactionType = "expense" | "income";
+
+export enum IncomeCategory {
+  Salary = "Зарплата",
+  Freelance = "Фриланс",
+  Gifts = "Подарки",
+  Sale = "Продажа",
+  Refund = "Возврат",
+  Other = "Другое",
+}
+
 export enum ExpenseCategory {
   Groceries = "Продукты",
   Transport = "Транспорт",
@@ -26,10 +37,11 @@ export enum ExpenseCategory {
 
 export interface ParsedExpense {
   description: string;
-  category: ExpenseCategory;
+  category: string;
   amount: number;
   currency: string;
   store: string;
+  type: TransactionType;
 }
 
 export interface Expense extends ParsedExpense {

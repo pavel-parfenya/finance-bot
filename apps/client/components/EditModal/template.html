@@ -3,6 +3,11 @@
     <h3>Изменить запись</h3>
     <label>Описание</label>
     <input v-model="description" type="text" placeholder="Описание" />
+    <label>Тип</label>
+    <select v-model="type" class="select-styled">
+      <option value="expense">Расход</option>
+      <option value="income">Доход</option>
+    </select>
     <label>Категория</label>
     <input v-model="category" type="text" placeholder="Категория" />
     <label>Сумма</label>

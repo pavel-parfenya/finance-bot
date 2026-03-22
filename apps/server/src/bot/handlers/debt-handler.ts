@@ -45,6 +45,7 @@ export function createDebtCallbackHandler(deps: BotDeps) {
           amount,
           currency: debt.currency,
           store: "Неизвестно",
+          type: "expense" as const,
           date: new Date(),
           username: displayName,
         };

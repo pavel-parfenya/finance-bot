@@ -29,6 +29,26 @@
       <button
         type="button"
         class="btn-header-icon"
+        title="Справка"
+        @click="openInfo"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="16" x2="12" y2="12" />
+          <line x1="12" y1="8" x2="12.01" y2="8" />
+        </svg>
+        <span v-if="showInfoBadge" class="header-badge-dot" />
+      </button>
+      <button
+        type="button"
+        class="btn-header-icon"
         title="Настройки"
         @click="settingsOpen = true"
       >
@@ -110,5 +130,10 @@
     :open="settingsOpen"
     @close="settingsOpen = false"
     @settings-changed="triggerRefresh"
+  />
+
+  <InfoModal
+    :open="infoOpen"
+    @close="infoOpen = false"
   />
 </div>

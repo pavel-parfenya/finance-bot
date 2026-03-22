@@ -60,6 +60,17 @@
   border-radius: 8px;
 }
 
+.header-badge-dot {
+  position: absolute;
+  top: 4px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  pointer-events: none;
+}
+
 /* Row: [filters btn] [nav tabs] */
 .nav-row {
   display: flex;

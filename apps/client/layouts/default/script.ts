@@ -8,6 +8,8 @@ export default defineComponent({
     const route = useRoute();
     const settingsOpen = ref(false);
     const membersOpen = ref(false);
+    const infoOpen = ref(false);
+    const showInfoBadge = ref(!localStorage.getItem("info_seen"));
     const totalMembers = ref(0);
     const { filtersOpen, activeFiltersCount, triggerRefresh } = useAppState();
 
@@ -41,10 +43,21 @@ export default defineComponent({
       }
     );
 
+    function openInfo() {
+      infoOpen.value = true;
+      if (showInfoBadge.value) {
+        showInfoBadge.value = false;
+        localStorage.setItem("info_seen", "1");
+      }
+    }
+
     return {
       activeTab,
       settingsOpen,
       membersOpen,
+      infoOpen,
+      showInfoBadge,
+      openInfo,
       otherMembersCount,
       filtersOpen,
       activeFiltersCount,

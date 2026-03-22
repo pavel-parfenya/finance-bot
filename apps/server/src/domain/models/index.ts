@@ -1,2 +1,2 @@
-export { ExpenseCategory } from "./expense";
-export type { ParsedExpense, Expense } from "./expense";
+export { ExpenseCategory, IncomeCategory } from "./expense";
+export type { ParsedExpense, Expense, TransactionType } from "./expense";

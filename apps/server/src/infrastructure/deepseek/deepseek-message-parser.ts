@@ -1,42 +1,36 @@
 import OpenAI from "openai";
 import { IMessageParser } from "../../domain/interfaces";
 import { ParseContext } from "../../domain/interfaces/message-parser";
-import { ParsedExpense, ExpenseCategory } from "../../domain/models";
+import type { ParsedExpense } from "../../domain/models";
+import { ExpenseCategory, IncomeCategory } from "../../domain/models";
 
 const DEEPSEEK_BASE_URL = "https://api.deepseek.com";
 
-const SYSTEM_PROMPT = `Ты — финансовый ассистент, который извлекает данные о расходах из сообщений пользователя.
-Разбери сообщение и верни JSON-объект с полями:
-- description: что было куплено (строка, на русском)
-- category: одна из [${Object.values(ExpenseCategory).join(", ")}]
-- amount: потраченная сумма (число)
-- currency: код валюты — BYN, USD, EUR и т.д. (строка). ВАЖНО для рублей:
-  - "белорусские рубли", "бел.руб", "Br" → "BYN"
-  - "российские рубли", "рос.руб" → "RUB"
-  - если сказано просто "рубли" без уточнения — верни "RUBLES" (специальное значение для последующей обработки)
-- store: где была совершена покупка, или "Неизвестно" если не указано (строка)
+const EXPENSE_CATS = Object.values(ExpenseCategory).join(", ");
+const INCOME_CATS = Object.values(IncomeCategory).join(", ");
 
-Правила валюты:
-- Если "$" — "USD". Если "€" — "EUR". Если "£" — "GBP".
-- Для рублей: всегда явно различай BYN и RUB. При неоднозначном "рубли" возвращай "RUBLES".
-- Если сумма не указана, amount = 0.
-- Выбери наиболее подходящую категорию из списка. Примеры:
-  - одежда, обувь, штаны, куртка, кроссовки → "Одежда и обувь"
-  - телефон, наушники, ноутбук → "Электроника"
-  - стрижка, маникюр, косметика → "Красота"
-  - бензин, ТО, шиномонтаж → "Авто"
-  - корм для кошки, ветеринар → "Животные"
-  - Netflix, Spotify, подписка → "Подписки"
-  - диван, посуда, полотенца → "Мебель и дом"
-  - мяч, абонемент в зал, лыжи → "Спорт"
-  - игрушки, школьные принадлежности → "Дети"
-  - цветы, подарок на день рождения → "Подарки"
-  - отель, билеты на самолёт → "Путешествия"
-  - мобильная связь, домашний интернет → "Связь и интернет"
-  - штраф, госпошлина, налог → "Налоги и сборы"
-- Всегда возвращай валидный JSON без markdown-обёрток.`;
+const SYSTEM_PROMPT = `Ты — финансовый ассистент, который извлекает данные о расходах и доходах из сообщений пользователя.
+Сначала определи тип: "expense" (расход/трата) или "income" (доход/поступление).
+Примеры дохода: зарплата, получил, заработал, фриланс, продал, подарок наличными, возврат денег.
+Примеры расхода: купил, потратил, оплатил, обед, бензин.
+
+Верни JSON с полями:
+- type: "expense" или "income"
+- description: что за операция (строка, на русском)
+- category: для expense — одна из [${EXPENSE_CATS}]. Для income — одна из [${INCOME_CATS}]
+- amount: сумма (число, всегда положительное)
+- currency: BYN, USD, EUR и т.д. Для рублей: "бел.руб"→"BYN", "рос.руб"→"RUB", неясно→"RUBLES"
+- store: где (для расхода) или источник (для дохода), или "Неизвестно"
+
+Примеры:
+- "купил молоко 5 BYN" → type: "expense", category: "Продукты"
+- "получил зарплату 5000 BYN" → type: "income", category: "Зарплата"
+- "доход от фриланса 200$" → type: "income", category: "Фриланс"
+- "продал велосипед 150р" → type: "income", category: "Продажа"
+- Если сумма не указана, amount = 0. Всегда валидный JSON без markdown.`;
 
 interface RawParsed {
+  type?: string;
   description: string;
   category: string;
   amount: number;
@@ -76,13 +70,16 @@ export class DeepSeekMessageParser implements IMessageParser {
       parsed.currency,
       context?.defaultCurrency
     );
+    const type = parsed.type === "income" ? "income" : "expense";
+    const category = this.resolveCategory(parsed.category, type);
 
     return {
       description: parsed.description,
-      category: this.resolveCategory(parsed.category),
+      category,
       amount: parsed.amount,
       currency,
       store: parsed.store ?? "Неизвестно",
+      type,
     };
   }
 
@@ -108,10 +105,10 @@ export class DeepSeekMessageParser implements IMessageParser {
     return cur || "BYN";
   }
 
-  private resolveCategory(raw: string): ExpenseCategory {
-    const match = Object.values(ExpenseCategory).find(
-      (c) => c.toLowerCase() === raw.toLowerCase()
-    );
-    return match ?? ExpenseCategory.Other;
+  private resolveCategory(raw: string, type: "expense" | "income"): string {
+    const list =
+      type === "income" ? Object.values(IncomeCategory) : Object.values(ExpenseCategory);
+    const match = list.find((c) => c.toLowerCase() === raw.toLowerCase());
+    return match ?? (type === "income" ? IncomeCategory.Other : ExpenseCategory.Other);
   }
 }

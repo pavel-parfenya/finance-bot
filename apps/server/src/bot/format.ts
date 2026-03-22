@@ -6,16 +6,19 @@ function formatDate(date: Date): string {
 
 export function formatExpense(expense: Expense, includeConfirmHint = true): string {
   const dateStr = formatDate(expense.date);
+  const isIncome = expense.type === "income";
+  const header = isIncome ? "Доход добавлен:" : "Расход добавлен:";
+  const storeLabel = isIncome ? "Источник:" : "Магазин:";
 
   const lines = [
-    "Расход добавлен:",
+    header,
     "",
     `Дата:      ${dateStr}`,
     `Личность:  ${expense.username}`,
     `Описание:  ${expense.description}`,
     `Категория: ${expense.category}`,
     `Сумма:     ${expense.amount} ${expense.currency}`,
-    `Магазин:   ${expense.store}`,
+    `${storeLabel.padEnd(10)} ${expense.store}`,
   ];
   if (includeConfirmHint) {
     lines.push("", "Запишется через 30 сек.", "Нажмите «Отмена», чтобы отменить.");

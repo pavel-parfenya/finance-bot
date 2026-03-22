@@ -114,6 +114,7 @@ export function createMiniAppApi(deps: MiniAppDeps) {
           ? t.date.toISOString().slice(0, 10)
           : String(t.date).slice(0, 10);
       const isoUtc = `${datePart}T${t.time}:00.000Z`;
+      const tx = t as { personDisplayName?: string; type?: string };
       return {
         id: t.id,
         date: isoUtc,
@@ -121,8 +122,8 @@ export function createMiniAppApi(deps: MiniAppDeps) {
         category: t.category,
         amount: String(t.amount),
         currency: t.currency,
-        personDisplayName:
-          (t as { personDisplayName?: string }).personDisplayName ?? undefined,
+        type: (tx.type === "income" ? "income" : "expense") as "expense" | "income",
+        personDisplayName: tx.personDisplayName ?? undefined,
       };
     };
 
@@ -141,13 +142,20 @@ export function createMiniAppApi(deps: MiniAppDeps) {
           category: filters.category,
           currency: filters.currency,
           userId: filters.userId,
+          type: filters.type,
           search: filters.search,
         },
         pagination,
         access
       );
     } else {
-      if (filters?.category || filters?.currency || filters?.userId || filters?.search) {
+      if (
+        filters?.category ||
+        filters?.currency ||
+        filters?.userId ||
+        filters?.type ||
+        filters?.search
+      ) {
         const farPast = new Date(0);
         const farFuture = new Date(8640000000000000);
         rows = await transactionRepo.findByWorkspaceIdsForPeriod(
@@ -158,6 +166,7 @@ export function createMiniAppApi(deps: MiniAppDeps) {
             category: filters.category,
             currency: filters.currency,
             userId: filters.userId,
+            type: filters.type,
             search: filters.search,
           },
           pagination,
@@ -167,7 +176,8 @@ export function createMiniAppApi(deps: MiniAppDeps) {
         rows = await transactionRepo.findByWorkspaceIdsPaginated(
           resolved.workspaceIds,
           pagination,
-          access
+          access,
+          { type: filters?.type }
         );
       }
     }
@@ -416,6 +426,7 @@ export function createMiniAppApi(deps: MiniAppDeps) {
       amount?: number;
       currency?: string;
       date?: Date;
+      type?: string;
     } = {};
     if (updates.description !== undefined) toUpdate.description = updates.description;
     if (updates.category !== undefined) toUpdate.category = updates.category;
@@ -425,6 +436,8 @@ export function createMiniAppApi(deps: MiniAppDeps) {
       toUpdate.amount = amt;
     }
     if (updates.currency !== undefined) toUpdate.currency = updates.currency;
+    if (updates.type === "expense" || updates.type === "income")
+      toUpdate.type = updates.type;
     if (updates.date !== undefined) {
       const d = new Date(updates.date);
       if (isNaN(d.getTime())) return { error: "Некорректная дата" };
@@ -439,7 +452,7 @@ export function createMiniAppApi(deps: MiniAppDeps) {
         ? updated.date.toISOString().slice(0, 10)
         : String(updated.date).slice(0, 10);
     const isoUtc = `${datePart}T${updated.time}:00.000Z`;
-    const txWithPerson = updated as { personDisplayName?: string };
+    const txWithExtra = updated as { personDisplayName?: string; type?: string };
     return {
       transaction: {
         id: updated.id,
@@ -448,7 +461,10 @@ export function createMiniAppApi(deps: MiniAppDeps) {
         category: updated.category,
         amount: String(updated.amount),
         currency: updated.currency,
-        personDisplayName: txWithPerson.personDisplayName ?? undefined,
+        type: (txWithExtra.type === "income" ? "income" : "expense") as
+          | "expense"
+          | "income",
+        personDisplayName: txWithExtra.personDisplayName ?? undefined,
       },
     };
   }

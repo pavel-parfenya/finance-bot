@@ -12,6 +12,7 @@ export function useAppState() {
     if (filters.value.category) n++;
     if (filters.value.userId) n++;
     if (filters.value.currency) n++;
+    if (filters.value.type) n++;
     if (filters.value.search?.trim()) n++;
     return n;
   });

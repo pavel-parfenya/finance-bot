@@ -30,8 +30,12 @@ export function createTextHandler(deps: BotDeps) {
       return;
     }
 
-    if (parsed.type === "expense") {
-      await ctx.reply("Обрабатываю ваш расход...");
+    if (parsed.type === "expense" || parsed.type === "income") {
+      await ctx.reply(
+        parsed.type === "income"
+          ? "Обрабатываю ваш доход..."
+          : "Обрабатываю ваш расход..."
+      );
     }
 
     try {

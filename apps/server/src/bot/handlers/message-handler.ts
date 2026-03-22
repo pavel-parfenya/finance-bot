@@ -61,7 +61,8 @@ export async function handleParsedMessage(
       return;
     }
 
-    case "expense": {
+    case "expense":
+    case "income": {
       if (ctx.message?.date) {
         parsed.data.date = new Date(ctx.message.date * 1000);
       }

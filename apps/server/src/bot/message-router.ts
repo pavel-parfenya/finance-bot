@@ -3,11 +3,12 @@ import type { Expense } from "../domain/models";
 import type { ParsedPurchaseQuestion } from "../infrastructure/deepseek/deepseek-purchase-advice";
 import { isPurchaseAdviceQuestion } from "../infrastructure/deepseek/deepseek-purchase-advice";
 
-export type MessageType = "debt" | "expense" | "purchase_advice";
+export type MessageType = "debt" | "expense" | "income" | "purchase_advice";
 
 export type ParsedMessage =
   | { type: "debt"; data: ParsedDebt }
   | { type: "expense"; data: Expense }
+  | { type: "income"; data: Expense }
   | { type: "purchase_advice"; data: ParsedPurchaseQuestion };
 
 export interface MessageRouterDeps {
@@ -51,8 +52,8 @@ export async function parseMessage(
   }
 
   try {
-    const expense = await deps.expenseService.parseText(text, username, defaultCurrency);
-    return { type: "expense", data: expense };
+    const parsed = await deps.expenseService.parseText(text, username, defaultCurrency);
+    return { type: parsed.type, data: parsed };
   } catch {
     return null;
   }

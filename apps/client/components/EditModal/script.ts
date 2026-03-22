@@ -14,6 +14,7 @@ export default defineComponent({
     const amount = ref("");
     const currency = ref("");
     const date = ref("");
+    const type = ref<"expense" | "income">("expense");
 
     watch(
       () => props.transaction,
@@ -22,6 +23,7 @@ export default defineComponent({
         category.value = t.category ?? "";
         amount.value = t.amount ?? "";
         currency.value = (t.currency ?? "BYN").toUpperCase();
+        type.value = t.type === "income" ? "income" : "expense";
         const d = new Date((t.date ?? "").toString());
         date.value = !isNaN(d.getTime())
           ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
@@ -37,6 +39,7 @@ export default defineComponent({
         amount: parseFloat(amount.value) || 0,
         currency: (currency.value.trim() || "BYN").toUpperCase(),
         date: date.value || new Date().toISOString().split("T")[0],
+        type: type.value,
       };
       const data = await updateTransaction(props.transaction.id, payload);
       if (data.error) {
@@ -53,6 +56,7 @@ export default defineComponent({
       amount,
       currency,
       date,
+      type,
       save,
       emit,
       CURRENCIES,

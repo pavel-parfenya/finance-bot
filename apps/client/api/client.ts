@@ -39,6 +39,7 @@ export async function fetchTransactions(
   if (filters?.category) params.set("category", filters.category);
   if (filters?.currency) params.set("currency", filters.currency);
   if (filters?.userId) params.set("userId", String(filters.userId));
+  if (filters?.type) params.set("type", filters.type);
   if (filters?.search) params.set("search", filters.search);
   const limit = page?.limit ?? filters?.limit ?? DEFAULT_PAGE_SIZE;
   const offset = page?.offset ?? filters?.offset ?? 0;

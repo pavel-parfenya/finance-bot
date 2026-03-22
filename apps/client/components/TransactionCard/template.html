@@ -1,4 +1,4 @@
-<div class="card" :data-id="transaction.id">
+<div class="card" :class="{ 'card-income': transaction.type === 'income' }" :data-id="transaction.id">
   <div class="card-main">
     <div class="card-desc">{{ transaction.description || '' }}</div>
     <div class="card-meta">
@@ -11,7 +11,7 @@
   </div>
   <div class="card-actions">
     <span class="card-amount">
-      {{ transaction.amount }}
+      {{ transaction.type === 'income' ? '+' : '' }}{{ transaction.amount }}
       <span v-if="transaction.currency" class="currency">
         {{ transaction.currency }}
       </span>

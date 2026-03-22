@@ -151,6 +151,7 @@ async function startPolling(container: ReturnType<typeof buildContainer>) {
           const category = u.searchParams.get("category") ?? "";
           const currency = u.searchParams.get("currency") ?? "";
           const userIdParam = u.searchParams.get("userId");
+          const typeParam = u.searchParams.get("type");
           const search = u.searchParams.get("search") ?? "";
           const limitParam = u.searchParams.get("limit");
           const offsetParam = u.searchParams.get("offset");
@@ -162,6 +163,8 @@ async function startPolling(container: ReturnType<typeof buildContainer>) {
             category ||
             currency ||
             (userIdParam && !isNaN(userIdNum)) ||
+            typeParam === "expense" ||
+            typeParam === "income" ||
             search ||
             limit !== undefined ||
             offset !== undefined
@@ -172,6 +175,10 @@ async function startPolling(container: ReturnType<typeof buildContainer>) {
                   category: category || undefined,
                   currency: currency || undefined,
                   userId: userIdParam && !isNaN(userIdNum) ? userIdNum : undefined,
+                  type:
+                    typeParam === "expense" || typeParam === "income"
+                      ? (typeParam as "expense" | "income")
+                      : undefined,
                   search: search || undefined,
                   limit,
                   offset,
@@ -223,6 +230,10 @@ async function startPolling(container: ReturnType<typeof buildContainer>) {
               amount: updates.amount as number | undefined,
               currency: updates.currency as string | undefined,
               date: updates.date as string | undefined,
+              type:
+                updates.type === "expense" || updates.type === "income"
+                  ? updates.type
+                  : undefined,
             });
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify(result));
@@ -486,6 +497,7 @@ async function startWebhook(container: ReturnType<typeof buildContainer>) {
           const category = u.searchParams.get("category") ?? "";
           const currency = u.searchParams.get("currency") ?? "";
           const userIdParam = u.searchParams.get("userId");
+          const typeParam = u.searchParams.get("type");
           const search = u.searchParams.get("search") ?? "";
           const limitParam = u.searchParams.get("limit");
           const offsetParam = u.searchParams.get("offset");
@@ -497,6 +509,8 @@ async function startWebhook(container: ReturnType<typeof buildContainer>) {
             category ||
             currency ||
             (userIdParam && !isNaN(userIdNum)) ||
+            typeParam === "expense" ||
+            typeParam === "income" ||
             search ||
             limit !== undefined ||
             offset !== undefined
@@ -507,6 +521,10 @@ async function startWebhook(container: ReturnType<typeof buildContainer>) {
                   category: category || undefined,
                   currency: currency || undefined,
                   userId: userIdParam && !isNaN(userIdNum) ? userIdNum : undefined,
+                  type:
+                    typeParam === "expense" || typeParam === "income"
+                      ? (typeParam as "expense" | "income")
+                      : undefined,
                   search: search || undefined,
                   limit,
                   offset,
@@ -558,6 +576,10 @@ async function startWebhook(container: ReturnType<typeof buildContainer>) {
               amount: updates.amount as number | undefined,
               currency: updates.currency as string | undefined,
               date: updates.date as string | undefined,
+              type:
+                updates.type === "expense" || updates.type === "income"
+                  ? updates.type
+                  : undefined,
             });
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify(result));

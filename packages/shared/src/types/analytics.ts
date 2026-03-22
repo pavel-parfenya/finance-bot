@@ -12,6 +12,9 @@ export interface AnalyticsResponse {
   byCategory?: AnalyticsCategoryItem[];
   byCurrency?: AnalyticsCurrencyItem[];
   totalInDefault?: string;
+  totalIncomeInDefault?: string;
+  totalExpenseInDefault?: string;
+  hasIncome?: boolean;
   defaultCurrency?: string;
   periodLabel?: string;
   error?: string;

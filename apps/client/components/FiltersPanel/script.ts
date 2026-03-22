@@ -33,6 +33,7 @@ export default defineComponent({
       const out = { ...v };
       if (out.userId === "" || out.userId === undefined) out.userId = undefined;
       else out.userId = Number(out.userId);
+      if (out.type === "" || !out.type) out.type = undefined;
       return out;
     }
 
@@ -44,6 +45,7 @@ export default defineComponent({
         category: undefined,
         currency: undefined,
         userId: undefined,
+        type: undefined,
         search: undefined,
       };
       const v = normalizeFilters(local.value);
