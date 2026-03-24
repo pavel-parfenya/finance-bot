@@ -6,13 +6,43 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   margin-bottom: 14px;
 }
 
-.header h1 {
+.header-title-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.header-back {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  margin-left: -6px;
+  border-radius: 8px;
+  color: var(--tg-theme-hint-color);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.header-back svg {
+  width: 22px;
+  height: 22px;
+}
+
+.header-title {
   margin: 0;
   font-size: 22px;
   font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .header-actions {
@@ -42,6 +72,10 @@
 
 .btn-header-icon:active {
   opacity: 1;
+}
+
+.btn-header-close {
+  opacity: 0.85;
 }
 
 .header-badge {

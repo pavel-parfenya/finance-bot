@@ -33,12 +33,30 @@ export function createVoiceHandler(deps: BotDeps) {
       const displayName = getUserDisplayName(ctx);
       const defaultCurrency = await deps.userService.getDefaultCurrency(user.id);
 
+      let customCategories: Array<{ name: string; description: string }> | undefined;
+      try {
+        const workspace = await deps.workspaceService.getWorkspaceForUser(user.id);
+        if (workspace) {
+          customCategories = await deps.customCategoryService.getCategoriesPlain(
+            workspace.id
+          );
+        }
+      } catch {
+        customCategories = undefined;
+      }
+
       const text = await deps.expenseService.recognizeVoice(buffer, mimeType);
 
-      const parsed = await parseMessage(text, displayName, defaultCurrency, {
-        debtParser: deps.debtParser,
-        expenseService: deps.expenseService,
-      });
+      const parsed = await parseMessage(
+        text,
+        displayName,
+        defaultCurrency,
+        {
+          debtParser: deps.debtParser,
+          expenseService: deps.expenseService,
+        },
+        customCategories
+      );
 
       if (!parsed) {
         await ctx.reply(INVALID_REPLY);

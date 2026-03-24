@@ -48,36 +48,3 @@
   width: 16px;
   height: 16px;
 }
-
-.info-content {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.info-section-title {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-
-.info-section p {
-  margin: 0 0 6px;
-  font-size: 13px;
-  color: var(--tg-theme-hint-color, #65676b);
-  line-height: 1.4;
-}
-
-.info-examples {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.info-example {
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: 12px;
-  background: var(--tg-theme-secondary-bg-color, #f0f2f5);
-  color: var(--tg-theme-text-color);
-}

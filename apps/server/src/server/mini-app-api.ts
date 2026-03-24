@@ -10,14 +10,19 @@ import type {
   DebtDto,
   DebtCreateRequest,
   DebtUpdateRequest,
+  CustomCategoryDto,
+  CustomCategoryCreateRequest,
+  CustomCategoryUpdateRequest,
 } from "@finance-bot/shared";
 import { buildPeriodRange } from "@finance-bot/shared";
 import { aggregateByCategoryAndCurrency } from "../analytics/aggregate-transactions";
+import { INFO_CHANGELOG_VERSION } from "../constants/info-changelog-version";
 import type { UserService } from "../services/user-service";
 import type { WorkspaceService } from "../services/workspace-service";
 import type { TransactionRepository } from "../repositories/transaction-repository";
 import type { InvitationRepository } from "../repositories/invitation-repository";
 import type { DebtRepository } from "../repositories/debt-repository";
+import type { CustomCategoryService } from "../services/custom-category-service";
 
 interface MiniAppDeps {
   userService: UserService;
@@ -25,6 +30,7 @@ interface MiniAppDeps {
   transactionRepo: TransactionRepository;
   invitationRepo: InvitationRepository;
   debtRepo: DebtRepository;
+  customCategoryService: CustomCategoryService;
   bot: Bot;
   botToken: string;
 }
@@ -327,19 +333,47 @@ export function createMiniAppApi(deps: MiniAppDeps) {
       role: string;
       fullAccess: boolean;
     }>;
+    infoChangelogVersion?: number;
+    infoChangelogSeenVersion?: number;
     error?: string;
   }> {
     const resolved = await resolveUser(initDataRaw, deps);
     if ("error" in resolved) return { error: resolved.error };
 
-    const workspace = await deps.workspaceService.getWorkspaceForUser(resolved.userId);
-    if (!workspace) return { isOwner: false };
+    const [seenVersion, workspace] = await Promise.all([
+      deps.userService.getInfoChangelogSeenVersion(resolved.userId),
+      deps.workspaceService.getWorkspaceForUser(resolved.userId),
+    ]);
+
+    if (!workspace) {
+      return {
+        isOwner: false,
+        infoChangelogVersion: INFO_CHANGELOG_VERSION,
+        infoChangelogSeenVersion: seenVersion,
+      };
+    }
     const isOwner = await deps.workspaceService.isWorkspaceOwner(
       resolved.userId,
       workspace.id
     );
     const members = await deps.workspaceService.getWorkspaceMembers(workspace.id);
-    return { userId: resolved.userId, isOwner, members };
+    return {
+      userId: resolved.userId,
+      isOwner,
+      members,
+      infoChangelogVersion: INFO_CHANGELOG_VERSION,
+      infoChangelogSeenVersion: seenVersion,
+    };
+  }
+
+  async function handleMarkInfoChangelogSeen(
+    initDataRaw: string
+  ): Promise<{ ok?: boolean; error?: string }> {
+    const resolved = await resolveUser(initDataRaw, deps);
+    if ("error" in resolved) return { error: resolved.error };
+
+    await deps.userService.markInfoChangelogSeen(resolved.userId, INFO_CHANGELOG_VERSION);
+    return { ok: true };
   }
 
   async function handleSetMemberFullAccess(
@@ -880,6 +914,125 @@ export function createMiniAppApi(deps: MiniAppDeps) {
     return { ok: true };
   }
 
+  async function handleGetCustomCategories(
+    initDataRaw: string
+  ): Promise<{ categories?: CustomCategoryDto[]; error?: string }> {
+    const resolved = await resolveUser(initDataRaw, deps);
+    if ("error" in resolved) return { error: resolved.error };
+
+    const workspace = await deps.workspaceService.getWorkspaceForUser(resolved.userId);
+    if (!workspace) return { categories: [] };
+
+    const cats = await deps.customCategoryService.getCategories(workspace.id);
+    return {
+      categories: cats.map((c) => ({
+        id: c.id,
+        name: c.name,
+        description: c.description,
+        createdByUserId: c.createdByUserId,
+        createdByUsername: c.createdBy?.username ?? null,
+      })),
+    };
+  }
+
+  async function handleCreateCustomCategory(
+    initDataRaw: string,
+    body: CustomCategoryCreateRequest
+  ): Promise<{ category?: CustomCategoryDto; error?: string }> {
+    const resolved = await resolveUser(initDataRaw, deps);
+    if ("error" in resolved) return { error: resolved.error };
+
+    const workspace = await deps.workspaceService.getWorkspaceForUser(resolved.userId);
+    if (!workspace) return { error: "Workspace не найден" };
+
+    try {
+      const cat = await deps.customCategoryService.createCategory(
+        workspace.id,
+        resolved.userId,
+        body.name,
+        body.description
+      );
+      return {
+        category: {
+          id: cat.id,
+          name: cat.name,
+          description: cat.description,
+          createdByUserId: cat.createdByUserId,
+          createdByUsername: cat.createdBy?.username ?? null,
+        },
+      };
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : "Ошибка создания" };
+    }
+  }
+
+  async function handleUpdateCustomCategory(
+    initDataRaw: string,
+    categoryIdStr: string,
+    body: CustomCategoryUpdateRequest
+  ): Promise<{ category?: CustomCategoryDto; error?: string }> {
+    const resolved = await resolveUser(initDataRaw, deps);
+    if ("error" in resolved) return { error: resolved.error };
+
+    const id = parseInt(categoryIdStr, 10);
+    if (isNaN(id)) return { error: "Неверный ID" };
+
+    const workspace = await deps.workspaceService.getWorkspaceForUser(resolved.userId);
+    if (!workspace) return { error: "Workspace не найден" };
+
+    const isOwner = await deps.workspaceService.isWorkspaceOwner(
+      resolved.userId,
+      workspace.id
+    );
+
+    try {
+      const cat = await deps.customCategoryService.updateCategory(
+        id,
+        resolved.userId,
+        isOwner,
+        body
+      );
+      if (!cat) return { error: "Ошибка обновления" };
+      return {
+        category: {
+          id: cat.id,
+          name: cat.name,
+          description: cat.description,
+          createdByUserId: cat.createdByUserId,
+          createdByUsername: cat.createdBy?.username ?? null,
+        },
+      };
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : "Ошибка обновления" };
+    }
+  }
+
+  async function handleDeleteCustomCategory(
+    initDataRaw: string,
+    categoryIdStr: string
+  ): Promise<{ ok?: boolean; error?: string }> {
+    const resolved = await resolveUser(initDataRaw, deps);
+    if ("error" in resolved) return { error: resolved.error };
+
+    const id = parseInt(categoryIdStr, 10);
+    if (isNaN(id)) return { error: "Неверный ID" };
+
+    const workspace = await deps.workspaceService.getWorkspaceForUser(resolved.userId);
+    if (!workspace) return { error: "Workspace не найден" };
+
+    const isOwner = await deps.workspaceService.isWorkspaceOwner(
+      resolved.userId,
+      workspace.id
+    );
+
+    try {
+      await deps.customCategoryService.deleteCategory(id, resolved.userId, isOwner);
+      return { ok: true };
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : "Ошибка удаления" };
+    }
+  }
+
   return {
     handleTransactions,
     handleTransactionsCategories,
@@ -892,8 +1045,13 @@ export function createMiniAppApi(deps: MiniAppDeps) {
     handleDeleteDebt,
     handleInvite,
     handleWorkspaceInfo,
+    handleMarkInfoChangelogSeen,
     handleSetMemberFullAccess,
     handleGetUserSettings,
     handleUpdateUserSettings,
+    handleGetCustomCategories,
+    handleCreateCustomCategory,
+    handleUpdateCustomCategory,
+    handleDeleteCustomCategory,
   };
 }

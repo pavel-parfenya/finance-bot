@@ -19,11 +19,29 @@ export function createTextHandler(deps: BotDeps) {
     const displayName = getUserDisplayName(ctx);
     const defaultCurrency = await deps.userService.getDefaultCurrency(user.id);
 
-    const parsed = await parseMessage(text, displayName, defaultCurrency, {
-      debtParser: deps.debtParser,
-      expenseService: deps.expenseService,
-      purchaseAdviceParser: deps.purchaseAdviceParser,
-    });
+    let customCategories: Array<{ name: string; description: string }> | undefined;
+    try {
+      const workspace = await deps.workspaceService.getWorkspaceForUser(user.id);
+      if (workspace) {
+        customCategories = await deps.customCategoryService.getCategoriesPlain(
+          workspace.id
+        );
+      }
+    } catch {
+      customCategories = undefined;
+    }
+
+    const parsed = await parseMessage(
+      text,
+      displayName,
+      defaultCurrency,
+      {
+        debtParser: deps.debtParser,
+        expenseService: deps.expenseService,
+        purchaseAdviceParser: deps.purchaseAdviceParser,
+      },
+      customCategories
+    );
 
     if (!parsed) {
       await ctx.reply(INVALID_REPLY);

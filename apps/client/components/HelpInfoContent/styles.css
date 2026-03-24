@@ -1,0 +1,105 @@
+.info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.info-section--whats-new {
+  position: relative;
+  padding: 16px 16px 16px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(51, 144, 236, 0.35);
+  border-left: 4px solid var(--tg-theme-button-color, #3390ec);
+  background: linear-gradient(
+    135deg,
+    rgba(51, 144, 236, 0.14) 0%,
+    var(--tg-theme-secondary-bg-color, #f0f2f5) 58%
+  );
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 8px 24px rgba(51, 144, 236, 0.12);
+}
+
+.info-whats-new-kicker {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tg-theme-button-text-color, #fff);
+  background: var(--tg-theme-button-color, #3390ec);
+  border-radius: 6px;
+}
+
+.info-whats-new-title {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--tg-theme-text-color);
+}
+
+.info-whats-new-body {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--tg-theme-text-color);
+}
+
+.info-whats-new-body p {
+  margin: 0 0 10px;
+  color: inherit;
+}
+
+.info-whats-new-body p:last-child {
+  margin-bottom: 0;
+}
+
+.info-whats-new-example-label {
+  margin-top: 4px !important;
+  margin-bottom: 6px !important;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tg-theme-hint-color);
+}
+
+.info-whats-new-example-desc {
+  margin-bottom: 0 !important;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--tg-theme-text-color);
+  opacity: 0.92;
+}
+
+.info-whats-new-body strong {
+  font-weight: 600;
+  color: var(--tg-theme-text-color);
+}
+
+.info-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.info-section p {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--tg-theme-hint-color, #65676b);
+  line-height: 1.4;
+}
+
+.info-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.info-example {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: var(--tg-theme-secondary-bg-color, #f0f2f5);
+  color: var(--tg-theme-text-color);
+}

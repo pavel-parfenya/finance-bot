@@ -85,4 +85,22 @@ export class UserService {
       await this.repo.update(userId, toUpdate);
     }
   }
+
+  async getInfoChangelogSeenVersion(userId: number): Promise<number> {
+    const user = await this.repo.findOneBy({ id: userId });
+    return user?.infoChangelogSeenVersion ?? 0;
+  }
+
+  async markInfoChangelogSeen(userId: number, version: number): Promise<void> {
+    await this.repo.update(userId, { infoChangelogSeenVersion: version });
+  }
+
+  /** Одноразово: все пользователи снова увидят индикатор «нового» в инфо. */
+  async resetAllInfoChangelogSeen(): Promise<void> {
+    await this.repo
+      .createQueryBuilder()
+      .update(User)
+      .set({ infoChangelogSeenVersion: 0 })
+      .execute();
+  }
 }

@@ -1,0 +1,32 @@
+<div class="settings-analytics">
+  <div class="settings-block">
+    <label class="checkbox-label">
+      <input
+        type="checkbox"
+        v-model="analyticsEnabled"
+        @change="onAnalyticsChange"
+      />
+      Получать аналитику от бота
+    </label>
+    <div class="settings-hint">
+      Сообщения о перерасходе, прогноз до конца месяца и др.
+    </div>
+  </div>
+  <div v-if="analyticsEnabled" class="settings-block">
+    <label for="analytics-voice">Характер бота</label>
+    <select
+      id="analytics-voice"
+      v-model="analyticsVoice"
+      class="select-styled"
+      @change="onVoiceChange"
+    >
+      <option
+        v-for="opt in VOICE_OPTIONS"
+        :key="opt.value"
+        :value="opt.value"
+      >
+        {{ opt.label }}
+      </option>
+    </select>
+  </div>
+</div>

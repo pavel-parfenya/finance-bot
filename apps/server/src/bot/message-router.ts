@@ -19,7 +19,8 @@ export interface MessageRouterDeps {
     parseText(
       text: string,
       username: string,
-      defaultCurrency?: string | null
+      defaultCurrency?: string | null,
+      customCategories?: Array<{ name: string; description: string }>
     ): Promise<Expense>;
   };
   purchaseAdviceParser?: {
@@ -38,7 +39,8 @@ export async function parseMessage(
   text: string,
   username: string,
   defaultCurrency: string | null | undefined,
-  deps: MessageRouterDeps
+  deps: MessageRouterDeps,
+  customCategories?: Array<{ name: string; description: string }>
 ): Promise<ParsedMessage | null> {
   const parsedDebt = await deps.debtParser.parse(text, defaultCurrency);
   if (parsedDebt) {
@@ -52,7 +54,12 @@ export async function parseMessage(
   }
 
   try {
-    const parsed = await deps.expenseService.parseText(text, username, defaultCurrency);
+    const parsed = await deps.expenseService.parseText(
+      text,
+      username,
+      defaultCurrency,
+      customCategories
+    );
     return { type: parsed.type, data: parsed };
   } catch {
     return null;

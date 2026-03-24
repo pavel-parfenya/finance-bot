@@ -1,12 +1,11 @@
 import { defineComponent, ref, computed, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useAppState } from "~/composables/useAppState";
-import { fetchWorkspaceInfo } from "~/api/client";
+import { fetchWorkspaceInfo, markInfoChangelogSeen } from "~/api/client";
 
 export default defineComponent({
   setup() {
     const route = useRoute();
-    const settingsOpen = ref(false);
     const membersOpen = ref(false);
     const infoOpen = ref(false);
     const showInfoBadge = ref(false);
@@ -15,9 +14,23 @@ export default defineComponent({
 
     const activeTab = computed(() => {
       const path = route.path;
+      if (path.startsWith("/settings")) return "settings";
       if (path.startsWith("/analytics")) return "analytics";
       if (path.startsWith("/debts")) return "debts";
       return "table";
+    });
+
+    const isSettingsRoute = computed(() => route.path.startsWith("/settings"));
+
+    const showSettingsBack = computed(() => /^\/settings\/.+/.test(route.path));
+
+    const pageTitle = computed(() => {
+      const p = route.path;
+      if (p === "/settings" || p === "/settings/") return "Настройки";
+      if (p.startsWith("/settings/help")) return "Справка";
+      if (p.startsWith("/settings/expenses")) return "Траты";
+      if (p.startsWith("/settings/analytics")) return "Аналитика";
+      return "Мои расходы";
     });
 
     const otherMembersCount = computed(() => Math.max(0, totalMembers.value - 1));
@@ -26,6 +39,9 @@ export default defineComponent({
       const data = await fetchWorkspaceInfo();
       if (!data.error) {
         totalMembers.value = data.members?.length ?? 0;
+        const current = data.infoChangelogVersion ?? 0;
+        const seen = data.infoChangelogSeenVersion ?? 0;
+        showInfoBadge.value = current > 0 && seen < current;
       }
     }
 
@@ -36,27 +52,39 @@ export default defineComponent({
 
     onMounted(() => {
       loadMembersCount();
-      showInfoBadge.value = !localStorage.getItem("info_seen");
     });
 
     watch(
-      () => settingsOpen.value,
-      (open) => {
-        if (!open) loadMembersCount();
-      }
+      () => route.path,
+      (p) => {
+        if (p.startsWith("/settings/help")) {
+          void (async () => {
+            const res = await markInfoChangelogSeen();
+            if (!res.error) {
+              await loadMembersCount();
+            }
+          })();
+        }
+      },
+      { immediate: true }
     );
 
-    function openInfo() {
+    async function openInfo() {
       infoOpen.value = true;
       if (showInfoBadge.value) {
         showInfoBadge.value = false;
-        localStorage.setItem("info_seen", "1");
+        const res = await markInfoChangelogSeen();
+        if (res.error) {
+          showInfoBadge.value = true;
+        }
       }
     }
 
     return {
       activeTab,
-      settingsOpen,
+      isSettingsRoute,
+      showSettingsBack,
+      pageTitle,
       membersOpen,
       infoOpen,
       showInfoBadge,

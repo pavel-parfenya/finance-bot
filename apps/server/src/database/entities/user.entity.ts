@@ -25,6 +25,10 @@ export class User {
   @Column({ type: "boolean", default: false })
   analyticsEnabled: boolean;
 
+  /** Совпадает с последним INFO_CHANGELOG_VERSION, который пользователь «прочитал» в модалке инфо. */
+  @Column({ type: "int", default: 0 })
+  infoChangelogSeenVersion: number;
+
   @Column({ type: "varchar", length: 20, default: "official" })
   analyticsVoice: string;
 

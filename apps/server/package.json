@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "tsx watch src/index.ts"
+    "dev": "tsx watch src/index.ts",
+    "reset-info-changelog": "tsx scripts/reset-info-changelog-seen.ts"
   },
   "dependencies": {
     "@finance-bot/shared": "*",

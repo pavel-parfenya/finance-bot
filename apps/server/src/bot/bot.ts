@@ -30,6 +30,7 @@ export interface BotDeps {
   purchaseAdviceParser?: import("../infrastructure/deepseek/deepseek-purchase-advice").DeepSeekPurchaseAdviceParser;
   monthlyReportGenerator?: import("../infrastructure/deepseek/deepseek-monthly-report").DeepSeekMonthlyReport;
   appStatsService?: import("../services/app-stats-service").AppStatsService;
+  customCategoryService: import("../services/custom-category-service").CustomCategoryService;
   superAdminUsername?: string | null;
   /** URL Telegram Mini App для просмотра расходов */
   miniAppUrl: string;

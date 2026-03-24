@@ -9,6 +9,9 @@ import type {
   DebtDto,
   DebtCreateRequest,
   DebtUpdateRequest,
+  CustomCategoryDto,
+  CustomCategoryCreateRequest,
+  CustomCategoryUpdateRequest,
 } from "@finance-bot/shared";
 
 const BASE = typeof window !== "undefined" ? window.location.origin : "";
@@ -100,6 +103,17 @@ export async function fetchWorkspaceInfo(): Promise<WorkspaceInfo> {
   return res.json();
 }
 
+export async function markInfoChangelogSeen(): Promise<{
+  ok?: boolean;
+  error?: string;
+}> {
+  const res = await fetch(`${BASE}/api/user/info-changelog-seen`, {
+    method: "POST",
+    headers: headers(),
+  });
+  return res.json();
+}
+
 export async function inviteUser(
   username: string
 ): Promise<{ ok?: boolean; error?: string }> {
@@ -177,6 +191,47 @@ export async function updateDebt(
 
 export async function deleteDebt(id: number): Promise<{ ok?: boolean; error?: string }> {
   const res = await fetch(`${BASE}/api/debts/${id}`, {
+    method: "DELETE",
+    headers: headers(),
+  });
+  return res.json();
+}
+
+export async function fetchCustomCategories(): Promise<{
+  categories?: CustomCategoryDto[];
+  error?: string;
+}> {
+  const res = await fetch(`${BASE}/api/workspace/categories`, { headers: headers() });
+  return res.json();
+}
+
+export async function createCustomCategory(
+  body: CustomCategoryCreateRequest
+): Promise<{ category?: CustomCategoryDto; error?: string }> {
+  const res = await fetch(`${BASE}/api/workspace/categories`, {
+    method: "POST",
+    headers: { ...headers(), "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+export async function updateCustomCategory(
+  id: number,
+  body: CustomCategoryUpdateRequest
+): Promise<{ category?: CustomCategoryDto; error?: string }> {
+  const res = await fetch(`${BASE}/api/workspace/categories/${id}`, {
+    method: "PATCH",
+    headers: { ...headers(), "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+export async function deleteCustomCategory(
+  id: number
+): Promise<{ ok?: boolean; error?: string }> {
+  const res = await fetch(`${BASE}/api/workspace/categories/${id}`, {
     method: "DELETE",
     headers: headers(),
   });

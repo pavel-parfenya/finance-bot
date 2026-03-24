@@ -20,9 +20,10 @@ export class ExpenseService {
   async parseText(
     text: string,
     username: string,
-    defaultCurrency?: string | null
+    defaultCurrency?: string | null,
+    customCategories?: Array<{ name: string; description: string }>
   ): Promise<Expense> {
-    const parsed = await this.parser.parse(text, { defaultCurrency });
+    const parsed = await this.parser.parse(text, { defaultCurrency, customCategories });
     validateParsed(parsed);
     return {
       ...parsed,
@@ -39,9 +40,10 @@ export class ExpenseService {
     audioBuffer: Buffer,
     mimeType: string,
     username: string,
-    defaultCurrency?: string | null
+    defaultCurrency?: string | null,
+    customCategories?: Array<{ name: string; description: string }>
   ): Promise<Expense> {
     const text = await this.recognizeVoice(audioBuffer, mimeType);
-    return this.parseText(text, username, defaultCurrency);
+    return this.parseText(text, username, defaultCurrency, customCategories);
   }
 }

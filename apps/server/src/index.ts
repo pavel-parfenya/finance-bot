@@ -103,6 +103,7 @@ async function startPolling(container: ReturnType<typeof buildContainer>) {
     transactionRepo,
     invitationRepo,
     debtRepo,
+    customCategoryService,
   } = container;
   console.log("Запуск бота в режиме polling...");
   await bot.api.deleteWebhook();
@@ -113,6 +114,7 @@ async function startPolling(container: ReturnType<typeof buildContainer>) {
     transactionRepo,
     invitationRepo,
     debtRepo,
+    customCategoryService,
     bot,
     botToken: config.telegram.botToken,
   });
@@ -343,6 +345,79 @@ async function startPolling(container: ReturnType<typeof buildContainer>) {
         const result = await api.handleUpdateUserSettings(initData, updates);
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(result));
+      } catch (err) {
+        console.error("API error:", err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Внутренняя ошибка сервера" }));
+      }
+      return;
+    }
+    if (req.method === "POST" && req.url === "/api/user/info-changelog-seen") {
+      const initData =
+        (req.headers["x-telegram-init-data"] as string) ??
+        (req.headers["x-init-data"] as string) ??
+        "";
+      try {
+        const result = await api.handleMarkInfoChangelogSeen(initData);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(result));
+      } catch (err) {
+        console.error("API error:", err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Внутренняя ошибка сервера" }));
+      }
+      return;
+    }
+    if (
+      (req.method === "GET" || req.method === "POST") &&
+      req.url === "/api/workspace/categories"
+    ) {
+      const initData =
+        (req.headers["x-telegram-init-data"] as string) ??
+        (req.headers["x-init-data"] as string) ??
+        "";
+      try {
+        if (req.method === "GET") {
+          const result = await api.handleGetCustomCategories(initData);
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(result));
+        } else {
+          const body = await readBody(req);
+          const result = await api.handleCreateCustomCategory(initData, JSON.parse(body));
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(result));
+        }
+      } catch (err) {
+        console.error("API error:", err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Внутренняя ошибка сервера" }));
+      }
+      return;
+    }
+    if (
+      (req.method === "PATCH" || req.method === "DELETE") &&
+      req.url?.startsWith("/api/workspace/categories/")
+    ) {
+      const initData =
+        (req.headers["x-telegram-init-data"] as string) ??
+        (req.headers["x-init-data"] as string) ??
+        "";
+      try {
+        const id = req.url.replace("/api/workspace/categories/", "");
+        if (req.method === "PATCH") {
+          const body = await readBody(req);
+          const result = await api.handleUpdateCustomCategory(
+            initData,
+            id,
+            JSON.parse(body)
+          );
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(result));
+        } else {
+          const result = await api.handleDeleteCustomCategory(initData, id);
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(result));
+        }
       } catch (err) {
         console.error("API error:", err);
         res.writeHead(500, { "Content-Type": "application/json" });
@@ -444,6 +519,7 @@ async function startWebhook(container: ReturnType<typeof buildContainer>) {
     transactionRepo,
     invitationRepo,
     debtRepo,
+    customCategoryService,
   } = container;
 
   await bot.api.setWebhook(webhookUrl, {
@@ -457,6 +533,7 @@ async function startWebhook(container: ReturnType<typeof buildContainer>) {
     transactionRepo,
     invitationRepo,
     debtRepo,
+    customCategoryService,
     bot,
     botToken: config.telegram.botToken,
   });
@@ -689,6 +766,79 @@ async function startWebhook(container: ReturnType<typeof buildContainer>) {
         const result = await api.handleUpdateUserSettings(initData, updates);
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(result));
+      } catch (err) {
+        console.error("API error:", err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Внутренняя ошибка сервера" }));
+      }
+      return;
+    }
+    if (req.method === "POST" && req.url === "/api/user/info-changelog-seen") {
+      const initData =
+        (req.headers["x-telegram-init-data"] as string) ??
+        (req.headers["x-init-data"] as string) ??
+        "";
+      try {
+        const result = await api.handleMarkInfoChangelogSeen(initData);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(result));
+      } catch (err) {
+        console.error("API error:", err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Внутренняя ошибка сервера" }));
+      }
+      return;
+    }
+    if (
+      (req.method === "GET" || req.method === "POST") &&
+      req.url === "/api/workspace/categories"
+    ) {
+      const initData =
+        (req.headers["x-telegram-init-data"] as string) ??
+        (req.headers["x-init-data"] as string) ??
+        "";
+      try {
+        if (req.method === "GET") {
+          const result = await api.handleGetCustomCategories(initData);
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(result));
+        } else {
+          const body = await readBody(req);
+          const result = await api.handleCreateCustomCategory(initData, JSON.parse(body));
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(result));
+        }
+      } catch (err) {
+        console.error("API error:", err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Внутренняя ошибка сервера" }));
+      }
+      return;
+    }
+    if (
+      (req.method === "PATCH" || req.method === "DELETE") &&
+      req.url?.startsWith("/api/workspace/categories/")
+    ) {
+      const initData =
+        (req.headers["x-telegram-init-data"] as string) ??
+        (req.headers["x-init-data"] as string) ??
+        "";
+      try {
+        const id = req.url.replace("/api/workspace/categories/", "");
+        if (req.method === "PATCH") {
+          const body = await readBody(req);
+          const result = await api.handleUpdateCustomCategory(
+            initData,
+            id,
+            JSON.parse(body)
+          );
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(result));
+        } else {
+          const result = await api.handleDeleteCustomCategory(initData, id);
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(result));
+        }
       } catch (err) {
         console.error("API error:", err);
         res.writeHead(500, { "Content-Type": "application/json" });

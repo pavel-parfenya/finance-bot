@@ -13,6 +13,8 @@ import { ExpenseService } from "../services/expense-service";
 import { AnalyticsInsightService } from "../services/analytics-insight-service";
 import { PurchaseAdviceService } from "../services/purchase-advice-service";
 import { AppStatsService } from "../services/app-stats-service";
+import { CustomCategoryRepository } from "../repositories/custom-category-repository";
+import { CustomCategoryService } from "../services/custom-category-service";
 import { DeepSeekPurchaseAdviceParser } from "../infrastructure/deepseek/deepseek-purchase-advice";
 import { DeepSeekMonthlyReport } from "../infrastructure/deepseek/deepseek-monthly-report";
 import { createBot } from "../bot/bot";
@@ -31,6 +33,8 @@ export interface AppContainer {
   purchaseAdviceService: PurchaseAdviceService;
   monthlyReportGenerator: DeepSeekMonthlyReport;
   appStatsService: AppStatsService;
+  customCategoryRepo: CustomCategoryRepository;
+  customCategoryService: CustomCategoryService;
 }
 
 export function buildContainer(config: Config, dataSource: DataSource): AppContainer {
@@ -56,6 +60,8 @@ export function buildContainer(config: Config, dataSource: DataSource): AppConta
   });
   const monthlyReportGenerator = new DeepSeekMonthlyReport(config.deepseek.apiKey);
   const appStatsService = new AppStatsService(dataSource);
+  const customCategoryRepo = new CustomCategoryRepository(dataSource);
+  const customCategoryService = new CustomCategoryService(customCategoryRepo);
 
   const miniAppUrl = config.publicBaseUrl ? `${config.publicBaseUrl}/app` : "";
 
@@ -67,6 +73,7 @@ export function buildContainer(config: Config, dataSource: DataSource): AppConta
     invitationRepo,
     debtService,
     debtParser,
+    customCategoryService,
     miniAppUrl,
     analyticsInsightService,
     purchaseAdviceService,
@@ -89,5 +96,7 @@ export function buildContainer(config: Config, dataSource: DataSource): AppConta
     purchaseAdviceService,
     monthlyReportGenerator,
     appStatsService,
+    customCategoryRepo,
+    customCategoryService,
   };
 }
