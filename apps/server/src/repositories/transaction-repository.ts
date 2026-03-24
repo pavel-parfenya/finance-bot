@@ -14,24 +14,10 @@ export class TransactionRepository {
     userId: number,
     expense: Expense
   ): Promise<Transaction> {
-    const time = expense.date.toLocaleTimeString("ru-RU", {
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: "UTC",
-    });
-
-    const utcDate = new Date(
-      Date.UTC(
-        expense.date.getUTCFullYear(),
-        expense.date.getUTCMonth(),
-        expense.date.getUTCDate()
-      )
-    );
     const transaction = this.repo.create({
       workspaceId,
       userId,
-      date: utcDate,
-      time,
+      occurredAt: expense.date,
       description: expense.description,
       category: expense.category,
       amount: expense.amount,
@@ -47,7 +33,7 @@ export class TransactionRepository {
   async findByWorkspaceId(workspaceId: number): Promise<Transaction[]> {
     return this.repo.find({
       where: { workspaceId },
-      order: { date: "ASC", createdAt: "ASC" },
+      order: { occurredAt: "ASC", createdAt: "ASC" },
     });
   }
 
@@ -56,7 +42,7 @@ export class TransactionRepository {
     return this.repo
       .createQueryBuilder("t")
       .where("t.workspaceId IN (:...ids)", { ids: workspaceIds })
-      .orderBy("t.date", "ASC")
+      .orderBy("t.occurredAt", "ASC")
       .addOrderBy("t.createdAt", "ASC")
       .getMany();
   }
@@ -115,12 +101,7 @@ export class TransactionRepository {
       (tx as { type?: string }).type = updates.type;
     }
     if (updates.date !== undefined) {
-      tx.date = updates.date;
-      tx.time = updates.date.toLocaleTimeString("ru-RU", {
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZone: "UTC",
-      });
+      tx.occurredAt = updates.date;
     }
     return this.repo.save(tx);
   }
@@ -154,8 +135,8 @@ export class TransactionRepository {
     const qb = this.repo
       .createQueryBuilder("t")
       .where("t.workspaceId IN (:...ids)", { ids: workspaceIds })
-      .andWhere("t.date >= :start", { start })
-      .andWhere("t.date <= :end", { end });
+      .andWhere("t.occurredAt >= :start", { start })
+      .andWhere("t.occurredAt <= :end", { end });
 
     if (access && access.fullAccessWorkspaceIds.length < workspaceIds.length) {
       if (access.fullAccessWorkspaceIds.length === 0) {
@@ -191,7 +172,7 @@ export class TransactionRepository {
       });
     }
 
-    qb.orderBy("t.date", "DESC").addOrderBy("t.createdAt", "DESC");
+    qb.orderBy("t.occurredAt", "DESC").addOrderBy("t.createdAt", "DESC");
     if (pagination) {
       qb.take(pagination.limit).skip(pagination.offset);
     }
@@ -229,7 +210,7 @@ export class TransactionRepository {
       }
     }
 
-    qb.orderBy("t.date", "DESC").addOrderBy("t.createdAt", "DESC");
+    qb.orderBy("t.occurredAt", "DESC").addOrderBy("t.createdAt", "DESC");
     if (pagination) {
       qb.take(pagination.limit).skip(pagination.offset);
     }

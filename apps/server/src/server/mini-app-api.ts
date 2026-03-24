@@ -115,11 +115,9 @@ export function createMiniAppApi(deps: MiniAppDeps) {
     const toDto = (
       t: Awaited<ReturnType<typeof transactionRepo.findByWorkspaceIds>>[number]
     ) => {
-      const datePart =
-        t.date instanceof Date
-          ? t.date.toISOString().slice(0, 10)
-          : String(t.date).slice(0, 10);
-      const isoUtc = `${datePart}T${t.time}:00.000Z`;
+      const at =
+        t.occurredAt instanceof Date ? t.occurredAt : new Date(t.occurredAt as string);
+      const isoUtc = at.toISOString();
       const tx = t as { personDisplayName?: string; type?: string };
       return {
         id: t.id,
@@ -481,11 +479,11 @@ export function createMiniAppApi(deps: MiniAppDeps) {
     const updated = await transactionRepo.update(id, toUpdate);
     if (!updated) return { error: "Ошибка обновления" };
 
-    const datePart =
-      updated.date instanceof Date
-        ? updated.date.toISOString().slice(0, 10)
-        : String(updated.date).slice(0, 10);
-    const isoUtc = `${datePart}T${updated.time}:00.000Z`;
+    const at =
+      updated.occurredAt instanceof Date
+        ? updated.occurredAt
+        : new Date(updated.occurredAt as string);
+    const isoUtc = at.toISOString();
     const txWithExtra = updated as { personDisplayName?: string; type?: string };
     return {
       transaction: {

@@ -29,7 +29,7 @@ export function createDataSource(options: DataSourceOptions | string): DataSourc
       Debt,
       CustomCategory,
     ],
-    synchronize: true,
+    synchronize: false,
     logging: false,
     ...(ssl !== undefined && {
       ssl: ssl ? { rejectUnauthorized: false } : false,

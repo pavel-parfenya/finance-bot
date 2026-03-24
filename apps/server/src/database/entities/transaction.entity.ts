@@ -20,11 +20,9 @@ export class Transaction {
   @Column()
   userId: number;
 
-  @Column({ type: "date" })
-  date: Date;
-
-  @Column({ type: "varchar", length: 10 })
-  time: string;
+  /** Момент операции в UTC; в PostgreSQL колонка `datetime` (timestamptz). */
+  @Column({ name: "datetime", type: "timestamptz" })
+  occurredAt: Date;
 
   @Column({ type: "varchar" })
   description: string;
