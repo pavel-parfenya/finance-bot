@@ -25,7 +25,8 @@ export function createAppStatsHandler(deps: BotDeps) {
         `📊 Статистика приложения\n\n` +
         `Всего пользователей: ${stats.totalUsers}\n` +
         `Пустых (без транзакций): ${stats.emptyUsers}\n` +
-        `Активных (траты за 48ч): ${stats.activeUsers}`;
+        `Транзакций за сегодня: ${stats.transactionsToday}\n` +
+        `Активных: ${stats.activeUsers}`;
 
       await ctx.reply(text);
     } catch (err) {
