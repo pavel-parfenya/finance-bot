@@ -17,7 +17,7 @@ export class Subscription {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ type: "int" })
   userId: number;
 
   @Column({ type: "enum", enum: SubscriptionPlan, default: SubscriptionPlan.Free })

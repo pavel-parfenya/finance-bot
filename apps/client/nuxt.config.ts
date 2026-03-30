@@ -1,3 +1,13 @@
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+import { loadEnv } from "vite";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const monorepoRoot = resolve(__dirname, "../../");
+const env = loadEnv(process.env.NODE_ENV ?? "development", monorepoRoot, "");
+
+const apiProxyTarget = `http://127.0.0.1:${env.PORT ?? "10000"}`;
+
 export default defineNuxtConfig({
   ssr: false,
   devtools: { enabled: false },
@@ -29,7 +39,7 @@ export default defineNuxtConfig({
   vite: {
     server: {
       proxy: {
-        "/api": "http://localhost:3000",
+        "/api": apiProxyTarget,
       },
     },
   },

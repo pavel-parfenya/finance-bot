@@ -21,7 +21,7 @@ export class Workspace {
   @Column({ type: "varchar" })
   title: string;
 
-  @Column()
+  @Column({ type: "int" })
   ownerId: number;
 
   @ManyToOne(() => User)

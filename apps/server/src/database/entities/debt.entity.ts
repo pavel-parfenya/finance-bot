@@ -19,15 +19,15 @@ export class Debt {
   id: number;
 
   /** Кто создал запись (отправил сообщение) */
-  @Column()
+  @Column({ type: "int" })
   creatorUserId: number;
 
   /** Кто должен (должник). null = не привязан, смотреть debtorName */
-  @Column({ nullable: true })
+  @Column({ type: "int", nullable: true })
   debtorUserId: number | null;
 
   /** Кому должны (кредитор). null = не привязан */
-  @Column({ nullable: true })
+  @Column({ type: "int", nullable: true })
   creditorUserId: number | null;
 
   @Column({ type: "varchar" })
@@ -55,7 +55,7 @@ export class Debt {
   status: DebtStatus;
 
   /** Кто может редактировать: кредитор (кто одолжил). Если не привязан — creator */
-  @Column()
+  @Column({ type: "int" })
   mainUserId: number;
 
   @CreateDateColumn()

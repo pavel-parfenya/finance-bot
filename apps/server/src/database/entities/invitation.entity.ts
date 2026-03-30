@@ -20,13 +20,13 @@ export class Invitation {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ type: "int" })
   workspaceId: number;
 
-  @Column()
+  @Column({ type: "int" })
   inviterId: number;
 
-  @Column()
+  @Column({ type: "int" })
   inviteeId: number;
 
   @Column({ type: "varchar", default: InvitationStatus.Pending })

@@ -14,10 +14,10 @@ export class Transaction {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ type: "int" })
   workspaceId: number;
 
-  @Column()
+  @Column({ type: "int" })
   userId: number;
 
   /** Момент операции в UTC; в PostgreSQL колонка `datetime` (timestamptz). */

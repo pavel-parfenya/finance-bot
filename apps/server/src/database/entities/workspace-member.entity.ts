@@ -9,10 +9,10 @@ export enum WorkspaceRole {
 
 @Entity("workspace_members")
 export class WorkspaceMember {
-  @PrimaryColumn()
+  @PrimaryColumn({ type: "int" })
   workspaceId: number;
 
-  @PrimaryColumn()
+  @PrimaryColumn({ type: "int" })
   userId: number;
 
   @Column({ type: "enum", enum: WorkspaceRole })

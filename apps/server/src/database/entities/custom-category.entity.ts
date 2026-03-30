@@ -14,10 +14,10 @@ export class CustomCategory {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ type: "int" })
   workspaceId: number;
 
-  @Column()
+  @Column({ type: "int" })
   createdByUserId: number;
 
   @Column({ type: "varchar" })
