@@ -1,0 +1,30 @@
+{
+  "name": "apps-api",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "nest build",
+    "start": "node dist/main.js",
+    "dev": "nest start --watch",
+    "reset-info-changelog": "tsx scripts/reset-info-changelog-seen.ts"
+  },
+  "dependencies": {
+    "@finance-bot/server-core": "*",
+    "@finance-bot/shared": "*",
+    "@nestjs/common": "^10.4.22",
+    "@nestjs/core": "^10.4.22",
+    "@nestjs/platform-express": "^10.4.22",
+    "@tma.js/init-data-node": "^2.0.6",
+    "express": "^4.22.1",
+    "grammy": "^1.35.0",
+    "reflect-metadata": "^0.2.2"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^10.4.9",
+    "@types/express": "^4.17.25",
+    "@types/node": "^22.13.5",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  }
+}

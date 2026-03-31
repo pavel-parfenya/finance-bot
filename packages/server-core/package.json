@@ -1,0 +1,25 @@
+{
+  "name": "@finance-bot/server-core",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Shared DB, repositories, domain services for finance-bot API and bot",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@finance-bot/shared": "*",
+    "dotenv": "^16.4.7",
+    "google-auth-library": "^9.15.1",
+    "google-spreadsheet": "^4.1.4",
+    "googleapis": "^171.4.0",
+    "openai": "^4.85.4",
+    "pg": "^8.20.0",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^0.3.28"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}
