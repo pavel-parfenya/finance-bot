@@ -10,6 +10,7 @@
     "reset-info-changelog": "tsx scripts/reset-info-changelog-seen.ts"
   },
   "dependencies": {
+    "apps-bot": "*",
     "@finance-bot/server-core": "*",
     "@finance-bot/shared": "*",
     "@nestjs/common": "^10.4.22",

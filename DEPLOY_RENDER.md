@@ -4,8 +4,9 @@
 
 В `Dockerfile` два runtime-образа: **`api`** (последний stage по умолчанию) и **`bot`**.
 
-- Публичный URL (`https://….onrender.com`) должен отдавать образ **`api`**: там Nest, `GET /`, `GET /app`, `/api/…` и раздача статики клиента. Если по умолчанию собирался последним stage **`bot`**, на корне будет только `Cannot GET /` — у процесса бота нет Mini App.
-- **`bot`** — отдельный сервис (или сборка `docker build --target bot`): `POST /webhook`, `GET /health`, internal send. В `WEBHOOK_URL` указывается URL **именно сервиса бота**, не Mini App.
+- Публичный URL (`https://….onrender.com`) отдаёт образ **`api`**: Nest, `GET /`, `GET /app`, `/api/…`, статика. При `MODE=webhook` на том же процессе висит **`POST /webhook`** и **`POST /internal/telegram/send`** (встроенный Grammу).  
+  **Webhook в Telegram:** `https://ТВОЙ-СЕРВИС.onrender.com/webhook` — тот же хост, что и Mini App (`PUBLIC_BASE_URL`).
+- Образ **`bot`** — только если поднимаешь **отдельный** сервис под вебхук. В нём задано `EMBED_TELEGRAM_BOT=false`, процесс слушает свой порт с `POST /webhook`. Тогда в Telegram webhook указываешь URL **этого** сервиса, а на сервисе API в env задаёшь `EMBED_TELEGRAM_BOT=false` и `BOT_SERVICE_URL` на бота.
 
 ## 1. База данных
 

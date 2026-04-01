@@ -3,6 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "main": "dist/main.js",
+  "exports": {
+    ".": "./dist/main.js",
+    "./bot": "./dist/bot/bot.js",
+    "./bootstrap-bot": "./dist/bootstrap-bot.js",
+    "./attach-http": "./dist/attach-telegram-bot-http.js"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/main.js",

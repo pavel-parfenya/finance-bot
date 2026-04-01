@@ -1,6 +1,15 @@
 import "reflect-metadata";
 import express from "express";
-import { config, initDatabase, createApiServices } from "@finance-bot/server-core";
+import {
+  config,
+  initDatabase,
+  createApiServices,
+  createCoreServices,
+  shouldEmbedTelegramBotInApi,
+} from "@finance-bot/server-core";
+import { attachTelegramBotHttpRoutes } from "apps-bot/attach-http";
+import { createBot } from "apps-bot/bot";
+import { configureBotAfterInit } from "apps-bot/bootstrap-bot";
 import { setApiContainer } from "./di/api-container.context";
 import { setupExpressLayer } from "./utils/setup-express-layer";
 import { startNestApplication } from "./utils/start-nest-application";
@@ -12,6 +21,23 @@ async function bootstrap(): Promise<void> {
 
   const expressApp = express();
   expressApp.use(express.json({ limit: "10mb" }));
+
+  if (shouldEmbedTelegramBotInApi()) {
+    const core = createCoreServices(config, dataSource);
+    const miniAppUrl = config.publicBaseUrl ? `${config.publicBaseUrl}/app` : "";
+    console.log(
+      `Mini App URL: ${miniAppUrl || "не задан — укажите PUBLIC_BASE_URL или RENDER_EXTERNAL_URL"}`
+    );
+    const bot = createBot(config.telegram.botToken, {
+      ...core,
+      miniAppUrl,
+      superAdminUsername: config.superAdminUsername,
+    });
+    await bot.init();
+    await configureBotAfterInit(bot, core);
+    attachTelegramBotHttpRoutes(expressApp, bot);
+  }
+
   setupExpressLayer(expressApp);
 
   await startNestApplication(expressApp);

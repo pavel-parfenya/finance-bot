@@ -15,6 +15,8 @@ RUN npm run build
 
 FROM node:22-alpine AS bot
 
+ENV EMBED_TELEGRAM_BOT=false
+
 WORKDIR /app
 
 COPY package.json package-lock.json ./

@@ -112,3 +112,20 @@ export const config = {
 } as const;
 
 export type Config = typeof config;
+
+/**
+ * Один публичный URL (например Render): webhook и Mini App на процессе API.
+ * Отключить: `EMBED_TELEGRAM_BOT=false` (отдельный контейнер/процесс бота).
+ */
+export function shouldEmbedTelegramBotInApi(): boolean {
+  return mode === "webhook" && process.env["EMBED_TELEGRAM_BOT"] !== "false";
+}
+
+/** База URL для POST /internal/telegram/send из API (тот же хост при встраивании). */
+export function resolveBotServiceBaseUrl(): string {
+  if (shouldEmbedTelegramBotInApi()) {
+    const p = process.env["PORT"] ?? "10000";
+    return `http://127.0.0.1:${p}`.replace(/\/$/, "");
+  }
+  return (process.env["BOT_SERVICE_URL"] ?? "http://127.0.0.1:10001").replace(/\/$/, "");
+}

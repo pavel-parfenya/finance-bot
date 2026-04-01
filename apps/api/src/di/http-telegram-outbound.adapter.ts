@@ -1,4 +1,4 @@
-import { config } from "@finance-bot/server-core";
+import { config, resolveBotServiceBaseUrl } from "@finance-bot/server-core";
 import type { TelegramOutboundPort } from "./telegram-outbound.port";
 
 export class HttpTelegramOutboundAdapter implements TelegramOutboundPort {
@@ -13,7 +13,7 @@ export class HttpTelegramOutboundAdapter implements TelegramOutboundPort {
         "INTERNAL_BOT_SECRET is required to send Telegram messages from the API service"
       );
     }
-    const res = await fetch(`${config.botServiceUrl}/internal/telegram/send`, {
+    const res = await fetch(`${resolveBotServiceBaseUrl()}/internal/telegram/send`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

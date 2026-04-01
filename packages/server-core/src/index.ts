@@ -1,6 +1,12 @@
 import "reflect-metadata";
 
-export { config, requireEnv, type Config } from "./config";
+export {
+  config,
+  requireEnv,
+  type Config,
+  shouldEmbedTelegramBotInApi,
+  resolveBotServiceBaseUrl,
+} from "./config";
 export { createDataSource, type DataSourceOptions } from "./database/data-source";
 export { initDatabase } from "./database/init-database";
 export * from "./database/entities";
