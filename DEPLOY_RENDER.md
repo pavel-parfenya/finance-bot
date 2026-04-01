@@ -1,5 +1,12 @@
 # Деплой на Render — Mini App
 
+## Образ Docker и маршруты
+
+В `Dockerfile` два runtime-образа: **`api`** (последний stage по умолчанию) и **`bot`**.
+
+- Публичный URL (`https://….onrender.com`) должен отдавать образ **`api`**: там Nest, `GET /`, `GET /app`, `/api/…` и раздача статики клиента. Если по умолчанию собирался последним stage **`bot`**, на корне будет только `Cannot GET /` — у процесса бота нет Mini App.
+- **`bot`** — отдельный сервис (или сборка `docker build --target bot`): `POST /webhook`, `GET /health`, internal send. В `WEBHOOK_URL` указывается URL **именно сервиса бота**, не Mini App.
+
 ## 1. База данных
 
 Создай PostgreSQL на Render (или используй Neon, Supabase и т.п.). Скопируй `DATABASE_URL`.
