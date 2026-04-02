@@ -14,8 +14,12 @@ export async function configureBotAfterInit(bot: Bot, core: CoreServices): Promi
     analyticsInsightService: core.analyticsInsightService,
     userService: core.userService,
     workspaceService: core.workspaceService,
+    transactionRepo: core.transactionRepo,
     bot,
     monthlyReportGenerator: core.monthlyReportGenerator,
+    endOfDayReminderGenerator: core.endOfDayReminderGenerator,
+    weeklyForecastGenerator: core.weeklyForecastGenerator,
+    inactiveUserNudgeGenerator: core.inactiveUserNudgeGenerator,
   });
 
   const miniAppUrl = config.publicBaseUrl ? `${config.publicBaseUrl}/app` : "";

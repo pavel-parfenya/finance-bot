@@ -17,6 +17,9 @@ import { CustomCategoryRepository } from "../repositories/custom-category-reposi
 import { CustomCategoryService } from "../services/custom-category-service";
 import { DeepSeekPurchaseAdviceParser } from "../infrastructure/deepseek/deepseek-purchase-advice";
 import { DeepSeekMonthlyReport } from "../infrastructure/deepseek/deepseek-monthly-report";
+import { DeepSeekEndOfDayReminder } from "../infrastructure/deepseek/deepseek-end-of-day-reminder";
+import { DeepSeekWeeklyForecast } from "../infrastructure/deepseek/deepseek-weekly-forecast";
+import { DeepSeekInactiveUserNudge } from "../infrastructure/deepseek/deepseek-inactive-user-nudge";
 
 export interface CoreServices {
   userService: UserService;
@@ -31,6 +34,9 @@ export interface CoreServices {
   purchaseAdviceService: PurchaseAdviceService;
   purchaseAdviceParser: DeepSeekPurchaseAdviceParser;
   monthlyReportGenerator: DeepSeekMonthlyReport;
+  endOfDayReminderGenerator: DeepSeekEndOfDayReminder;
+  weeklyForecastGenerator: DeepSeekWeeklyForecast;
+  inactiveUserNudgeGenerator: DeepSeekInactiveUserNudge;
   appStatsService: AppStatsService;
   customCategoryRepo: CustomCategoryRepository;
   customCategoryService: CustomCategoryService;
@@ -59,6 +65,11 @@ export function createCoreServices(config: Config, dataSource: DataSource): Core
     purchaseAdviceParser,
   });
   const monthlyReportGenerator = new DeepSeekMonthlyReport(config.deepseek.apiKey);
+  const endOfDayReminderGenerator = new DeepSeekEndOfDayReminder(config.deepseek.apiKey);
+  const weeklyForecastGenerator = new DeepSeekWeeklyForecast(config.deepseek.apiKey);
+  const inactiveUserNudgeGenerator = new DeepSeekInactiveUserNudge(
+    config.deepseek.apiKey
+  );
   const appStatsService = new AppStatsService(dataSource);
   const customCategoryRepo = new CustomCategoryRepository(dataSource);
   const customCategoryService = new CustomCategoryService(customCategoryRepo);
@@ -76,6 +87,9 @@ export function createCoreServices(config: Config, dataSource: DataSource): Core
     purchaseAdviceService,
     purchaseAdviceParser,
     monthlyReportGenerator,
+    endOfDayReminderGenerator,
+    weeklyForecastGenerator,
+    inactiveUserNudgeGenerator,
     appStatsService,
     customCategoryRepo,
     customCategoryService,

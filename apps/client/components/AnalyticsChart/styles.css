@@ -3,3 +3,11 @@
   height: 260px;
   margin-bottom: 24px;
 }
+
+.chart-wrap--interactive {
+  cursor: pointer;
+}
+
+.chart-wrap--interactive canvas {
+  -webkit-tap-highlight-color: transparent;
+}

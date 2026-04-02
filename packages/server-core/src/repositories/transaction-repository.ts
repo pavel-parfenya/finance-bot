@@ -106,6 +106,51 @@ export class TransactionRepository {
     return this.repo.save(tx);
   }
 
+  async existsAnyForWorkspaceIds(workspaceIds: number[]): Promise<boolean> {
+    if (workspaceIds.length === 0) return false;
+    const n = await this.repo
+      .createQueryBuilder("t")
+      .where("t.workspaceId IN (:...ids)", { ids: workspaceIds })
+      .getCount();
+    return n > 0;
+  }
+
+  async existsForWorkspaceIdsOccurredAfter(
+    workspaceIds: number[],
+    sinceInclusive: Date
+  ): Promise<boolean> {
+    if (workspaceIds.length === 0) return false;
+    const n = await this.repo
+      .createQueryBuilder("t")
+      .where("t.workspaceId IN (:...ids)", { ids: workspaceIds })
+      .andWhere("t.occurredAt >= :since", { since: sinceInclusive })
+      .getCount();
+    return n > 0;
+  }
+
+  /** Есть ли хоть одна запись, которую пользователь добавил сам (как в app-stats «пустые»). */
+  async userHasAnyTransactionAsAuthor(userId: number): Promise<boolean> {
+    const n = await this.repo
+      .createQueryBuilder("t")
+      .where("t.userId = :uid", { uid: userId })
+      .getCount();
+    return n > 0;
+  }
+
+  async userHasTransactionAsAuthorBetween(
+    userId: number,
+    startInclusive: Date,
+    endInclusive: Date
+  ): Promise<boolean> {
+    const n = await this.repo
+      .createQueryBuilder("t")
+      .where("t.userId = :uid", { uid: userId })
+      .andWhere("t.occurredAt >= :s", { s: startInclusive })
+      .andWhere("t.occurredAt <= :e", { e: endInclusive })
+      .getCount();
+    return n > 0;
+  }
+
   async findByWorkspaceIdsForMonth(
     workspaceIds: number[],
     year: number,

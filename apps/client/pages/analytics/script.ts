@@ -1,8 +1,15 @@
 import { defineComponent, ref, computed, watch, onMounted } from "vue";
 import type { WorkspaceMember } from "@finance-bot/shared";
+import type { RouteLocationRaw } from "vue-router";
 import { getDefaultPeriodDates } from "~/utils/format";
+import {
+  analyticsStateToTableFilters,
+  tableFiltersToQuery,
+} from "~/utils/analytics-table-link";
 import { fetchAnalytics, fetchWorkspaceInfo } from "~/api/client";
 import { useAppState } from "~/composables/useAppState";
+
+const REMAINDER_LABEL = "Остаток";
 
 export default defineComponent({
   setup() {
@@ -24,29 +31,47 @@ export default defineComponent({
 
     const showPersonFilter = () => members.value.length > 1;
 
+    function getExpenseRows(
+      cats: Array<{ category: string; amount: string }>
+    ): Array<{ category: string; amount: number }> {
+      return cats
+        .filter((x) => {
+          const n = parseFloat(x.amount);
+          return hasIncome.value ? n < 0 : n > 0;
+        })
+        .map((x) => ({
+          category: x.category,
+          amount: Math.abs(parseFloat(x.amount)),
+        }))
+        .filter((x) => x.amount > 0)
+        .sort((a, b) => b.amount - a.amount);
+    }
+
+    /** Расходы по убыванию суммы; основа для диаграммы и списка. */
+    const sortedExpenseRows = computed(() => getExpenseRows(byCategory.value));
+
     const chartItems = computed(() => {
-      const categories = byCategory.value;
+      const rows = sortedExpenseRows.value;
       const totalInc = parseFloat(totalIncomeInDefault.value) || 0;
       const totalExp = parseFloat(totalExpenseInDefault.value) || 0;
 
       if (!hasIncome.value) {
-        return getExpenseCategoriesForChart(categories).map((x) => ({
+        return rows.map((x) => ({
           category: x.category,
           value: x.amount,
         }));
       }
 
       if (totalInc <= 0) return [];
-      const expenseOnly = categories.filter((x) => parseFloat(x.amount) < 0);
-      const items = expenseOnly.map((x) => ({
+      const items = rows.map((x) => ({
         category: x.category,
-        value: Math.round((Math.abs(parseFloat(x.amount)) / totalInc) * 1000) / 10,
+        value: Math.round((x.amount / totalInc) * 1000) / 10,
       }));
 
       const remainder =
         Math.round(Math.max(0, (totalInc - totalExp) / totalInc) * 1000) / 10;
       if (remainder > 0) {
-        items.push({ category: "Остаток", value: remainder });
+        items.push({ category: REMAINDER_LABEL, value: remainder });
       }
       return items;
     });
@@ -68,52 +93,35 @@ export default defineComponent({
     });
 
     const chartCategoryList = computed(() => {
-      const categories = byCategory.value;
+      const rows = sortedExpenseRows.value;
       const totalInc = parseFloat(totalIncomeInDefault.value) || 0;
+      const totalExp = parseFloat(totalExpenseInDefault.value) || 0;
 
       if (!hasIncome.value) {
-        return getExpenseCategoriesForChart(categories).map((x) => ({
+        return rows.map((x) => ({
           category: x.category,
           amount: String(x.amount.toFixed(2)),
           percent: null as string | null,
         }));
       }
       if (totalInc <= 0) return [];
-      const expenseOnly = categories.filter((x) => parseFloat(x.amount) < 0);
-      const totalExp = parseFloat(totalExpenseInDefault.value) || 0;
-      const list = expenseOnly.map((x) => {
-        const amt = Math.abs(parseFloat(x.amount));
-        const pct = Math.round((amt / totalInc) * 1000) / 10;
+      const list = rows.map((x) => {
+        const pct = Math.round((x.amount / totalInc) * 1000) / 10;
         return {
           category: x.category,
-          amount: String(amt.toFixed(2)),
+          amount: x.amount.toFixed(2),
           percent: pct.toFixed(1) + "%",
         };
       });
       const remainder = Math.max(0, totalInc - totalExp);
       const remainderPct = Math.round((remainder / totalInc) * 1000) / 10;
       list.push({
-        category: "Остаток",
+        category: REMAINDER_LABEL,
         amount: remainder.toFixed(2),
         percent: remainderPct.toFixed(1) + "%",
       });
       return list;
     });
-
-    function getExpenseCategoriesForChart(
-      cats: Array<{ category: string; amount: string }>
-    ): Array<{ category: string; amount: number }> {
-      return cats
-        .filter((x) => {
-          const n = parseFloat(x.amount);
-          return hasIncome.value ? n < 0 : n > 0;
-        })
-        .map((x) => ({
-          category: x.category,
-          amount: Math.abs(parseFloat(x.amount)),
-        }))
-        .filter((x) => x.amount > 0);
-    }
 
     function showPeriodDates() {
       return period.value === "period";
@@ -123,6 +131,22 @@ export default defineComponent({
       const { start, end } = getDefaultPeriodDates();
       startDate.value = start;
       endDate.value = end;
+    }
+
+    function tableLinkForCategory(category: string): RouteLocationRaw {
+      const f = analyticsStateToTableFilters(
+        period.value,
+        startDate.value,
+        endDate.value,
+        userIdFilter.value,
+        category
+      );
+      return { path: "/table", query: tableFiltersToQuery(f) };
+    }
+
+    function onChartSegment(category: string) {
+      if (category === REMAINDER_LABEL) return;
+      navigateTo(tableLinkForCategory(category));
     }
 
     async function loadMembers() {
@@ -198,6 +222,9 @@ export default defineComponent({
       defaultCurrency,
       showPeriodDates,
       setDefaultPeriod,
+      REMAINDER_LABEL,
+      tableLinkForCategory,
+      onChartSegment,
     };
   },
 });

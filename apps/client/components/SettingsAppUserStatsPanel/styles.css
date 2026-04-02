@@ -82,8 +82,14 @@
 
 .app-user-stats-cards {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
+}
+
+@media (min-width: 420px) {
+  .app-user-stats-cards {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
 }
 
 .app-user-stats-card {
@@ -110,6 +116,10 @@
 
 .app-user-stats-card--inactive {
   background: #d97706;
+}
+
+.app-user-stats-card--archived {
+  background: #475569;
 }
 
 .app-user-stats-card-value {

@@ -10,6 +10,7 @@ export interface AppStats {
   emptyUsers: number;
   activeUsers: number;
   inactiveUsers: number;
+  archivedUsers: number;
 }
 
 export interface AppStatsDailyPoint {
@@ -18,6 +19,7 @@ export interface AppStatsDailyPoint {
   emptyUsers: number;
   activeUsers: number;
   inactiveUsers: number;
+  archivedUsers: number;
 }
 
 function formatUtcYmd(y: number, month: number, day: number): string {
@@ -69,13 +71,15 @@ export class AppStatsService {
 
   async getStats(): Promise<AppStats> {
     const ref = new Date();
-    const [totalUsers, emptyUsers, activeUsers, inactiveUsers] = await Promise.all([
-      this.countTotalUsersAtRef(ref),
-      this.countEmptyUsersAtRef(ref),
-      this.countActiveUsersTxAtRef(ref),
-      this.countInactiveUsersAtRef(ref),
-    ]);
-    return { totalUsers, emptyUsers, activeUsers, inactiveUsers };
+    const [totalUsers, emptyUsers, activeUsers, inactiveUsers, archivedUsers] =
+      await Promise.all([
+        this.countTotalUsersAtRef(ref),
+        this.countEmptyUsersAtRef(ref),
+        this.countActiveUsersTxAtRef(ref),
+        this.countInactiveUsersAtRef(ref),
+        this.countArchivedUsersAtRef(ref),
+      ]);
+    return { totalUsers, emptyUsers, activeUsers, inactiveUsers, archivedUsers };
   }
 
   /**
@@ -170,6 +174,7 @@ export class AppStatsService {
       emptyUsers: r.emptyUsers,
       activeUsers: r.activeUsers,
       inactiveUsers: r.inactiveUsers,
+      archivedUsers: r.archivedUsers ?? 0,
     }));
   }
 
@@ -177,17 +182,25 @@ export class AppStatsService {
     await this.dataSource.query(
       `
       INSERT INTO app_user_stats_snapshots (
-        snapshot_date, total_users, empty_users, active_users, inactive_users
+        snapshot_date, total_users, empty_users, active_users, inactive_users, archived_users
       )
-      VALUES ($1::date, $2, $3, $4, $5)
+      VALUES ($1::date, $2, $3, $4, $5, $6)
       ON CONFLICT (snapshot_date) DO UPDATE SET
         total_users = EXCLUDED.total_users,
         empty_users = EXCLUDED.empty_users,
         active_users = EXCLUDED.active_users,
         inactive_users = EXCLUDED.inactive_users,
+        archived_users = EXCLUDED.archived_users,
         computed_at = now()
       `,
-      [p.date, p.totalUsers, p.emptyUsers, p.activeUsers, p.inactiveUsers]
+      [
+        p.date,
+        p.totalUsers,
+        p.emptyUsers,
+        p.activeUsers,
+        p.inactiveUsers,
+        p.archivedUsers,
+      ]
     );
   }
 
@@ -197,19 +210,31 @@ export class AppStatsService {
     d: number;
   }): Promise<AppStatsDailyPoint> {
     const ref = utcDayEndRef(cur.y, cur.m, cur.d);
-    const [totalUsers, emptyUsers, activeUsers, inactiveUsers] = await Promise.all([
-      this.countTotalUsersAtRef(ref),
-      this.countEmptyUsersAtRef(ref),
-      this.countActiveUsersTxAtRef(ref),
-      this.countInactiveUsersAtRef(ref),
-    ]);
+    const [totalUsers, emptyUsers, activeUsers, inactiveUsers, archivedUsers] =
+      await Promise.all([
+        this.countTotalUsersAtRef(ref),
+        this.countEmptyUsersAtRef(ref),
+        this.countActiveUsersTxAtRef(ref),
+        this.countInactiveUsersAtRef(ref),
+        this.countArchivedUsersAtRef(ref),
+      ]);
     return {
       date: formatUtcYmd(cur.y, cur.m, cur.d),
       totalUsers,
       emptyUsers,
       activeUsers,
       inactiveUsers,
+      archivedUsers,
     };
+  }
+
+  private async countArchivedUsersAtRef(ref: Date): Promise<number> {
+    return this.dataSource
+      .getRepository(User)
+      .createQueryBuilder("u")
+      .where("u.createdAt <= :ref", { ref })
+      .andWhere("u.archived = true")
+      .getCount();
   }
 
   private async countTotalUsersAtRef(ref: Date): Promise<number> {
@@ -217,6 +242,7 @@ export class AppStatsService {
       .getRepository(User)
       .createQueryBuilder("u")
       .where("u.createdAt <= :ref", { ref })
+      .andWhere("u.archived = false")
       .getCount();
   }
 
@@ -225,6 +251,7 @@ export class AppStatsService {
       .getRepository(User)
       .createQueryBuilder("u")
       .where("u.createdAt <= :ref", { ref })
+      .andWhere("u.archived = false")
       .andWhere(
         `NOT EXISTS (
           SELECT 1 FROM transactions t
@@ -239,9 +266,10 @@ export class AppStatsService {
     const since = new Date(ref.getTime() - ms);
     const rows = await this.dataSource.query<{ count: string }[]>(
       `
-      SELECT COUNT(DISTINCT "userId")::text AS count
-      FROM transactions
-      WHERE "datetime" >= $1 AND "datetime" <= $2
+      SELECT COUNT(DISTINCT t."userId")::text AS count
+      FROM transactions t
+      INNER JOIN users u ON u.id = t."userId" AND u.archived = false
+      WHERE t."datetime" >= $1 AND t."datetime" <= $2
       `,
       [since, ref]
     );
@@ -256,6 +284,7 @@ export class AppStatsService {
       SELECT COUNT(*)::text AS count
       FROM users u
       WHERE u."createdAt" <= $2
+        AND u.archived = false
         AND EXISTS (
           SELECT 1 FROM transactions t
           WHERE t."userId" = u.id AND t."datetime" <= $2

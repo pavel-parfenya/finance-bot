@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { analyticsVoiceHint } from "./deepseek-analytics-voice-hints";
 
 const DEEPSEEK_BASE_URL = "https://api.deepseek.com";
 
@@ -43,13 +44,6 @@ export interface SpendingContext {
   forecastEndOfMonth: string;
   defaultCurrency: string;
 }
-
-const VOICE_INSTRUCTIONS: Record<string, string> = {
-  official: "Пиши нейтрально, деловым тоном.",
-  strict: "Пиши назидательно, серьёзно.",
-  modern: "Используй сленг, «короче», «ну типа», «бабло».",
-  modern_18: "Сленг + можно мат (мягко).",
-};
 
 export class DeepSeekPurchaseAdviceParser {
   private readonly client: OpenAI;
@@ -96,7 +90,7 @@ export class DeepSeekPurchaseAdviceParser {
     spending: SpendingContext,
     voice: string
   ): Promise<string> {
-    const voiceHint = VOICE_INSTRUCTIONS[voice] ?? VOICE_INSTRUCTIONS.official;
+    const voiceHint = analyticsVoiceHint(voice);
     const categoriesText = spending.byCategory
       .slice(0, 10)
       .map((c) => `  - ${c.category}: ${c.amount} ${spending.defaultCurrency}`)
@@ -114,7 +108,7 @@ ${voiceHint}
 
     const response = await this.client.chat.completions.create({
       model: "deepseek-chat",
-      temperature: 0.5,
+      temperature: voice === "modern_18" ? 0.75 : 0.5,
       messages: [
         { role: "system", content: systemPrompt },
         {

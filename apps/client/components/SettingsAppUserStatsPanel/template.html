@@ -36,6 +36,10 @@
         <span class="app-user-stats-card-value">{{ current.inactiveUsers }}</span>
         <span class="app-user-stats-card-title">Неактивные</span>
       </div>
+      <div class="app-user-stats-card app-user-stats-card--archived">
+        <span class="app-user-stats-card-value">{{ current.archivedUsers }}</span>
+        <span class="app-user-stats-card-title">Архив (бот)</span>
+      </div>
     </div>
 
     <div v-if="series.length === 0" class="app-user-stats-empty">

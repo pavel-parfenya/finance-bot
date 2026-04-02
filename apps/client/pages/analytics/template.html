@@ -73,14 +73,52 @@
       v-if="chartItems.length > 0"
       :items="chartItems"
       :format-as-percent="chartFormatAsPercent"
+      interactive
+      @segment-click="onChartSegment"
     />
     <div class="category-list">
-      <div v-for="c in chartCategoryList" :key="c.category" class="row">
-        <span>{{ c.category }}</span>
-        <span>
-          {{ c.percent ? c.percent + ' (' + c.amount + ' ' + defaultCurrency + ')' : c.amount + ' ' + defaultCurrency }}
-        </span>
-      </div>
+      <template v-for="c in chartCategoryList" :key="c.category">
+        <NuxtLink
+          v-if="c.category !== REMAINDER_LABEL"
+          class="category-row category-row--link"
+          :to="tableLinkForCategory(c.category)"
+          title="Траты по категории с выбранным периодом и участником"
+        >
+          <span class="category-row-name">
+            <svg
+              class="category-row-detail-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path d="M10 15l3-3-3-3" />
+            </svg>
+            <span class="category-row-title-text">{{ c.category }}</span>
+          </span>
+          <span class="category-row-value">
+            {{
+              c.percent
+                ? c.percent + " (" + c.amount + " " + defaultCurrency + ")"
+                : c.amount + " " + defaultCurrency
+            }}
+          </span>
+        </NuxtLink>
+        <div v-else class="category-row category-row--static">
+          <span class="category-row-name">{{ c.category }}</span>
+          <span class="category-row-value">
+            {{
+              c.percent
+                ? c.percent + " (" + c.amount + " " + defaultCurrency + ")"
+                : c.amount + " " + defaultCurrency
+            }}
+          </span>
+        </div>
+      </template>
     </div>
   </div>
 </div>

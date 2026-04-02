@@ -170,7 +170,10 @@ export async function fetchAppUserStats(
 
 export async function updateUserSettings(updates: {
   defaultCurrency?: string | null;
-  analyticsEnabled?: boolean;
+  analyticsReminderEod?: boolean;
+  analyticsMonthReport?: boolean;
+  analyticsForecastWeekly?: boolean;
+  analyticsTimezone?: string | null;
   analyticsVoice?: string;
 }): Promise<{ ok?: boolean; error?: string }> {
   const res = await fetch(`${BASE}/api/user/settings`, {

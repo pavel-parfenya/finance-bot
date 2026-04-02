@@ -1,15 +1,11 @@
 import { buildPeriodRange } from "@finance-bot/shared";
-import { aggregateByCategoryAndCurrency } from "../analytics/aggregate-transactions";
-import { fetchExchangeRates } from "../analytics/fetch-exchange-rates";
-import type { Insight } from "../analytics/types";
-import type { TransactionRepository } from "../repositories/transaction-repository";
-import { detectCategorySpike } from "./insights/category-spike";
-import { detectMonthForecast } from "./insights/month-forecast";
-import { detectTopCategory } from "./insights/top-category";
 import {
-  detectVsPrevMonthCategory,
-  detectVsPrevMonthTotal,
-} from "./insights/vs-prev-month";
+  aggregateByCategoryAndCurrency,
+  aggregateExpensesByCategoryOnly,
+} from "../analytics/aggregate-transactions";
+import { fetchExchangeRates } from "../analytics/fetch-exchange-rates";
+import type { MonthlyReportData } from "../infrastructure/deepseek/deepseek-monthly-report";
+import type { TransactionRepository } from "../repositories/transaction-repository";
 
 export interface AnalyticsInsightServiceDeps {
   transactionRepo: TransactionRepository;
@@ -18,81 +14,11 @@ export interface AnalyticsInsightServiceDeps {
 export class AnalyticsInsightService {
   constructor(private readonly deps: AnalyticsInsightServiceDeps) {}
 
-  async computeInsights(
-    workspaceIds: number[],
-    defaultCurrency: string
-  ): Promise<Insight[]> {
-    if (workspaceIds.length === 0) return [];
-
-    const { start: currStart, end: currEnd } = buildPeriodRange("current");
-    const { start: prevStart, end: prevEnd } = buildPeriodRange("prev");
-
-    const [currTx, prevTx] = await Promise.all([
-      this.deps.transactionRepo.findByWorkspaceIdsForPeriod(
-        workspaceIds,
-        currStart,
-        currEnd
-      ),
-      this.deps.transactionRepo.findByWorkspaceIdsForPeriod(
-        workspaceIds,
-        prevStart,
-        prevEnd
-      ),
-    ]);
-
-    let rates: Record<string, number> = {};
-    try {
-      rates = await fetchExchangeRates();
-    } catch {
-      rates["USD"] = 1;
-    }
-
-    const currAgg = aggregateByCategoryAndCurrency(currTx, rates, defaultCurrency);
-    const prevAgg = aggregateByCategoryAndCurrency(prevTx, rates, defaultCurrency);
-
-    const totalCurrent = Number(currAgg.totalInDefault);
-    const totalPrev = Number(prevAgg.totalInDefault);
-
-    const insights: Insight[] = [];
-
-    const categorySpike = detectCategorySpike(
-      currAgg.byCategory,
-      totalCurrent,
-      defaultCurrency
-    );
-    if (categorySpike) insights.push(categorySpike);
-
-    const monthForecast = detectMonthForecast(totalCurrent, defaultCurrency);
-    if (monthForecast) insights.push(monthForecast);
-
-    const topCategory = detectTopCategory(currAgg.byCategory, defaultCurrency);
-    if (topCategory) insights.push(topCategory);
-
-    const vsTotal = detectVsPrevMonthTotal(totalCurrent, totalPrev, defaultCurrency);
-    if (vsTotal) insights.push(vsTotal);
-
-    const vsCategory = detectVsPrevMonthCategory(
-      currAgg.byCategory,
-      prevAgg.byCategory,
-      defaultCurrency
-    );
-    if (vsCategory) insights.push(vsCategory);
-
-    return insights.sort((a, b) => a.priority - b.priority);
-  }
-
-  /** Данные для развёрнутого отчёта на конец месяца (LLM) */
+  /** Данные для развёрнутого месячного отчёта (LLM): расходы отдельно, доход — для сетевого прогноза. */
   async getMonthlyReportData(
     workspaceIds: number[],
     defaultCurrency: string
-  ): Promise<{
-    currentByCategory: Array<{ category: string; amount: string }>;
-    prevByCategory: Array<{ category: string; amount: string }>;
-    totalCurrent: number;
-    totalPrev: number;
-    forecast: number;
-    defaultCurrency: string;
-  } | null> {
+  ): Promise<MonthlyReportData | null> {
     if (workspaceIds.length === 0) return null;
 
     const { start: currStart, end: currEnd } = buildPeriodRange("current");
@@ -121,22 +47,41 @@ export class AnalyticsInsightService {
     const currAgg = aggregateByCategoryAndCurrency(currTx, rates, defaultCurrency);
     const prevAgg = aggregateByCategoryAndCurrency(prevTx, rates, defaultCurrency);
 
-    const totalCurrent = Number(currAgg.totalInDefault);
-    const totalPrev = Number(prevAgg.totalInDefault);
+    const currExp = aggregateExpensesByCategoryOnly(currTx, rates, defaultCurrency);
+    const prevExp = aggregateExpensesByCategoryOnly(prevTx, rates, defaultCurrency);
+
+    const totalIncomeCurrent = Number(currAgg.totalIncomeInDefault ?? 0);
+    const totalIncomePrev = Number(prevAgg.totalIncomeInDefault ?? 0);
+    const hasIncomeCurrent = currAgg.hasIncome === true;
+
+    const totalExpenseCurrent = currExp.totalExpense;
+    const totalExpensePrev = prevExp.totalExpense;
 
     const now = new Date();
     const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
     const daysPassed = now.getDate();
-    const forecast =
-      daysPassed > 0 ? (totalCurrent / daysPassed) * daysInMonth : totalCurrent;
+    const projectedExpenseEom =
+      daysPassed > 0
+        ? (totalExpenseCurrent / daysPassed) * daysInMonth
+        : totalExpenseCurrent;
+
+    const projectedNetEom = hasIncomeCurrent
+      ? totalIncomeCurrent - projectedExpenseEom
+      : null;
 
     return {
-      currentByCategory: currAgg.byCategory,
-      prevByCategory: prevAgg.byCategory,
-      totalCurrent,
-      totalPrev,
-      forecast,
       defaultCurrency,
+      currentExpenseByCategory: currExp.byCategory,
+      prevExpenseByCategory: prevExp.byCategory,
+      totalExpenseCurrent,
+      totalExpensePrev,
+      totalIncomeCurrent,
+      totalIncomePrev,
+      hasIncomeCurrent,
+      projectedExpenseEom,
+      projectedNetEom,
+      daysPassed,
+      daysInMonth,
     };
   }
 }

@@ -1,5 +1,23 @@
 import { DataSource, Repository } from "typeorm";
+import type { AnalyticsVoice } from "../analytics/types";
 import { User } from "../database/entities";
+
+export const DEFAULT_ANALYTICS_TIMEZONE = "Europe/Moscow";
+
+const ANALYTICS_VOICES: readonly AnalyticsVoice[] = [
+  "official",
+  "strict",
+  "modern",
+  "modern_18",
+];
+
+function normalizeAnalyticsVoice(raw: string | null | undefined): AnalyticsVoice {
+  const v = (raw ?? "").trim().toLowerCase();
+  if (!v) return "official";
+  return (ANALYTICS_VOICES as readonly string[]).includes(v)
+    ? (v as AnalyticsVoice)
+    : "official";
+}
 
 export class UserService {
   private readonly repo: Repository<User>;
@@ -16,8 +34,40 @@ export class UserService {
     return this.repo.findOneBy({ id });
   }
 
-  async findAllWithAnalyticsEnabled(): Promise<User[]> {
-    return this.repo.find({ where: { analyticsEnabled: true } });
+  async findAllWithAnalyticsReminderEod(): Promise<User[]> {
+    return this.repo.find({ where: { analyticsReminderEod: true } });
+  }
+
+  async findAllWithAnalyticsMonthReport(): Promise<User[]> {
+    return this.repo.find({ where: { analyticsMonthReport: true } });
+  }
+
+  async findAllWithAnalyticsForecastWeekly(): Promise<User[]> {
+    return this.repo.find({ where: { analyticsForecastWeekly: true } });
+  }
+
+  /** Любая из трёх рассылок (напоминание, отчёт, прогноз). */
+  async findAllWithAnyAnalyticsMessaging(): Promise<User[]> {
+    return this.repo
+      .createQueryBuilder("u")
+      .where("u.archived = false")
+      .andWhere(
+        "(u.analyticsReminderEod = true OR u.analyticsMonthReport = true OR u.analyticsForecastWeekly = true)"
+      )
+      .getMany();
+  }
+
+  /** Для ежемесячного напоминания неактивным (без чекбокса в настройках). */
+  async findAllNonArchived(): Promise<User[]> {
+    return this.repo.find({ where: { archived: false } });
+  }
+
+  async setArchived(userId: number, archived: boolean): Promise<void> {
+    await this.repo.update(userId, { archived });
+  }
+
+  async setLastInactiveUserNudgeYm(userId: number, ym: string): Promise<void> {
+    await this.repo.update(userId, { lastInactiveUserNudgeYm: ym });
   }
 
   async findOrCreate(telegramId: number, username: string | null): Promise<User> {
@@ -26,9 +76,17 @@ export class UserService {
     if (!user) {
       user = this.repo.create({ telegramId, username });
       user = await this.repo.save(user);
-    } else if (user.username !== username) {
-      user.username = username;
-      user = await this.repo.save(user);
+    } else {
+      let changed = false;
+      if (user.username !== username) {
+        user.username = username;
+        changed = true;
+      }
+      if (user.archived) {
+        user.archived = false;
+        changed = true;
+      }
+      if (changed) user = await this.repo.save(user);
     }
 
     return user;
@@ -53,21 +111,25 @@ export class UserService {
     });
   }
 
-  async getAnalyticsEnabled(userId: number): Promise<boolean> {
+  async getAnalyticsVoice(userId: number): Promise<AnalyticsVoice> {
     const user = await this.repo.findOneBy({ id: userId });
-    return user?.analyticsEnabled ?? false;
+    return normalizeAnalyticsVoice(user?.analyticsVoice);
   }
 
-  async getAnalyticsVoice(userId: number): Promise<string> {
+  async getAnalyticsTimezoneResolved(userId: number): Promise<string> {
     const user = await this.repo.findOneBy({ id: userId });
-    return user?.analyticsVoice ?? "official";
+    const tz = user?.analyticsTimezone?.trim();
+    return tz && tz.length > 0 ? tz : DEFAULT_ANALYTICS_TIMEZONE;
   }
 
   async updateUserSettings(
     userId: number,
     updates: {
       defaultCurrency?: string | null;
-      analyticsEnabled?: boolean;
+      analyticsReminderEod?: boolean;
+      analyticsMonthReport?: boolean;
+      analyticsForecastWeekly?: boolean;
+      analyticsTimezone?: string | null;
       analyticsVoice?: string;
     }
   ): Promise<void> {
@@ -75,15 +137,39 @@ export class UserService {
     if (updates.defaultCurrency !== undefined) {
       toUpdate.defaultCurrency = updates.defaultCurrency?.trim() || null;
     }
-    if (updates.analyticsEnabled !== undefined) {
-      toUpdate.analyticsEnabled = updates.analyticsEnabled;
+    if (updates.analyticsReminderEod !== undefined) {
+      toUpdate.analyticsReminderEod = updates.analyticsReminderEod;
+    }
+    if (updates.analyticsMonthReport !== undefined) {
+      toUpdate.analyticsMonthReport = updates.analyticsMonthReport;
+    }
+    if (updates.analyticsForecastWeekly !== undefined) {
+      toUpdate.analyticsForecastWeekly = updates.analyticsForecastWeekly;
+    }
+    if (updates.analyticsTimezone !== undefined) {
+      toUpdate.analyticsTimezone = updates.analyticsTimezone?.trim() || null;
     }
     if (updates.analyticsVoice !== undefined) {
-      toUpdate.analyticsVoice = updates.analyticsVoice;
+      toUpdate.analyticsVoice = normalizeAnalyticsVoice(updates.analyticsVoice);
     }
     if (Object.keys(toUpdate).length > 0) {
       await this.repo.update(userId, toUpdate);
     }
+  }
+
+  async setLastAnalyticsReminderLocalDate(
+    userId: number,
+    localYmd: string
+  ): Promise<void> {
+    await this.repo.update(userId, { lastAnalyticsReminderLocalDate: localYmd });
+  }
+
+  async setLastMonthlyReportSentYm(userId: number, ym: string): Promise<void> {
+    await this.repo.update(userId, { lastMonthlyReportSentYm: ym });
+  }
+
+  async setLastForecastSentLocalDate(userId: number, localYmd: string): Promise<void> {
+    await this.repo.update(userId, { lastForecastSentLocalDate: localYmd });
   }
 
   async getInfoChangelogSeenVersion(userId: number): Promise<number> {

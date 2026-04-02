@@ -76,3 +76,37 @@ export function aggregateByCategoryAndCurrency(
     hasIncome,
   };
 }
+
+/**
+ * Только расходы по категориям (для топа в отчётах; доходы не включаются).
+ */
+export function aggregateExpensesByCategoryOnly(
+  transactions: TransactionForAggregation[],
+  rates: Record<string, number>,
+  defaultCurrency: string
+): { byCategory: Array<{ category: string; amount: string }>; totalExpense: number } {
+  const byCategoryMap = new Map<string, number>();
+  const defRate = rates[defaultCurrency] ?? 1;
+  let totalExpense = 0;
+
+  for (const t of transactions) {
+    if (t.type === "income") continue;
+    const amt = Number(t.amount);
+    const cur = t.currency || "USD";
+    const r = rates[cur] ?? 1;
+    const amtInDefault = (amt / r) * defRate;
+    totalExpense += amtInDefault;
+    const key = t.category || "Без категории";
+    byCategoryMap.set(key, (byCategoryMap.get(key) || 0) + amtInDefault);
+  }
+
+  const byCategory = Array.from(byCategoryMap.entries())
+    .map(([category, amount]) => ({
+      category,
+      amount: amount.toFixed(2),
+    }))
+    .filter((c) => Number(c.amount) > 0)
+    .sort((a, b) => Number(b.amount) - Number(a.amount));
+
+  return { byCategory, totalExpense };
+}

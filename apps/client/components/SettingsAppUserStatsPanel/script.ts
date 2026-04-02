@@ -65,6 +65,7 @@ const COLOR_TOTAL = "#2563eb";
 const COLOR_EMPTY = "#64748b";
 const COLOR_ACTIVE = "#16a34a";
 const COLOR_INACTIVE = "#d97706";
+const COLOR_ARCHIVED = "#94a3b8";
 
 export default defineComponent({
   setup() {
@@ -78,6 +79,7 @@ export default defineComponent({
       emptyUsers: 0,
       activeUsers: 0,
       inactiveUsers: 0,
+      archivedUsers: 0,
     });
     const series = ref<
       Array<{
@@ -86,6 +88,7 @@ export default defineComponent({
         emptyUsers: number;
         activeUsers: number;
         inactiveUsers: number;
+        archivedUsers: number;
       }>
     >([]);
 
@@ -138,8 +141,14 @@ export default defineComponent({
           .trim() || "#9ca3af";
 
       const labels = series.value.map((p) => formatDdMon(p.date));
-      const mk = (key: "totalUsers" | "emptyUsers" | "activeUsers" | "inactiveUsers") =>
-        series.value.map((p) => p[key]);
+      const mk = (
+        key:
+          | "totalUsers"
+          | "emptyUsers"
+          | "activeUsers"
+          | "inactiveUsers"
+          | "archivedUsers"
+      ) => series.value.map((p) => p[key] ?? 0);
 
       chartInst = new Chart(ctx, {
         type: "line",
@@ -175,6 +184,14 @@ export default defineComponent({
               data: mk("inactiveUsers"),
               borderColor: COLOR_INACTIVE,
               backgroundColor: `${COLOR_INACTIVE}33`,
+              tension: 0.2,
+              pointRadius: 2,
+            },
+            {
+              label: "Архив (бот)",
+              data: mk("archivedUsers"),
+              borderColor: COLOR_ARCHIVED,
+              backgroundColor: `${COLOR_ARCHIVED}33`,
               tension: 0.2,
               pointRadius: 2,
             },

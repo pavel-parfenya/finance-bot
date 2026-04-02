@@ -1,32 +1,107 @@
 <div class="settings-analytics">
-  <div class="settings-block">
-    <label class="checkbox-label">
-      <input
-        type="checkbox"
-        v-model="analyticsEnabled"
-        @change="onAnalyticsChange"
-      />
-      Получать аналитику от бота
-    </label>
-    <div class="settings-hint">
-      Сообщения о перерасходе, прогноз до конца месяца и др.
-    </div>
-  </div>
-  <div v-if="analyticsEnabled" class="settings-block">
-    <label for="analytics-voice">Характер бота</label>
-    <select
-      id="analytics-voice"
-      v-model="analyticsVoice"
-      class="select-styled"
-      @change="onVoiceChange"
-    >
-      <option
-        v-for="opt in VOICE_OPTIONS"
-        :key="opt.value"
-        :value="opt.value"
+  <section class="analytics-section" aria-labelledby="analytics-appearance-heading">
+    <h2 id="analytics-appearance-heading" class="analytics-section-title">
+      Оформление и время
+    </h2>
+    <div class="settings-block">
+      <label for="analytics-voice">Характер бота</label>
+      <select
+        id="analytics-voice"
+        v-model="analyticsVoice"
+        class="select-styled"
+        @change="onVoiceChange"
       >
-        {{ opt.label }}
-      </option>
-    </select>
-  </div>
+        <option
+          v-for="opt in VOICE_OPTIONS"
+          :key="opt.value"
+          :value="opt.value"
+        >
+          {{ opt.label }}
+        </option>
+      </select>
+      <p class="settings-hint">
+        Влияет на формулировки напоминаний, отчётов и советов.
+      </p>
+    </div>
+    <div class="settings-block">
+      <label for="analytics-timezone">Часовой пояс</label>
+      <select
+        id="analytics-timezone"
+        v-model="analyticsTimezone"
+        class="select-styled"
+        @change="onTimezoneChange"
+      >
+        <option
+          v-for="opt in TIMEZONE_OPTIONS"
+          :key="opt.value"
+          :value="opt.value"
+        >
+          {{ opt.label }}
+        </option>
+      </select>
+      <p class="settings-hint">
+        Рассылки приходят около 20:00 по этому поясу.
+      </p>
+    </div>
+  </section>
+
+  <section class="analytics-section" aria-labelledby="analytics-dispatch-heading">
+    <h2 id="analytics-dispatch-heading" class="analytics-section-title">
+      Что присылать
+    </h2>
+    <p class="analytics-section-lead">
+      Включи нужные типы сообщений — они независимы друг от друга.
+    </p>
+    <ul class="analytics-dispatch-list" role="list">
+      <li class="analytics-dispatch-item">
+        <label class="analytics-dispatch-row">
+          <input
+            type="checkbox"
+            class="analytics-dispatch-checkbox"
+            v-model="analyticsReminderEod"
+            @change="onReminderChange"
+          />
+          <span class="analytics-dispatch-body">
+            <span class="analytics-dispatch-title">Напоминание в конце дня</span>
+            <span class="analytics-dispatch-hint">
+              Если уже есть траты в базе, но за последние сутки ничего не занесено —
+              короткое напоминание.
+            </span>
+          </span>
+        </label>
+      </li>
+      <li class="analytics-dispatch-item">
+        <label class="analytics-dispatch-row">
+          <input
+            type="checkbox"
+            class="analytics-dispatch-checkbox"
+            v-model="analyticsMonthReport"
+            @change="onMonthReportChange"
+          />
+          <span class="analytics-dispatch-body">
+            <span class="analytics-dispatch-title">Отчёт в последний день месяца</span>
+            <span class="analytics-dispatch-hint">
+              Развёрнутый отчёт о тратах и динамике за месяц.
+            </span>
+          </span>
+        </label>
+      </li>
+      <li class="analytics-dispatch-item">
+        <label class="analytics-dispatch-row">
+          <input
+            type="checkbox"
+            class="analytics-dispatch-checkbox"
+            v-model="analyticsForecastWeekly"
+            @change="onForecastChange"
+          />
+          <span class="analytics-dispatch-body">
+            <span class="analytics-dispatch-title">Прогноз по воскресеньям</span>
+            <span class="analytics-dispatch-hint">
+              Снимок трат, идеи, где сэкономить, прогноз до конца месяца.
+            </span>
+          </span>
+        </label>
+      </li>
+    </ul>
+  </section>
 </div>

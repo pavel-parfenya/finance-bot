@@ -1,4 +1,5 @@
 import { defineComponent, ref, watch, onMounted, onUnmounted } from "vue";
+import { useRoute } from "vue-router";
 import type { TransactionDto, TransactionFilters } from "@finance-bot/shared";
 import type { WorkspaceMember } from "@finance-bot/shared";
 import {
@@ -13,6 +14,7 @@ const PAGE_SIZE = 20;
 
 export default defineComponent({
   setup() {
+    const route = useRoute();
     const { filters, filtersOpen, refreshTrigger } = useAppState();
 
     const transactions = ref<TransactionDto[]>([]);
@@ -75,6 +77,31 @@ export default defineComponent({
       loadTable(true);
     }
 
+    /** Применить query с аналитики (или других экранов): period, даты, категория, userId. */
+    function mergeFiltersFromRouteQuery(): boolean {
+      const q = route.query;
+      if (!q.period && !q.category && !q.userId && !q.startDate && !q.endDate) {
+        return false;
+      }
+      const next: TransactionFilters = { ...filters.value };
+      if (typeof q.period === "string") {
+        next.period = q.period;
+        if (q.period !== "period") {
+          next.startDate = undefined;
+          next.endDate = undefined;
+        }
+      }
+      if (typeof q.startDate === "string") next.startDate = q.startDate || undefined;
+      if (typeof q.endDate === "string") next.endDate = q.endDate || undefined;
+      if (typeof q.category === "string") next.category = q.category || undefined;
+      if (typeof q.userId === "string") {
+        const n = parseInt(q.userId, 10);
+        next.userId = isNaN(n) ? undefined : n;
+      }
+      filters.value = next;
+      return true;
+    }
+
     function openEdit(tx: TransactionDto) {
       editingTx.value = tx;
     }
@@ -102,6 +129,7 @@ export default defineComponent({
     let observer: IntersectionObserver | null = null;
 
     onMounted(() => {
+      mergeFiltersFromRouteQuery();
       loadTable(true);
       loadMembers();
       observer = new IntersectionObserver(
@@ -140,6 +168,14 @@ export default defineComponent({
     });
 
     watch(refreshTrigger, () => loadMembers());
+
+    watch(
+      () => route.fullPath,
+      () => {
+        if (route.path !== "/table") return;
+        if (mergeFiltersFromRouteQuery()) loadTable(true);
+      }
+    );
 
     return {
       filters,

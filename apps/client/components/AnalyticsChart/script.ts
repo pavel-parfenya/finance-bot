@@ -53,8 +53,11 @@ export default defineComponent({
   props: {
     items: { type: Array as () => ChartItem[], required: true },
     formatAsPercent: { type: Boolean, default: false },
+    /** Секторы (кроме «Остаток») кликабельны — для перехода в траты. */
+    interactive: { type: Boolean, default: false },
   },
-  setup(props) {
+  emits: ["segment-click"],
+  setup(props, { emit }) {
     const canvasRef = ref<HTMLCanvasElement | null>(null);
     let chartInst: Chart | null = null;
 
@@ -117,6 +120,16 @@ export default defineComponent({
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          onClick: props.interactive
+            ? (_evt, elements) => {
+                const el = elements[0];
+                if (!el) return;
+                const idx = el.index;
+                const label = labels[idx];
+                if (typeof label !== "string" || label === REMAINDER_LABEL) return;
+                emit("segment-click", label);
+              }
+            : undefined,
           plugins: {
             legend: {
               position: "bottom",
@@ -174,7 +187,7 @@ export default defineComponent({
     onUnmounted(destroyChart);
 
     watch(
-      () => [props.items, props.formatAsPercent],
+      () => [props.items, props.formatAsPercent, props.interactive],
       () => {
         destroyChart();
         initChart();

@@ -17,37 +17,10 @@ export interface TransactionForAggregation {
   type?: string;
 }
 
-/** Типы инсайтов аналитики */
-export type InsightType =
-  | "category_spike"
-  | "month_forecast"
-  | "top_category"
-  | "vs_prev_month_total"
-  | "vs_prev_month_category";
-
-/** Характер голоса бота */
+/** Характер голоса бота (месячный отчёт и др.) */
 export type AnalyticsVoice = "official" | "strict" | "modern" | "modern_18";
 
-/** Данные инсайта (зависят от типа) */
-export interface InsightData {
-  category?: string;
-  amount?: string | number;
-  percent?: number;
-  currency?: string;
-  prevAmount?: string | number;
-  currentAmount?: string | number;
-  deltaPercent?: number;
-  deltaAmount?: string | number;
-}
-
-/** Один инсайт для отправки пользователю */
-export interface Insight {
-  type: InsightType;
-  data: InsightData;
-  priority: number;
-}
-
-/** Сводка трат за период (для инсайтов и purchase advice) */
+/** Сводка трат за период (для purchase advice и др.) */
 export interface SpendingSummary {
   byCategory: Map<string, number>;
   totalInDefault: number;

@@ -1,5 +1,10 @@
 import { Injectable } from "@nestjs/common";
-import { config, INFO_CHANGELOG_VERSION, UserService } from "@finance-bot/server-core";
+import {
+  config,
+  DEFAULT_ANALYTICS_TIMEZONE,
+  INFO_CHANGELOG_VERSION,
+  UserService,
+} from "@finance-bot/server-core";
 import type { ResolvedTelegramUser } from "../telegram/telegram-auth.types";
 
 @Injectable()
@@ -7,10 +12,8 @@ export class UserApiService {
   constructor(private readonly userService: UserService) {}
 
   async getSettings(resolved: ResolvedTelegramUser) {
-    const [defaultCurrency, analyticsEnabled, analyticsVoice, user] = await Promise.all([
+    const [defaultCurrency, user] = await Promise.all([
       this.userService.getDefaultCurrency(resolved.userId),
-      this.userService.getAnalyticsEnabled(resolved.userId),
-      this.userService.getAnalyticsVoice(resolved.userId),
       this.userService.findById(resolved.userId),
     ]);
 
@@ -20,8 +23,11 @@ export class UserApiService {
 
     return {
       defaultCurrency: defaultCurrency ?? null,
-      analyticsEnabled,
-      analyticsVoice: analyticsVoice ?? "official",
+      analyticsReminderEod: user?.analyticsReminderEod ?? false,
+      analyticsMonthReport: user?.analyticsMonthReport ?? false,
+      analyticsForecastWeekly: user?.analyticsForecastWeekly ?? false,
+      analyticsTimezone: user?.analyticsTimezone?.trim() || DEFAULT_ANALYTICS_TIMEZONE,
+      analyticsVoice: await this.userService.getAnalyticsVoice(resolved.userId),
       isSuperAdmin,
     };
   }
@@ -30,7 +36,10 @@ export class UserApiService {
     resolved: ResolvedTelegramUser,
     updates: {
       defaultCurrency?: string | null;
-      analyticsEnabled?: boolean;
+      analyticsReminderEod?: boolean;
+      analyticsMonthReport?: boolean;
+      analyticsForecastWeekly?: boolean;
+      analyticsTimezone?: string | null;
       analyticsVoice?: string;
     }
   ) {

@@ -4,6 +4,7 @@ export interface AppUserStatsPoint {
   emptyUsers: number;
   activeUsers: number;
   inactiveUsers: number;
+  archivedUsers: number;
 }
 
 export interface AppUserStatsResponse {
@@ -12,6 +13,7 @@ export interface AppUserStatsResponse {
     emptyUsers: number;
     activeUsers: number;
     inactiveUsers: number;
+    archivedUsers: number;
   };
   series: AppUserStatsPoint[];
   activeWindowHours: number;

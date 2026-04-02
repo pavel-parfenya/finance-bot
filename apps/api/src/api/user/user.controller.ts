@@ -19,7 +19,10 @@ export class UserController {
     @Body()
     updates: {
       defaultCurrency?: string | null;
-      analyticsEnabled?: boolean;
+      analyticsReminderEod?: boolean;
+      analyticsMonthReport?: boolean;
+      analyticsForecastWeekly?: boolean;
+      analyticsTimezone?: string | null;
       analyticsVoice?: string;
     },
     @TelegramUser() user: ResolvedTelegramUser
