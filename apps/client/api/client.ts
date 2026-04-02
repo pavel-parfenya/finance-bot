@@ -6,6 +6,7 @@ import type {
   AnalyticsResponse,
   WorkspaceInfo,
   UserSettings,
+  AppUserStatsResponse,
   DebtDto,
   DebtCreateRequest,
   DebtUpdateRequest,
@@ -143,6 +144,28 @@ export async function setMemberFullAccess(
 export async function fetchUserSettings(): Promise<UserSettings> {
   const res = await fetch(`${BASE}/api/user/settings`, { headers: headers() });
   return res.json();
+}
+
+export async function fetchAppUserStats(
+  from: string,
+  to: string
+): Promise<AppUserStatsResponse | { error?: string }> {
+  const params = new URLSearchParams({ from, to });
+  const res = await fetch(`${BASE}/api/admin/app-user-stats?${params}`, {
+    headers: headers(),
+  });
+  const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+  if (!res.ok) {
+    const message = typeof data["message"] === "string" ? data["message"] : null;
+    const nested =
+      data["error"] && typeof data["error"] === "object" && data["error"] !== null
+        ? (data["error"] as { error?: string }).error
+        : null;
+    const flat = typeof data["error"] === "string" ? data["error"] : null;
+    const msg = flat ?? nested ?? message ?? `Ошибка ${String(res.status)}`;
+    return { error: msg };
+  }
+  return data as AppUserStatsResponse;
 }
 
 export async function updateUserSettings(updates: {

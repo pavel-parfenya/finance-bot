@@ -7,6 +7,7 @@ import { Transaction } from "./entities/transaction.entity";
 import { Invitation } from "./entities/invitation.entity";
 import { Debt } from "./entities/debt.entity";
 import { CustomCategory } from "./entities/custom-category.entity";
+import { AppUserStatsSnapshot } from "./entities/app-user-stats-snapshot.entity";
 
 export interface DataSourceOptions {
   url: string;
@@ -28,6 +29,7 @@ export function createDataSource(options: DataSourceOptions | string): DataSourc
       Invitation,
       Debt,
       CustomCategory,
+      AppUserStatsSnapshot,
     ],
     synchronize: false,
     logging: false,

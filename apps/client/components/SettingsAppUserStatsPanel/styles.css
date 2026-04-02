@@ -1,0 +1,163 @@
+.app-user-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.app-user-stats-range {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-user-stats-field {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.app-user-stats-label {
+  font-size: 12px;
+  color: var(--tg-theme-hint-color);
+  flex-shrink: 0;
+}
+
+.input-styled {
+  box-sizing: border-box;
+  min-width: 0;
+  width: auto;
+  max-width: 118px;
+  padding: 7px 8px;
+  font-size: 13px;
+  border-radius: var(--radius, 10px);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background-color: var(--tg-theme-secondary-bg-color, #f0f2f5);
+  color: var(--tg-theme-text-color);
+}
+
+.app-user-stats-apply {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  margin-left: auto;
+  border-radius: var(--radius, 10px);
+  border: none;
+  background: var(--tg-theme-button-color, #3390ec);
+  color: var(--tg-theme-button-text-color, #fff);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app-user-stats-apply-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.app-user-stats-apply:active {
+  opacity: 0.9;
+}
+
+.app-user-stats-error {
+  padding: 12px;
+  border-radius: var(--radius, 10px);
+  background: rgba(220, 38, 38, 0.1);
+  color: #b91c1c;
+  font-size: 14px;
+}
+
+.app-user-stats-loading {
+  padding: 24px;
+  text-align: center;
+  color: var(--tg-theme-hint-color);
+}
+
+.app-user-stats-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.app-user-stats-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 8px;
+  border-radius: var(--radius, 10px);
+  border: none;
+  min-width: 0;
+}
+
+.app-user-stats-card--total {
+  background: #2563eb;
+}
+
+.app-user-stats-card--empty {
+  background: #64748b;
+}
+
+.app-user-stats-card--active {
+  background: #16a34a;
+}
+
+.app-user-stats-card--inactive {
+  background: #d97706;
+}
+
+.app-user-stats-card-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.app-user-stats-card-title {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.92);
+  line-height: 1.2;
+}
+
+.app-user-stats-empty {
+  font-size: 14px;
+  color: var(--tg-theme-hint-color);
+  line-height: 1.4;
+}
+
+.app-user-stats-chart-wrap {
+  position: relative;
+  width: 100%;
+  height: 280px;
+}
+
+.app-user-stats-chart {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+@media (max-width: 360px) {
+  .app-user-stats-cards {
+    gap: 4px;
+  }
+
+  .app-user-stats-card {
+    padding: 8px 6px;
+  }
+
+  .app-user-stats-card-value {
+    font-size: 16px;
+  }
+
+  .app-user-stats-card-title {
+    font-size: 10px;
+  }
+}

@@ -7,6 +7,7 @@ import {
   TransactionRepository,
   InvitationRepository,
   DebtRepository,
+  AppStatsService,
 } from "@finance-bot/server-core";
 import { getApiContainer } from "../di/api-container.context";
 import { HttpTelegramOutboundAdapter } from "../di/http-telegram-outbound.adapter";
@@ -18,6 +19,8 @@ import { TransactionsModule } from "./transactions/transactions.module";
 import { WorkspaceModule } from "./workspace/workspace.module";
 import { UserModule } from "./user/user.module";
 import { DebtsModule } from "./debts/debts.module";
+import { AdminModule } from "./admin/admin.module";
+import { AppStatsSnapshotScheduler } from "./app-stats-snapshot.scheduler";
 
 @Global()
 @Module({
@@ -27,6 +30,7 @@ import { DebtsModule } from "./debts/debts.module";
     WorkspaceModule,
     UserModule,
     DebtsModule,
+    AdminModule,
   ],
   providers: [
     { provide: UserService, useFactory: () => getApiContainer().userService },
@@ -44,10 +48,15 @@ import { DebtsModule } from "./debts/debts.module";
       provide: CustomCategoryService,
       useFactory: () => getApiContainer().customCategoryService,
     },
+    {
+      provide: AppStatsService,
+      useFactory: () => getApiContainer().appStatsService,
+    },
     { provide: BOT_TOKEN, useFactory: () => requireEnv("TELEGRAM_BOT_TOKEN") },
     { provide: TELEGRAM_OUTBOUND, useClass: HttpTelegramOutboundAdapter },
     TelegramAuthService,
     TelegramInitDataGuard,
+    AppStatsSnapshotScheduler,
   ],
   exports: [
     UserService,
@@ -56,6 +65,7 @@ import { DebtsModule } from "./debts/debts.module";
     InvitationRepository,
     DebtRepository,
     CustomCategoryService,
+    AppStatsService,
     BOT_TOKEN,
     TELEGRAM_OUTBOUND,
     TelegramAuthService,

@@ -7,6 +7,7 @@ import { UserService } from "../services/user-service";
 import { WorkspaceService } from "../services/workspace-service";
 import { CustomCategoryRepository } from "../repositories/custom-category-repository";
 import { CustomCategoryService } from "../services/custom-category-service";
+import { AppStatsService } from "../services/app-stats-service";
 
 export interface ApiServices {
   userService: UserService;
@@ -15,6 +16,7 @@ export interface ApiServices {
   invitationRepo: InvitationRepository;
   debtRepo: DebtRepository;
   customCategoryService: CustomCategoryService;
+  appStatsService: AppStatsService;
 }
 
 /** Минимальный набор для Nest Mini App API (без LLM/STT и т.д.). */
@@ -26,6 +28,7 @@ export function createApiServices(_config: Config, dataSource: DataSource): ApiS
   const workspaceService = new WorkspaceService(dataSource);
   const customCategoryRepo = new CustomCategoryRepository(dataSource);
   const customCategoryService = new CustomCategoryService(customCategoryRepo);
+  const appStatsService = new AppStatsService(dataSource);
 
   return {
     userService,
@@ -34,5 +37,6 @@ export function createApiServices(_config: Config, dataSource: DataSource): ApiS
     invitationRepo,
     debtRepo,
     customCategoryService,
+    appStatsService,
   };
 }

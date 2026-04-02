@@ -4,5 +4,6 @@ export interface UserSettings {
   defaultCurrency?: string | null;
   analyticsEnabled?: boolean;
   analyticsVoice?: AnalyticsVoice;
+  isSuperAdmin?: boolean;
   error?: string;
 }

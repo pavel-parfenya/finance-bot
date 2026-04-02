@@ -1,0 +1,48 @@
+<div class="app-user-stats">
+  <div class="app-user-stats-range">
+    <label class="app-user-stats-field">
+      <span class="app-user-stats-label">С</span>
+      <input v-model="fromDate" type="date" class="input-styled" />
+    </label>
+    <label class="app-user-stats-field">
+      <span class="app-user-stats-label">По</span>
+      <input v-model="toDate" type="date" class="input-styled" />
+    </label>
+    <button type="button" class="app-user-stats-apply" aria-label="Обновить график" @click="applyRange">
+      <svg class="app-user-stats-apply-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+        <path d="M21 3v7h-7" />
+      </svg>
+    </button>
+  </div>
+
+  <div v-if="error" class="app-user-stats-error">{{ error }}</div>
+  <div v-else-if="loading" class="app-user-stats-loading">Загрузка…</div>
+  <template v-else>
+    <div class="app-user-stats-cards">
+      <div class="app-user-stats-card app-user-stats-card--total">
+        <span class="app-user-stats-card-value">{{ current.totalUsers }}</span>
+        <span class="app-user-stats-card-title">Всего</span>
+      </div>
+      <div class="app-user-stats-card app-user-stats-card--empty">
+        <span class="app-user-stats-card-value">{{ current.emptyUsers }}</span>
+        <span class="app-user-stats-card-title">Пустых</span>
+      </div>
+      <div class="app-user-stats-card app-user-stats-card--active">
+        <span class="app-user-stats-card-value">{{ current.activeUsers }}</span>
+        <span class="app-user-stats-card-title">Активные</span>
+      </div>
+      <div class="app-user-stats-card app-user-stats-card--inactive">
+        <span class="app-user-stats-card-value">{{ current.inactiveUsers }}</span>
+        <span class="app-user-stats-card-title">Неактивные</span>
+      </div>
+    </div>
+
+    <div v-if="series.length === 0" class="app-user-stats-empty">
+      Нет снимков за период. На графике — по одной точке за UTC-день; они сохраняются автоматически в 23:59 UTC. Прошлые дни без строки в базе можно дозаполнить, открыв страницу с этим диапазоном дат.
+    </div>
+    <div v-else class="app-user-stats-chart-wrap">
+      <canvas ref="canvasRef" class="app-user-stats-chart" />
+    </div>
+  </template>
+</div>

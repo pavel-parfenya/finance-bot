@@ -11,7 +11,6 @@ import type {
   PurchaseAdviceService,
   DeepSeekPurchaseAdviceParser,
   DeepSeekMonthlyReport,
-  AppStatsService,
   CustomCategoryService,
 } from "@finance-bot/server-core";
 import { createStartHandler } from "./handlers/start-handler";
@@ -24,7 +23,6 @@ import { createCurrencyHandler, SET_CURRENCY_PREFIX } from "./handlers/currency-
 import { createInviteHandler } from "./handlers/invite-handler";
 import { createDebtCallbackHandler } from "./handlers/debt-handler";
 import { createTestAnalyticsHandler } from "./handlers/test-analytics-handler";
-import { createAppStatsHandler } from "./handlers/app-stats-handler";
 
 export interface BotDeps {
   userService: UserService;
@@ -38,9 +36,7 @@ export interface BotDeps {
   purchaseAdviceService?: PurchaseAdviceService;
   purchaseAdviceParser?: DeepSeekPurchaseAdviceParser;
   monthlyReportGenerator?: DeepSeekMonthlyReport;
-  appStatsService?: AppStatsService;
   customCategoryService: CustomCategoryService;
-  superAdminUsername?: string | null;
   /** URL Telegram Mini App для просмотра расходов */
   miniAppUrl: string;
   /** Добавляется в createBot */
@@ -55,7 +51,6 @@ export function createBot(token: string, depsWithoutBot: BotDeps): Bot {
   bot.command("help", createHelpHandler(deps));
   bot.command("app", createAppHandler(deps));
   bot.command("test_analytics", createTestAnalyticsHandler(deps));
-  bot.command("app_stats", createAppStatsHandler(deps));
   bot.callbackQuery(["cancel_expense", "save_expense"], createCancelExpenseHandler());
   bot.callbackQuery(new RegExp(`^${SET_CURRENCY_PREFIX}`), createCurrencyHandler(deps));
   bot.callbackQuery(

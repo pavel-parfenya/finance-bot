@@ -10,3 +10,4 @@ export { Transaction } from "./transaction.entity";
 export { Invitation, InvitationStatus } from "./invitation.entity";
 export { Debt, DebtStatus } from "./debt.entity";
 export { CustomCategory } from "./custom-category.entity";
+export { AppUserStatsSnapshot } from "./app-user-stats-snapshot.entity";

@@ -1,4 +1,13 @@
 <nav class="settings-menu" aria-label="Настройки">
+  <NuxtLink v-if="showAppStats" class="settings-row" to="/settings/app-stats">
+    <div class="settings-row-text">
+      <span class="settings-row-title">Статистика приложения</span>
+      <span class="settings-row-sub">Пользователи и динамика по дням</span>
+    </div>
+    <svg class="settings-row-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  </NuxtLink>
   <NuxtLink class="settings-row" to="/settings/expenses">
     <div class="settings-row-text">
       <span class="settings-row-title">Траты</span>

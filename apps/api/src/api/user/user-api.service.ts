@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { INFO_CHANGELOG_VERSION, UserService } from "@finance-bot/server-core";
+import { config, INFO_CHANGELOG_VERSION, UserService } from "@finance-bot/server-core";
 import type { ResolvedTelegramUser } from "../telegram/telegram-auth.types";
 
 @Injectable()
@@ -7,16 +7,22 @@ export class UserApiService {
   constructor(private readonly userService: UserService) {}
 
   async getSettings(resolved: ResolvedTelegramUser) {
-    const [defaultCurrency, analyticsEnabled, analyticsVoice] = await Promise.all([
+    const [defaultCurrency, analyticsEnabled, analyticsVoice, user] = await Promise.all([
       this.userService.getDefaultCurrency(resolved.userId),
       this.userService.getAnalyticsEnabled(resolved.userId),
       this.userService.getAnalyticsVoice(resolved.userId),
+      this.userService.findById(resolved.userId),
     ]);
+
+    const superName = config.superAdminUsername;
+    const uname = (user?.username ?? "").replace(/^@/, "").toLowerCase();
+    const isSuperAdmin = !!(superName && uname && uname === superName.toLowerCase());
 
     return {
       defaultCurrency: defaultCurrency ?? null,
       analyticsEnabled,
       analyticsVoice: analyticsVoice ?? "official",
+      isSuperAdmin,
     };
   }
 

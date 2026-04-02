@@ -27,7 +27,6 @@ async function bootstrap(): Promise<void> {
   const bot = createBot(config.telegram.botToken, {
     ...core,
     miniAppUrl,
-    superAdminUsername: config.superAdminUsername,
   });
 
   await bot.init();

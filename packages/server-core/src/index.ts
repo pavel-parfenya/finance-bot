@@ -34,5 +34,10 @@ export { DeepSeekMonthlyReport } from "./infrastructure/deepseek/deepseek-monthl
 export { DebtService } from "./services/debt-service";
 export { DeepSeekDebtParser } from "./infrastructure/deepseek/deepseek-debt-parser";
 export { PurchaseAdviceService } from "./services/purchase-advice-service";
-export { AppStatsService } from "./services/app-stats-service";
+export {
+  AppStatsService,
+  APP_STATS_ACTIVE_HOURS,
+  type AppStats,
+  type AppStatsDailyPoint,
+} from "./services/app-stats-service";
 export { DeepSeekPurchaseAdviceParser } from "./infrastructure/deepseek/deepseek-purchase-advice";
