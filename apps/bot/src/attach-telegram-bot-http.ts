@@ -2,28 +2,11 @@ import type { Application } from "express";
 import type { Bot } from "grammy";
 import { config } from "@finance-bot/server-core";
 
-/** POST /webhook и POST /internal/telegram/send на том же Express, что и Nest (один URL в проде). */
-export function attachTelegramBotHttpRoutes(app: Application, bot: Bot): void {
-  if (config.mode !== "webhook") return;
-
-  const { webhookPath, webhookSecret } = config;
-  app.post(webhookPath, async (req, res) => {
-    if (webhookSecret) {
-      const token = req.headers["x-telegram-bot-api-secret-token"];
-      if (token !== webhookSecret) {
-        res.status(403).end();
-        return;
-      }
-    }
-    try {
-      await bot.handleUpdate(req.body);
-      res.status(200).send("OK");
-    } catch (err) {
-      console.error("Ошибка обработки webhook:", err);
-      res.status(500).end();
-    }
-  });
-
+/**
+ * API → бот: исходящие сообщения (в т.ч. кнопки подтверждения долга).
+ * Должен быть доступен и при `MODE=polling` (отдельный контейнер бота), и при webhook.
+ */
+export function attachInternalTelegramSendRoute(app: Application, bot: Bot): void {
   app.post("/internal/telegram/send", async (req, res) => {
     const secret = config.internalBotSecret;
     if (!secret) {
@@ -56,4 +39,32 @@ export function attachTelegramBotHttpRoutes(app: Application, bot: Bot): void {
       });
     }
   });
+}
+
+/** Webhook Telegram (только MODE=webhook). */
+function attachWebhookRoute(app: Application, bot: Bot): void {
+  const { webhookPath, webhookSecret } = config;
+  app.post(webhookPath, async (req, res) => {
+    if (webhookSecret) {
+      const token = req.headers["x-telegram-bot-api-secret-token"];
+      if (token !== webhookSecret) {
+        res.status(403).end();
+        return;
+      }
+    }
+    try {
+      await bot.handleUpdate(req.body);
+      res.status(200).send("OK");
+    } catch (err) {
+      console.error("Ошибка обработки webhook:", err);
+      res.status(500).end();
+    }
+  });
+}
+
+/** POST /webhook (если webhook) и POST /internal/telegram/send на том же Express, что и Nest (один URL в проде). */
+export function attachTelegramBotHttpRoutes(app: Application, bot: Bot): void {
+  attachInternalTelegramSendRoute(app, bot);
+  if (config.mode !== "webhook") return;
+  attachWebhookRoute(app, bot);
 }

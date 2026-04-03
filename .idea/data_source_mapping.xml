@@ -2,7 +2,7 @@
 <project version="4">
   <component name="DataSourcePerFileMappings">
     <file url="file://$PROJECT_DIR$/apps/api/scripts/migrate-app-user-stats-snapshots.sql" value="496d1152-2646-4a69-ba91-6ac0800cc750" />
-    <file url="file://$PROJECT_DIR$/apps/api/scripts/migrate-user-analytics-split.sql" value="71a7bfc7-e4b1-4a85-b1b4-6ca9e1a5736b" />
-    <file url="file://$PROJECT_DIR$/apps/api/scripts/migrate-user-archived-nudge.sql" value="71a7bfc7-e4b1-4a85-b1b4-6ca9e1a5736b" />
+    <file url="file://$PROJECT_DIR$/apps/api/scripts/migrate-user-analytics-split.sql" value="496d1152-2646-4a69-ba91-6ac0800cc750" />
+    <file url="file://$PROJECT_DIR$/apps/api/scripts/migrate-user-archived-nudge.sql" value="496d1152-2646-4a69-ba91-6ac0800cc750" />
   </component>
 </project>

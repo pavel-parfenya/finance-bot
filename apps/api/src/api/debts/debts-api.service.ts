@@ -14,6 +14,32 @@ export class DebtsApiService {
     @Inject(TELEGRAM_OUTBOUND) private readonly telegram: TelegramOutboundPort
   ) {}
 
+  /** Сообщение контрагенту с кнопками подтверждения записи о долге (Mini App и единый текст). */
+  private debtConfirmationKeyboard(debtId: number) {
+    return new InlineKeyboard()
+      .text("Подтвердить", `debt_confirm:${debtId}`)
+      .text("Отклонить", `debt_reject:${debtId}`);
+  }
+
+  private async notifyCounterpartyDebtPending(
+    linkedTelegramId: number,
+    args: {
+      creatorDisplayName: string;
+      debtDesc: string;
+      debtId: number;
+      source: "create" | "link";
+    }
+  ): Promise<void> {
+    const mid =
+      args.source === "create"
+        ? `создал(а) запись о долге: ${args.debtDesc}`
+        : `привязал(а) вас к долгу: ${args.debtDesc}`;
+    const msg = `${args.creatorDisplayName} ${mid}. Подтвердите или отклоните.`;
+    await this.telegram.sendMessage(linkedTelegramId, msg, {
+      reply_markup: this.debtConfirmationKeyboard(args.debtId),
+    });
+  }
+
   private toDebtDto(
     d: Awaited<ReturnType<DebtRepository["findById"]>>,
     userId: number
@@ -24,10 +50,20 @@ export class DebtsApiService {
       debtor?: { username?: string | null } | null;
       creditor?: { username?: string | null } | null;
     };
+    const debtorName =
+      d.debtorName?.trim() ||
+      (debtWithRelations.debtor?.username
+        ? `@${debtWithRelations.debtor.username}`
+        : d.debtorName);
+    const creditorName =
+      d.creditorName?.trim() ||
+      (debtWithRelations.creditor?.username
+        ? `@${debtWithRelations.creditor.username}`
+        : d.creditorName);
     return {
       id: d.id,
-      debtorName: d.debtorName,
-      creditorName: d.creditorName,
+      debtorName,
+      creditorName,
       debtorUserId: d.debtorUserId,
       creditorUserId: d.creditorUserId,
       debtorUsername: debtWithRelations.debtor?.username ?? null,
@@ -77,6 +113,14 @@ export class DebtsApiService {
   async create(resolved: ResolvedTelegramUser, body: DebtCreateRequest) {
     const creatorUserId = resolved.userId;
     const creatorDisplayName = resolved.creatorDisplayName;
+    let debtorName = body.debtorName?.trim() ?? "";
+    let creditorName = body.creditorName?.trim() ?? "";
+    if (body.iAmCreditor) {
+      if (!creditorName) creditorName = creatorDisplayName;
+    } else {
+      if (!debtorName) debtorName = creatorDisplayName;
+    }
+
     let debtorUserId: number | null = null;
     let creditorUserId: number | null = null;
     let mainUserId: number;
@@ -106,15 +150,17 @@ export class DebtsApiService {
       mainUserId = creatorUserId;
     }
 
-    const status =
-      debtorUserId || creditorUserId ? DebtStatus.Pending : DebtStatus.Active;
+    const counterpartyLinked = body.iAmCreditor
+      ? debtorUserId != null
+      : creditorUserId != null;
+    const status = counterpartyLinked ? DebtStatus.Pending : DebtStatus.Active;
 
     const debt = await this.debtRepo.create({
       creatorUserId,
       debtorUserId,
       creditorUserId,
-      debtorName: body.debtorName,
-      creditorName: body.creditorName,
+      debtorName,
+      creditorName,
       amount: body.amount,
       currency: body.currency,
       lentDate: body.lentDate ? new Date(body.lentDate) : null,
@@ -125,14 +171,15 @@ export class DebtsApiService {
     });
 
     if (linkedUserTelegramId && debt.status === DebtStatus.Pending) {
-      const debtorName = body.debtorName || body.creditorName || "—";
-      const debtDesc = `${debtorName} — ${body.amount} ${body.currency}`;
-      const msg = `${creatorDisplayName} создал(а) запись о долге: ${debtDesc}. Подтвердите или отклоните.`;
-      const kb = new InlineKeyboard()
-        .text("Подтвердить", `debt_confirm:${debt.id}`)
-        .text("Отклонить", `debt_reject:${debt.id}`);
+      const counterpartyLabel = body.iAmCreditor ? debtorName : creditorName;
+      const debtDesc = `${counterpartyLabel || "—"} — ${body.amount} ${body.currency}`;
       try {
-        await this.telegram.sendMessage(linkedUserTelegramId, msg, { reply_markup: kb });
+        await this.notifyCounterpartyDebtPending(linkedUserTelegramId, {
+          creatorDisplayName,
+          debtDesc,
+          debtId: debt.id,
+          source: "create",
+        });
       } catch (err) {
         console.error("Failed to send debt notification:", err);
       }
@@ -159,6 +206,8 @@ export class DebtsApiService {
     if (updates.creditorName !== undefined) toUpdate.creditorName = updates.creditorName;
 
     let linkedUserTelegramIdForNotify: number | undefined;
+    /** Уведомление уходит должнику (кредитор привязал @username должника). */
+    let pendingLinkNotifyToDebtor: boolean | null = null;
 
     if (updates.debtorUsername !== undefined) {
       const resolvedDebtor = await this.resolveUsernameToUser(updates.debtorUsername);
@@ -171,6 +220,7 @@ export class DebtsApiService {
         if (isNewLink) {
           toUpdate.status = DebtStatus.Pending;
           linkedUserTelegramIdForNotify = resolvedDebtor.telegramId;
+          pendingLinkNotifyToDebtor = true;
         }
       } else {
         toUpdate.debtorUserId = null;
@@ -189,12 +239,30 @@ export class DebtsApiService {
           toUpdate.status = DebtStatus.Pending;
           linkedUserTelegramIdForNotify = resolvedCreditor.telegramId;
           toUpdate.mainUserId = resolved.userId;
+          pendingLinkNotifyToDebtor = false;
         }
       } else {
         toUpdate.creditorUserId = null;
         toUpdate.mainUserId = resolved.userId;
         toUpdate.status = DebtStatus.Active;
       }
+    }
+
+    if (
+      linkedUserTelegramIdForNotify &&
+      pendingLinkNotifyToDebtor === true &&
+      !debt.creditorName?.trim() &&
+      (toUpdate.creditorName === undefined || !String(toUpdate.creditorName).trim())
+    ) {
+      toUpdate.creditorName = resolved.creatorDisplayName;
+    }
+    if (
+      linkedUserTelegramIdForNotify &&
+      pendingLinkNotifyToDebtor === false &&
+      !debt.debtorName?.trim() &&
+      (toUpdate.debtorName === undefined || !String(toUpdate.debtorName).trim())
+    ) {
+      toUpdate.debtorName = resolved.creatorDisplayName;
     }
     if (updates.amount !== undefined) toUpdate.amount = updates.amount;
     if (updates.currency !== undefined) toUpdate.currency = updates.currency;
@@ -213,18 +281,19 @@ export class DebtsApiService {
 
     if (linkedUserTelegramIdForNotify && updated?.status === DebtStatus.Pending) {
       const creatorDisplayName = resolved.creatorDisplayName;
-      const debtorName = updates.debtorName ?? debt.debtorName;
-      const creditorName = updates.creditorName ?? debt.creditorName;
+      const effDebtor = String(toUpdate.debtorName ?? debt.debtorName ?? "").trim();
+      const effCreditor = String(toUpdate.creditorName ?? debt.creditorName ?? "").trim();
       const amount = updates.amount ?? Number(debt.amount);
       const currency = updates.currency ?? debt.currency;
-      const debtDesc = `${debtorName || creditorName || "—"} — ${amount} ${currency}`;
-      const msg = `${creatorDisplayName} привязал(а) вас к долгу: ${debtDesc}. Подтвердите или отклоните.`;
-      const kb = new InlineKeyboard()
-        .text("Подтвердить", `debt_confirm:${id}`)
-        .text("Отклонить", `debt_reject:${id}`);
+      const counterpartyLabel =
+        pendingLinkNotifyToDebtor === true ? effCreditor : effDebtor;
+      const debtDesc = `${counterpartyLabel || "—"} — ${amount} ${currency}`;
       try {
-        await this.telegram.sendMessage(linkedUserTelegramIdForNotify, msg, {
-          reply_markup: kb,
+        await this.notifyCounterpartyDebtPending(linkedUserTelegramIdForNotify, {
+          creatorDisplayName,
+          debtDesc,
+          debtId: id,
+          source: "link",
         });
       } catch (err) {
         console.error("Failed to send debt notification:", err);
