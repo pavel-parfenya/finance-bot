@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Post, Query, UseGuards } from "@nestjs/common";
 import { TelegramInitDataGuard } from "../telegram/telegram-init-data.guard";
 import { TelegramUser } from "../telegram/telegram-user.decorator";
 import type { ResolvedTelegramUser } from "../telegram/telegram-auth.types";
@@ -8,6 +8,23 @@ import { AdminApiService } from "./admin-api.service";
 @UseGuards(TelegramInitDataGuard)
 export class AdminController {
   constructor(private readonly adminApi: AdminApiService) {}
+
+  @Get("telegram-users")
+  async telegramUsers(@TelegramUser() user: ResolvedTelegramUser) {
+    return this.adminApi.listTelegramUsers(user);
+  }
+
+  @Post("send-telegram-message")
+  async sendTelegramMessage(
+    @TelegramUser() user: ResolvedTelegramUser,
+    @Body() body: { userId?: number; text?: string }
+  ) {
+    return this.adminApi.sendTelegramMessageAsBot(
+      user,
+      body.userId ?? 0,
+      typeof body.text === "string" ? body.text : ""
+    );
+  }
 
   @Get("app-user-stats")
   async appUserStats(

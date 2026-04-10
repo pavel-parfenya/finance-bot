@@ -1,0 +1,77 @@
+.admin-send-page {
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-send-hint {
+  margin: 0 0 6px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--tg-theme-hint-color, #8e8e93);
+}
+
+.admin-send-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tg-theme-text-color);
+}
+
+.admin-send-select {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 15px;
+  border-radius: var(--radius, 10px);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: var(--tg-theme-bg-color, #fff);
+  color: var(--tg-theme-text-color);
+}
+
+.admin-send-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 15px;
+  line-height: 1.4;
+  border-radius: var(--radius, 10px);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: var(--tg-theme-bg-color, #fff);
+  color: var(--tg-theme-text-color);
+  resize: vertical;
+  min-height: 120px;
+  box-sizing: border-box;
+}
+
+.admin-send-error {
+  font-size: 13px;
+  color: #e53935;
+  line-height: 1.35;
+}
+
+.admin-send-success {
+  font-size: 13px;
+  color: var(--tg-theme-button-color, #3390ec);
+  line-height: 1.35;
+}
+
+.admin-send-submit {
+  margin-top: 6px;
+  padding: 14px 18px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius, 10px);
+  background: var(--tg-theme-button-color, #3390ec);
+  color: var(--tg-theme-button-text-color, #fff);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.admin-send-submit:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+.admin-send-submit:active:not(:disabled) {
+  opacity: 0.9;
+}

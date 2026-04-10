@@ -34,6 +34,11 @@ export class UserService {
     return this.repo.findOneBy({ id });
   }
 
+  /** Список пользователей для админки (селект получателей и т.п.). */
+  async findAllOrderedById(): Promise<User[]> {
+    return this.repo.find({ order: { id: "ASC" } });
+  }
+
   async findAllWithAnalyticsReminderEod(): Promise<User[]> {
     return this.repo.find({ where: { analyticsReminderEod: true } });
   }

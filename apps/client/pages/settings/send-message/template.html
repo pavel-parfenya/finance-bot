@@ -1,0 +1,41 @@
+<div v-if="allowed" class="admin-send-page">
+  <p class="admin-send-hint">
+    Сообщение уйдёт в личный чат с ботом у выбранного пользователя (как обычное сообщение от бота).
+  </p>
+  <div v-if="loadError" class="admin-send-error">{{ loadError }}</div>
+  <template v-else-if="loaded">
+    <label class="admin-send-label" for="admin-send-user">Пользователь</label>
+    <select
+      id="admin-send-user"
+      v-model="selectedUserId"
+      class="admin-send-select"
+    >
+      <option value="">— Выберите —</option>
+      <option v-for="u in users" :key="u.userId" :value="String(u.userId)">
+        {{ u.displayName }}
+      </option>
+    </select>
+
+    <label class="admin-send-label" for="admin-send-text">Текст сообщения</label>
+    <textarea
+      id="admin-send-text"
+      v-model="messageText"
+      class="admin-send-textarea"
+      rows="6"
+      maxlength="4096"
+      placeholder="Текст до 4096 символов"
+    />
+
+    <div v-if="submitError" class="admin-send-error">{{ submitError }}</div>
+    <div v-if="sentOk" class="admin-send-success">Сообщение отправлено.</div>
+
+    <button
+      type="button"
+      class="admin-send-submit"
+      :disabled="sending"
+      @click="submit"
+    >
+      {{ sending ? "Отправка…" : "Отправить" }}
+    </button>
+  </template>
+</div>

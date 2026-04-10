@@ -15,5 +15,12 @@
       <jdbc-url>jdbc:postgresql://dpg-d6q4opkr85hc73c37hdg-a.singapore-postgres.render.com:5432/finance_bot_mig4</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
+    <data-source source="LOCAL" name="contentbot@localhost" uuid="c08e39a7-37d4-4bc8-89e2-5316f5607f24">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://localhost:5432/contentbot</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>

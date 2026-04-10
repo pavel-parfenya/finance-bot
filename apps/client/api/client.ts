@@ -7,6 +7,7 @@ import type {
   WorkspaceInfo,
   UserSettings,
   AppUserStatsResponse,
+  AdminTelegramUserOption,
   DebtDto,
   DebtCreateRequest,
   DebtUpdateRequest,
@@ -146,6 +147,40 @@ export async function fetchUserSettings(): Promise<UserSettings> {
   return res.json();
 }
 
+function adminApiErrorMessage(data: Record<string, unknown>, status: number): string {
+  const message = typeof data["message"] === "string" ? data["message"] : null;
+  const nested =
+    data["error"] && typeof data["error"] === "object" && data["error"] !== null
+      ? (data["error"] as { error?: string }).error
+      : null;
+  const flat = typeof data["error"] === "string" ? data["error"] : null;
+  return flat ?? nested ?? message ?? `Ошибка ${String(status)}`;
+}
+
+export async function fetchAdminTelegramUsers(): Promise<{
+  users?: AdminTelegramUserOption[];
+  error?: string;
+}> {
+  const res = await fetch(`${BASE}/api/admin/telegram-users`, { headers: headers() });
+  const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+  if (!res.ok) {
+    return { error: adminApiErrorMessage(data, res.status) };
+  }
+  return data as { users: AdminTelegramUserOption[] };
+}
+
+export async function sendAdminTelegramMessage(
+  userId: number,
+  text: string
+): Promise<{ ok?: boolean; error?: string }> {
+  const res = await fetch(`${BASE}/api/admin/send-telegram-message`, {
+    method: "POST",
+    headers: { ...headers(), "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, text }),
+  });
+  return res.json();
+}
+
 export async function fetchAppUserStats(
   from: string,
   to: string
@@ -156,14 +191,7 @@ export async function fetchAppUserStats(
   });
   const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
   if (!res.ok) {
-    const message = typeof data["message"] === "string" ? data["message"] : null;
-    const nested =
-      data["error"] && typeof data["error"] === "object" && data["error"] !== null
-        ? (data["error"] as { error?: string }).error
-        : null;
-    const flat = typeof data["error"] === "string" ? data["error"] : null;
-    const msg = flat ?? nested ?? message ?? `Ошибка ${String(res.status)}`;
-    return { error: msg };
+    return { error: adminApiErrorMessage(data, res.status) };
   }
   return data as AppUserStatsResponse;
 }
