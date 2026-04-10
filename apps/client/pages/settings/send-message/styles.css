@@ -12,6 +12,24 @@
   color: var(--tg-theme-hint-color, #8e8e93);
 }
 
+.admin-send-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--tg-theme-text-color);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.admin-send-check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--tg-theme-button-color, #3390ec);
+}
+
 .admin-send-label {
   font-size: 13px;
   font-weight: 600;
@@ -46,6 +64,28 @@
   font-size: 13px;
   color: #e53935;
   line-height: 1.35;
+}
+
+.admin-send-undelivered {
+  padding: 10px 12px;
+  border-radius: var(--radius, 10px);
+  background: var(--tg-theme-secondary-bg-color, #f0f2f5);
+  border: 1px solid rgba(229, 57, 53, 0.25);
+}
+
+.admin-send-undelivered-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tg-theme-text-color);
+  margin-bottom: 6px;
+}
+
+.admin-send-undelivered-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--tg-theme-hint-color, #65676b);
 }
 
 .admin-send-success {

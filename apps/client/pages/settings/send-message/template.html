@@ -1,14 +1,23 @@
 <div v-if="allowed" class="admin-send-page">
-  <p class="admin-send-hint">
+  <p v-if="!sendToAll" class="admin-send-hint">
     Сообщение уйдёт в личный чат с ботом у выбранного пользователя (как обычное сообщение от бота).
+  </p>
+  <p v-else class="admin-send-hint">
+    Одно и то же сообщение уйдёт в личный чат с ботом каждому пользователю из базы (если кому-то бот не может написать — это попадёт в счётчик «не доставлено»).
   </p>
   <div v-if="loadError" class="admin-send-error">{{ loadError }}</div>
   <template v-else-if="loaded">
+    <label class="admin-send-check">
+      <input v-model="sendToAll" type="checkbox" />
+      <span>Отправить всем</span>
+    </label>
+
     <label class="admin-send-label" for="admin-send-user">Пользователь</label>
     <select
       id="admin-send-user"
       v-model="selectedUserId"
       class="admin-send-select"
+      :disabled="sendToAll"
     >
       <option value="">— Выберите —</option>
       <option v-for="u in users" :key="u.userId" :value="String(u.userId)">
@@ -27,7 +36,16 @@
     />
 
     <div v-if="submitError" class="admin-send-error">{{ submitError }}</div>
-    <div v-if="sentOk" class="admin-send-success">Сообщение отправлено.</div>
+    <div v-if="undeliveredList.length" class="admin-send-undelivered">
+      <div class="admin-send-undelivered-title">Не доставлено (в архив бота):</div>
+      <ul class="admin-send-undelivered-list">
+        <li v-for="u in undeliveredList" :key="u.userId">{{ u.displayName }}</li>
+      </ul>
+    </div>
+    <div v-if="sentOk" class="admin-send-success">
+      <template v-if="sentSummary">{{ sentSummary }}</template>
+      <template v-else>Сообщение отправлено.</template>
+    </div>
 
     <button
       type="button"

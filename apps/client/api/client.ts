@@ -8,6 +8,7 @@ import type {
   UserSettings,
   AppUserStatsResponse,
   AdminTelegramUserOption,
+  AdminUndeliveredRecipient,
   DebtDto,
   DebtCreateRequest,
   DebtUpdateRequest,
@@ -169,14 +170,21 @@ export async function fetchAdminTelegramUsers(): Promise<{
   return data as { users: AdminTelegramUserOption[] };
 }
 
-export async function sendAdminTelegramMessage(
-  userId: number,
-  text: string
-): Promise<{ ok?: boolean; error?: string }> {
+export async function sendAdminTelegramMessage(body: {
+  text: string;
+  sendToAll?: boolean;
+  userId?: number;
+}): Promise<{
+  ok?: boolean;
+  error?: string;
+  sent?: number;
+  failed?: number;
+  undelivered?: AdminUndeliveredRecipient[];
+}> {
   const res = await fetch(`${BASE}/api/admin/send-telegram-message`, {
     method: "POST",
     headers: { ...headers(), "Content-Type": "application/json" },
-    body: JSON.stringify({ userId, text }),
+    body: JSON.stringify(body),
   });
   return res.json();
 }

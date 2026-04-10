@@ -17,13 +17,13 @@ export class AdminController {
   @Post("send-telegram-message")
   async sendTelegramMessage(
     @TelegramUser() user: ResolvedTelegramUser,
-    @Body() body: { userId?: number; text?: string }
+    @Body() body: { userId?: number; text?: string; sendToAll?: boolean }
   ) {
-    return this.adminApi.sendTelegramMessageAsBot(
-      user,
-      body.userId ?? 0,
-      typeof body.text === "string" ? body.text : ""
-    );
+    return this.adminApi.sendTelegramMessageAsBot(user, {
+      text: typeof body.text === "string" ? body.text : "",
+      sendToAll: body.sendToAll === true,
+      targetUserId: body.userId,
+    });
   }
 
   @Get("app-user-stats")
