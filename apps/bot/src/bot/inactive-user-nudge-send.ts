@@ -23,7 +23,8 @@ export interface InactiveUserNudgeDeps {
 
 /**
  * Последний день месяца ~20:00 локали: напоминание неактивным (всегда, без настройки).
- * При блокировке бота — пользователь помечается archived.
+ * При блокировке бота пользователь помечается archived (для метрик и отключения рассылок).
+ * Вернулся в чат — findOrCreate снимает архив.
  */
 export async function sendInactiveUserMonthNudgeIfDue(
   userId: number,

@@ -17,6 +17,7 @@ import type {
 } from "@finance-bot/server-core";
 import { sendInactiveUserMonthNudgeIfDue } from "./inactive-user-nudge-send";
 import type { Bot } from "grammy";
+import { userQualifiesForInactiveMonthNudge } from "@finance-bot/server-core";
 
 const DELAY_BETWEEN_USERS_MS = 500;
 
@@ -47,6 +48,12 @@ export function startAnalyticsCron(deps: AnalyticsCronDeps): void {
         const localYmd = format(zoned, "yyyy-MM-dd");
         const ym = format(zoned, "yyyy-MM");
         const tgId = Number(user.telegramId);
+
+        if (
+          await userQualifiesForInactiveMonthNudge(user.id, deps.transactionRepo, utcNow)
+        ) {
+          continue;
+        }
 
         if (
           user.analyticsReminderEod &&

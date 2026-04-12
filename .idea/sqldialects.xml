@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="SqlDialectMappings">
+    <file url="file://$PROJECT_DIR$/apps/api/scripts/enable-all-user-analytics-notifications.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/apps/api/scripts/migrate-app-user-stats-snapshots.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/apps/api/scripts/migrate-user-analytics-split.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/apps/api/scripts/migrate-user-archived-nudge.sql" dialect="PostgreSQL" />

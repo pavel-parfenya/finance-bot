@@ -2,6 +2,11 @@ import { InlineKeyboard } from "grammy";
 import { Context } from "grammy";
 import { BotDeps } from "../bot";
 import { CURRENCIES } from "@finance-bot/shared";
+import { resolveUser } from "../utils";
+import {
+  createAnalyticsOnboardingKeyboard,
+  getAnalyticsOnboardingMessageText,
+} from "./analytics-onboard-handler";
 
 export const SET_CURRENCY_PREFIX = "set_currency:";
 
@@ -22,11 +27,13 @@ export function createCurrencyHandler(deps: BotDeps) {
     const currency = data.slice(SET_CURRENCY_PREFIX.length);
     if (!(CURRENCIES as readonly string[]).includes(currency)) return;
 
-    const user = await deps.userService.findOneByTelegramId(ctx.from?.id ?? 0);
+    const user = await resolveUser(ctx, deps.userService);
     if (!user) {
       await ctx.answerCallbackQuery({ text: "Ошибка: пользователь не найден." });
       return;
     }
+
+    const isFirstCurrencyChoice = !user.defaultCurrency?.trim();
 
     await deps.userService.setDefaultCurrency(user.id, currency);
     await ctx.answerCallbackQuery({ text: `Валюта по умолчанию: ${currency}` });
@@ -41,6 +48,16 @@ export function createCurrencyHandler(deps: BotDeps) {
         });
       } catch {
         // Сообщение могло быть уже отредактировано
+      }
+    }
+
+    if (isFirstCurrencyChoice) {
+      try {
+        await ctx.reply(getAnalyticsOnboardingMessageText(), {
+          reply_markup: createAnalyticsOnboardingKeyboard(),
+        });
+      } catch (err) {
+        console.error("analytics onboarding reply:", err);
       }
     }
   };

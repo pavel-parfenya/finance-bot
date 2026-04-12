@@ -1,6 +1,6 @@
 import { Context } from "grammy";
 import { BotDeps } from "../bot";
-import { getUserDisplayName } from "../utils";
+import { getUserDisplayName, resolveUser } from "../utils";
 import { ExpenseCategory } from "@finance-bot/server-core";
 
 export function createDebtCallbackHandler(deps: BotDeps) {
@@ -14,7 +14,7 @@ export function createDebtCallbackHandler(deps: BotDeps) {
     )
       return;
 
-    const user = await deps.userService.findOneByTelegramId(ctx.from?.id ?? 0);
+    const user = await resolveUser(ctx, deps.userService);
     if (!user) {
       await ctx.answerCallbackQuery({ text: "Пользователь не найден." });
       return;

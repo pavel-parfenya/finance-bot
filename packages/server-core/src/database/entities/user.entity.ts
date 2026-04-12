@@ -69,7 +69,11 @@ export class User {
   @Column({ type: "varchar", length: 20, default: "official" })
   analyticsVoice: string;
 
-  /** Пользователь заблокировал бота — не слать сообщения. */
+  /**
+   * Метка для статистики (недоставка / блок): не слать рассылки аналитики.
+   * С ботом и приложением пользователь не ограничен — при следующем сообщении
+   * findOrCreate снимает архив.
+   */
   @Column({ type: "boolean", default: false })
   archived: boolean;
 

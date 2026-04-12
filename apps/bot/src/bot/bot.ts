@@ -25,6 +25,7 @@ import { createCancelExpenseHandler } from "./handlers/cancel-expense-handler";
 import { createCurrencyHandler, SET_CURRENCY_PREFIX } from "./handlers/currency-handler";
 import { createInviteHandler } from "./handlers/invite-handler";
 import { createDebtCallbackHandler } from "./handlers/debt-handler";
+import { createAnalyticsOnboardHandler } from "./handlers/analytics-onboard-handler";
 import {
   createTestAnalyticsHandler,
   createTestReminderEodHandler,
@@ -75,6 +76,7 @@ export function createBot(token: string, depsWithoutBot: BotDeps): Bot {
     /^debt_(confirm|reject|repaid_add|repaid_skip):/,
     createDebtCallbackHandler(deps)
   );
+  bot.callbackQuery(/^analytics_onboard:/, createAnalyticsOnboardHandler(deps));
 
   bot.on("message:text", createTextHandler(deps));
 

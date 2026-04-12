@@ -54,6 +54,7 @@ export function createVoiceHandler(deps: BotDeps) {
         {
           debtParser: deps.debtParser,
           expenseService: deps.expenseService,
+          purchaseAdviceParser: deps.purchaseAdviceParser,
         },
         customCategories
       );
