@@ -3,6 +3,7 @@ import { BotDeps } from "../bot";
 import { resolveUser, getUserDisplayName } from "../utils";
 import { parseMessage } from "../message-router";
 import { handleParsedMessage } from "./message-handler";
+import { checkRateLimit } from "../rate-limiter";
 
 const INVALID_REPLY =
   "Не удалось внести данные: информация невалидная (указана нулевая сумма или не распознано описание).";
@@ -14,6 +15,11 @@ export function createVoiceHandler(deps: BotDeps) {
 
     const user = await resolveUser(ctx, deps.userService);
     if (!user) return;
+
+    if (!checkRateLimit(user.telegramId)) {
+      await ctx.reply("Слишком много сообщений. Подождите немного и попробуйте снова.");
+      return;
+    }
 
     await ctx.reply("Распознаю голосовое сообщение...");
 
