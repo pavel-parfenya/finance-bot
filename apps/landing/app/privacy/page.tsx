@@ -53,7 +53,6 @@ export default async function PrivacyPage() {
       <Section title="2. Как мы используем данные">
         <ul className="list-disc pl-5 space-y-1 mt-2">
           <li>Предоставление сервиса: хранение транзакций, аналитика.</li>
-          <li>Синхронизация с Google Sheets (если вы её подключили).</li>
           <li>Уведомления через бот (аналитика, напоминания — с вашего согласия).</li>
         </ul>
       </Section>
@@ -65,7 +64,6 @@ export default async function PrivacyPage() {
         </p>
         <ul className="list-disc pl-5 space-y-1 mt-2">
           <li>Groq / OpenAI — распознавание голоса (текст передаётся без идентификаторов).</li>
-          <li>Google — если подключена Google Sheets.</li>
           <li>WebPay — обработка платежей.</li>
         </ul>
       </Section>

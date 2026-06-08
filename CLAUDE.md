@@ -49,7 +49,7 @@ apps/client              # Nuxt 3 Telegram Mini App (SSG, served by API)
 All domain logic, services, infrastructure implementations, and the TypeORM `DataSource` live here. Both `apps/api` and `apps/bot` import from it.
 
 - `domain/` — interfaces and models (zero external dependencies)
-- `infrastructure/` — DeepSeek (LLM parsing), Whisper (STT), Google Sheets
+- `infrastructure/` — DeepSeek (LLM parsing), Whisper (STT)
 - `services/` — application services: `UserService`, `WorkspaceService`, `ExpenseService`, `DebtService`, `AnalyticsInsightService`, `AppStatsService`, etc.
 - `repositories/` — TypeORM repositories (`TransactionRepository`, `DebtRepository`, etc.)
 - `database/` — TypeORM `DataSource` factory + entities; `synchronize: false` (schema is managed manually)

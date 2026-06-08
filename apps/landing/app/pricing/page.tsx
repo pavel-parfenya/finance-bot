@@ -15,7 +15,7 @@ const FALLBACK_PLANS: CmsPricingPlan[] = [
     price: 0,
     period: null,
     description: "Для старта",
-    features: ["Текстовый ввод трат", "Базовая аналитика", "Google Sheets", "1 пространство"],
+    features: ["Текстовый ввод трат", "Базовая аналитика", "1 пространство"],
     isPopular: false,
     ctaText: "Начать бесплатно",
     sortOrder: 0,

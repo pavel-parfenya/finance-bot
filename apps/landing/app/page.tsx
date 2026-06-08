@@ -26,11 +26,6 @@ const DEFAULT_FEATURES: CmsFeature[] = [
     description: "Семья или партнёры — одно пространство для всех.",
   },
   {
-    icon: "🔄",
-    title: "Google Sheets",
-    description: "Все данные автоматически попадают в вашу таблицу.",
-  },
-  {
     icon: "🌍",
     title: "Любая валюта",
     description: "BYN, USD, EUR, RUB и ещё 5 валют с автоконвертацией.",
@@ -92,8 +87,23 @@ export default async function HomePage() {
     page?.ctaSubtitle ?? "Бесплатный тариф доступен без регистрации";
   const ctaButtonText = page?.ctaButtonText ?? "Открыть в Telegram";
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "[BRAND_NAME]",
+    applicationCategory: "FinanceApplication",
+    operatingSystem: "Telegram",
+    description:
+      "Telegram-бот для учёта финансов с распознаванием голосовых сообщений",
+    url: "https://valentinethebuhgalter.by",
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Hero */}
       <section className="mx-auto max-w-5xl px-6 py-24 text-center">
         <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-1.5 text-sm text-gray-500 mb-8">
