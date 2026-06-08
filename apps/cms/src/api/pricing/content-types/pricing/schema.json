@@ -1,0 +1,45 @@
+{
+  "kind": "collectionType",
+  "collectionName": "pricings",
+  "info": {
+    "singularName": "pricing",
+    "pluralName": "pricings",
+    "displayName": "Pricing",
+    "description": "Тарифные планы"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "price": {
+      "type": "decimal"
+    },
+    "period": {
+      "type": "enumeration",
+      "enum": ["month", "year", "once"],
+      "default": "month"
+    },
+    "description": {
+      "type": "text"
+    },
+    "features": {
+      "type": "json"
+    },
+    "isPopular": {
+      "type": "boolean",
+      "default": false
+    },
+    "ctaText": {
+      "type": "string"
+    },
+    "sortOrder": {
+      "type": "integer",
+      "default": 0
+    }
+  }
+}

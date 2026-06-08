@@ -1,0 +1,58 @@
+{
+  "kind": "singleType",
+  "collectionName": "home_pages",
+  "info": {
+    "singularName": "home-page",
+    "pluralName": "home-pages",
+    "displayName": "Home Page",
+    "description": "Контент главной страницы лендинга"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "heroBadgeText": {
+      "type": "string"
+    },
+    "heroTitle": {
+      "type": "string"
+    },
+    "heroSubtitle": {
+      "type": "text"
+    },
+    "heroPrimaryCtaText": {
+      "type": "string"
+    },
+    "heroSecondaryCtaText": {
+      "type": "string"
+    },
+    "featuresTitle": {
+      "type": "string"
+    },
+    "featuresSubtitle": {
+      "type": "text"
+    },
+    "features": {
+      "type": "json"
+    },
+    "demoMessages": {
+      "type": "json"
+    },
+    "ctaTitle": {
+      "type": "string"
+    },
+    "ctaSubtitle": {
+      "type": "text"
+    },
+    "ctaButtonText": {
+      "type": "string"
+    },
+    "seoTitle": {
+      "type": "string"
+    },
+    "seoDescription": {
+      "type": "text"
+    }
+  }
+}

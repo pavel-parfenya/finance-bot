@@ -1,15 +1,25 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from "typeorm";
 import { User } from "./user.entity";
 
 export enum SubscriptionPlan {
   Free = "free",
-  Pro = "pro",
+  ProMonth = "pro_month",
+  ProYear = "pro_year",
 }
 
 export enum SubscriptionStatus {
   Active = "active",
+  Canceled = "canceled",
   Expired = "expired",
-  Cancelled = "cancelled",
+  PastDue = "past_due",
 }
 
 @Entity("subscriptions")
@@ -27,10 +37,28 @@ export class Subscription {
   status: SubscriptionStatus;
 
   @Column({ type: "timestamptz", nullable: true })
+  startsAt: Date | null;
+
+  @Column({ type: "timestamptz", nullable: true })
   expiresAt: Date | null;
 
   @Column({ type: "varchar", nullable: true })
   paymentId: string | null;
+
+  @Column({ type: "varchar", nullable: true })
+  recurringToken: string | null;
+
+  @Column({ type: "varchar", nullable: true })
+  webpayOrderId: string | null;
+
+  @Column({ type: "varchar", nullable: true })
+  webpayRecurringId: string | null;
+
+  @CreateDateColumn({ type: "timestamptz" })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: "timestamptz" })
+  updatedAt: Date;
 
   @ManyToOne(() => User, (u) => u.subscriptions)
   @JoinColumn({ name: "userId" })

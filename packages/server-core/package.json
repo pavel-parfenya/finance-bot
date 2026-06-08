@@ -6,7 +6,10 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "migrations": "typeorm-ts-node-commonjs -d src/database/data-source.cli.ts migration:run",
+    "migrations:generate": "typeorm-ts-node-commonjs -d src/database/data-source.cli.ts migration:generate src/database/migrations/migration",
+    "migrations:revert": "typeorm-ts-node-commonjs -d src/database/data-source.cli.ts migration:revert"
   },
   "dependencies": {
     "@finance-bot/shared": "*",
@@ -20,6 +23,7 @@
     "typeorm": "^0.3.28"
   },
   "devDependencies": {
+    "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
   }
 }

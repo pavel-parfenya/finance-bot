@@ -34,7 +34,7 @@ export class WorkspaceService {
     return m?.role === WorkspaceRole.Owner;
   }
 
-  /** Возвращает workspace пользователя, создавая «ожидающий» (без таблицы), если нет. */
+  /** Возвращает workspace пользователя, создавая новый если нет. */
   async getOrCreateWorkspaceForUser(userId: number): Promise<Workspace> {
     let workspace = await this.getWorkspaceForUser(userId);
     if (workspace) return workspace;

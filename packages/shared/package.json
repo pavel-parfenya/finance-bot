@@ -1,11 +1,15 @@
 {
   "name": "@finance-bot/shared",
   "version": "1.0.0",
-  "description": "Shared types, constants and utilities for finance-bot",
+  "description": "Shared types, constants and utilities for finance-bot (re-exports shared-types + shared-utils)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc"
+  },
+  "dependencies": {
+    "@finance-bot/shared-types": "*",
+    "@finance-bot/shared-utils": "*"
   },
   "devDependencies": {
     "typescript": "^5.7.3"

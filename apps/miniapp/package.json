@@ -1,0 +1,22 @@
+{
+  "name": "apps-miniapp",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev --dotenv ../../.env",
+    "build": "nuxt generate --dotenv ../../.env",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@finance-bot/shared": "*",
+    "chart.js": "^4.4.6",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "nuxt": "3.8.0",
+    "nuxi": "3.10.0",
+    "typescript": "^5.7.3"
+  }
+}
