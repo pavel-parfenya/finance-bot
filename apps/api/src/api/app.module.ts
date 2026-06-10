@@ -1,5 +1,6 @@
 import { Global, Module } from "@nestjs/common";
 import {
+  config,
   requireEnv,
   UserService,
   WorkspaceService,
@@ -8,6 +9,9 @@ import {
   InvitationRepository,
   DebtRepository,
   AppStatsService,
+  SubscriptionService,
+  BillingTokenService,
+  FeatureService,
 } from "@finance-bot/server-core";
 import { getApiContainer } from "../di/api-container.context";
 import { HttpTelegramOutboundAdapter } from "../di/http-telegram-outbound.adapter";
@@ -20,6 +24,8 @@ import { WorkspaceModule } from "./workspace/workspace.module";
 import { UserModule } from "./user/user.module";
 import { DebtsModule } from "./debts/debts.module";
 import { AdminModule } from "./admin/admin.module";
+import { BillingModule } from "./billing/billing.module";
+import { SubscriptionModule } from "./subscription/subscription.module";
 import { AppStatsSnapshotScheduler } from "./app-stats-snapshot.scheduler";
 
 @Global()
@@ -31,6 +37,8 @@ import { AppStatsSnapshotScheduler } from "./app-stats-snapshot.scheduler";
     UserModule,
     DebtsModule,
     AdminModule,
+    // Billing/подписка (/api/billing/*, /api/subscription) — только в paid-режиме.
+    ...(config.paymentMode === "paid" ? [BillingModule, SubscriptionModule] : []),
   ],
   providers: [
     { provide: UserService, useFactory: () => getApiContainer().userService },
@@ -52,6 +60,18 @@ import { AppStatsSnapshotScheduler } from "./app-stats-snapshot.scheduler";
       provide: AppStatsService,
       useFactory: () => getApiContainer().appStatsService,
     },
+    {
+      provide: SubscriptionService,
+      useFactory: () => getApiContainer().subscriptionService,
+    },
+    {
+      provide: BillingTokenService,
+      useFactory: () => getApiContainer().billingTokenService,
+    },
+    {
+      provide: FeatureService,
+      useFactory: () => getApiContainer().featureService,
+    },
     { provide: BOT_TOKEN, useFactory: () => requireEnv("TELEGRAM_BOT_TOKEN") },
     { provide: TELEGRAM_OUTBOUND, useClass: HttpTelegramOutboundAdapter },
     TelegramAuthService,
@@ -66,6 +86,9 @@ import { AppStatsSnapshotScheduler } from "./app-stats-snapshot.scheduler";
     DebtRepository,
     CustomCategoryService,
     AppStatsService,
+    SubscriptionService,
+    BillingTokenService,
+    FeatureService,
     BOT_TOKEN,
     TELEGRAM_OUTBOUND,
     TelegramAuthService,

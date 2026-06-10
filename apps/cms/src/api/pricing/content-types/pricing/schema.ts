@@ -16,6 +16,10 @@ const schema = {
       type: "string" as const,
       required: true,
     },
+    planId: {
+      type: "enumeration" as const,
+      enum: ["free", "pro_month", "pro_year"],
+    },
     price: {
       type: "decimal" as const,
     },
@@ -29,6 +33,12 @@ const schema = {
     },
     features: {
       type: "json" as const,
+    },
+    planFeatures: {
+      type: "relation" as const,
+      relation: "manyToMany" as const,
+      target: "api::feature.feature" as const,
+      inversedBy: "pricings",
     },
     isPopular: {
       type: "boolean" as const,

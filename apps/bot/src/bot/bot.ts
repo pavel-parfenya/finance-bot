@@ -15,6 +15,7 @@ import type {
   DeepSeekWeeklyForecast,
   DeepSeekInactiveUserNudge,
   CustomCategoryService,
+  FeatureService,
 } from "@finance-bot/server-core";
 import { createStartHandler } from "./handlers/start-handler";
 import { createHelpHandler } from "./handlers/help-handler";
@@ -49,6 +50,7 @@ export interface BotDeps {
   weeklyForecastGenerator?: DeepSeekWeeklyForecast;
   inactiveUserNudgeGenerator?: DeepSeekInactiveUserNudge;
   customCategoryService: CustomCategoryService;
+  featureService: FeatureService;
   /** URL Telegram Mini App для просмотра расходов */
   miniAppUrl: string;
   /** Добавляется в createBot */
@@ -62,6 +64,7 @@ export function createBot(token: string, depsWithoutBot: BotDeps): Bot {
   bot.command("start", createStartHandler(deps));
   bot.command("help", createHelpHandler(deps));
   bot.command("app", createAppHandler(deps));
+  // Управление подпиской перенесено в Mini App (Настройки → Подписка).
   bot.command("test_analytics", createTestAnalyticsHandler(deps));
   bot.command("test_reminder_eod", createTestReminderEodHandler(deps));
   bot.command("test_forecast", createTestForecastHandler(deps));

@@ -87,6 +87,14 @@ A single `.env` file at the repo root is loaded by both apps. Per-app overrides 
 
 PostgreSQL via TypeORM. `synchronize: false` — never auto-syncs schema. Entities: `User`, `Workspace`, `WorkspaceMember`, `Subscription`, `Transaction`, `Invitation`, `Debt`, `CustomCategory`, `AppUserStatsSnapshot`.
 
+**Column naming: camelCase.** There is **no** TypeORM naming strategy, so a column's DB name is exactly the entity property name (e.g. `userId`, `expiresAt`, `startsAt` — not `user_id`/`starts_at`). Because `synchronize: false`, the entity and the actual schema are only kept in sync by hand, so a mismatch silently compiles and only fails at query time (`column "X" does not exist`). Rules:
+
+- New entity columns: keep the property name camelCase and do **not** add `name:` overrides — let the property name be the column name.
+- Migrations that `ADD COLUMN` / `RENAME COLUMN` must quote camelCase identifiers, e.g. `ADD COLUMN "startsAt" TIMESTAMPTZ` (unquoted or snake_case will diverge from the entity). Migrations live in `packages/server-core/src/database/migrations/`; run with `npm run migrations` (`-w @finance-bot/server-core`).
+- After changing an entity, verify the column exists with the same name in every environment before relying on it — the build will not catch the drift.
+
+> Precedent: migration `002_FixSubscriptionColumnNames` renamed snake_case columns added by `001_ExtendSubscriptions` back to camelCase after `SubscriptionService` queries failed with `column Subscription.startsAt does not exist`.
+
 ### Testing
 
 Tests use Vitest. Test files match `packages/**/*.test.ts` or `apps/**/*.test.ts`. The only existing test at the time of this writing is `packages/server-core/src/analytics/aggregate-transactions.test.ts`.

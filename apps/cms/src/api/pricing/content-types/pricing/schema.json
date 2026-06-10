@@ -16,6 +16,10 @@
       "type": "string",
       "required": true
     },
+    "planId": {
+      "type": "enumeration",
+      "enum": ["free", "pro_month", "pro_year"]
+    },
     "price": {
       "type": "decimal"
     },
@@ -29,6 +33,12 @@
     },
     "features": {
       "type": "json"
+    },
+    "planFeatures": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::feature.feature",
+      "inversedBy": "pricings"
     },
     "isPopular": {
       "type": "boolean",

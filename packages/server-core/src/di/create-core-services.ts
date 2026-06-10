@@ -15,6 +15,10 @@ import { PurchaseAdviceService } from "../services/purchase-advice-service";
 import { AppStatsService } from "../services/app-stats-service";
 import { CustomCategoryRepository } from "../repositories/custom-category-repository";
 import { CustomCategoryService } from "../services/custom-category-service";
+import { SubscriptionService } from "../services/subscription-service";
+import { BillingTokenService } from "../services/billing-token-service";
+import { FeatureService } from "../services/feature-service";
+import { StrapiPlanConfig } from "../infrastructure/strapi/strapi-plan-config";
 import { DeepSeekPurchaseAdviceParser } from "../infrastructure/deepseek/deepseek-purchase-advice";
 import { DeepSeekMonthlyReport } from "../infrastructure/deepseek/deepseek-monthly-report";
 import { DeepSeekEndOfDayReminder } from "../infrastructure/deepseek/deepseek-end-of-day-reminder";
@@ -40,6 +44,9 @@ export interface CoreServices {
   appStatsService: AppStatsService;
   customCategoryRepo: CustomCategoryRepository;
   customCategoryService: CustomCategoryService;
+  subscriptionService: SubscriptionService;
+  billingTokenService: BillingTokenService;
+  featureService: FeatureService;
 }
 
 /** Все зависимости бота кроме экземпляра Grammу `Bot`. */
@@ -73,6 +80,14 @@ export function createCoreServices(config: Config, dataSource: DataSource): Core
   const appStatsService = new AppStatsService(dataSource);
   const customCategoryRepo = new CustomCategoryRepository(dataSource);
   const customCategoryService = new CustomCategoryService(customCategoryRepo);
+  const subscriptionService = new SubscriptionService(dataSource);
+  const billingTokenService = new BillingTokenService(config.billing.jwtSecret);
+  const strapiPlanConfig = new StrapiPlanConfig(config.strapiApiUrl);
+  const featureService = new FeatureService(
+    config.paymentMode,
+    subscriptionService,
+    strapiPlanConfig
+  );
 
   return {
     userService,
@@ -93,5 +108,8 @@ export function createCoreServices(config: Config, dataSource: DataSource): Core
     appStatsService,
     customCategoryRepo,
     customCategoryService,
+    subscriptionService,
+    billingTokenService,
+    featureService,
   };
 }

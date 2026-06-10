@@ -1,7 +1,12 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { InlineKeyboard } from "grammy";
 import type { DebtCreateRequest, DebtDto, DebtUpdateRequest } from "@finance-bot/shared";
-import { DebtStatus, DebtRepository, UserService } from "@finance-bot/server-core";
+import {
+  DebtStatus,
+  DebtRepository,
+  UserService,
+  FeatureService,
+} from "@finance-bot/server-core";
 import { TELEGRAM_OUTBOUND } from "../tokens";
 import type { TelegramOutboundPort } from "../../di/telegram-outbound.port";
 import type { ResolvedTelegramUser } from "../telegram/telegram-auth.types";
@@ -11,6 +16,7 @@ export class DebtsApiService {
   constructor(
     private readonly debtRepo: DebtRepository,
     private readonly userService: UserService,
+    private readonly featureService: FeatureService,
     @Inject(TELEGRAM_OUTBOUND) private readonly telegram: TelegramOutboundPort
   ) {}
 
@@ -111,6 +117,12 @@ export class DebtsApiService {
   }
 
   async create(resolved: ResolvedTelegramUser, body: DebtCreateRequest) {
+    if (!(await this.featureService.hasFeature(resolved.userId, "debts"))) {
+      return {
+        error:
+          "Учёт долгов доступен на платном тарифе. Оформите подписку в разделе «Подписка».",
+      };
+    }
     const creatorUserId = resolved.userId;
     const creatorDisplayName = resolved.creatorDisplayName;
     let debtorName = body.debtorName?.trim() ?? "";

@@ -20,6 +20,13 @@ export { InvitationRepository } from "./repositories/invitation-repository";
 export { DebtRepository } from "./repositories/debt-repository";
 export { UserService, DEFAULT_ANALYTICS_TIMEZONE } from "./services/user-service";
 export { WorkspaceService } from "./services/workspace-service";
+export { SubscriptionService } from "./services/subscription-service";
+export { FeatureService } from "./services/feature-service";
+export { StrapiPlanConfig } from "./infrastructure/strapi/strapi-plan-config";
+export {
+  BillingTokenService,
+  type BillingTokenPayload,
+} from "./services/billing-token-service";
 export { CustomCategoryService } from "./services/custom-category-service";
 export { AnalyticsInsightService } from "./services/analytics-insight-service";
 export { ExpenseService } from "./services/expense-service";

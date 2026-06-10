@@ -17,12 +17,14 @@
     "google-auth-library": "^9.15.1",
     "google-spreadsheet": "^4.1.4",
     "googleapis": "^171.4.0",
+    "jsonwebtoken": "^9.0.2",
     "openai": "^4.85.4",
     "pg": "^8.20.0",
     "reflect-metadata": "^0.2.2",
     "typeorm": "^0.3.28"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.7",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
   }

@@ -52,26 +52,36 @@ const FAQS = [
 const PRICING_PLANS = [
   {
     name: "Free",
+    planId: "free",
     price: 0,
     period: null,
     description: "Для старта",
     features: ["Текстовый ввод трат", "Базовая аналитика", "1 пространство"],
+    featureKeys: [],
     isPopular: false,
     ctaText: "Начать бесплатно",
     sortOrder: 0,
   },
   {
     name: "Pro",
+    planId: "pro_month",
     price: null,
     period: "month",
     description: "Для тех, кто ценит время",
     features: [
       "Всё из Free",
       "Голосовые сообщения",
-      "AI-распознавание",
-      "Расширенная аналитика",
+      "Аналитика",
       "Прогнозы трат",
-      "Совместный учёт",
+      "Долги",
+      "Совместный бюджет",
+    ],
+    featureKeys: [
+      "voice_input",
+      "advanced_analytics",
+      "forecasts",
+      "debts",
+      "collaborative",
     ],
     isPopular: true,
     ctaText: "Выбрать Pro",
@@ -79,14 +89,31 @@ const PRICING_PLANS = [
   },
   {
     name: "Pro Year",
+    planId: "pro_year",
     price: null,
     period: "year",
     description: "Выгоднее",
-    features: ["Всё из Pro", "Приоритетная поддержка", "Скидка по сравнению с месячным"],
+    features: ["Всё из Pro", "Скидка по сравнению с месячным"],
+    featureKeys: [
+      "voice_input",
+      "advanced_analytics",
+      "forecasts",
+      "debts",
+      "collaborative",
+    ],
     isPopular: false,
     ctaText: "Выбрать годовой",
     sortOrder: 2,
   },
+];
+
+/** Каталог фич (коллекция Feature). `key` совпадает с FeatureKey в коде (гейтинг). */
+const FEATURES = [
+  { key: "voice_input", label: "Голосовые сообщения", sortOrder: 0 },
+  { key: "advanced_analytics", label: "Аналитика", sortOrder: 1 },
+  { key: "forecasts", label: "Прогнозы трат", sortOrder: 2 },
+  { key: "debts", label: "Долги", sortOrder: 3 },
+  { key: "collaborative", label: "Совместный бюджет", sortOrder: 4 },
 ];
 
 const HOME_PAGE = {
@@ -332,14 +359,39 @@ async function seed() {
       console.log(`  Skipped — ${existingFaqs.length} FAQs already exist`);
     }
 
+    console.log("Seeding Features...");
+    const featureIdByKey = new Map<string, string>();
+    const existingFeatures = await app.documents("api::feature.feature").findMany({});
+    if (existingFeatures.length === 0) {
+      for (const feature of FEATURES) {
+        const created = await app.documents("api::feature.feature").create({
+          data: feature,
+        });
+        featureIdByKey.set(feature.key, created.documentId);
+      }
+      console.log(`  Created ${FEATURES.length} features`);
+    } else {
+      for (const f of existingFeatures) {
+        if (typeof f.key === "string") featureIdByKey.set(f.key, f.documentId);
+      }
+      console.log(`  Skipped — ${existingFeatures.length} features already exist`);
+    }
+
     console.log("Seeding Pricing plans...");
     const existingPlans = await app.documents("api::pricing.pricing").findMany({});
 
     if (existingPlans.length === 0) {
       for (const plan of PRICING_PLANS) {
+        const { featureKeys, ...planData } = plan;
+        const connect = (featureKeys ?? [])
+          .map((k) => featureIdByKey.get(k))
+          .filter((id): id is string => Boolean(id));
         await app.documents("api::pricing.pricing").create({
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          data: plan as any,
+          data: {
+            ...planData,
+            planFeatures: { connect },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any,
           status: "published",
         });
       }

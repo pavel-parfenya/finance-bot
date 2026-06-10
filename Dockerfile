@@ -49,7 +49,7 @@ COPY --from=build /app/packages/shared/dist ./packages/shared/dist
 COPY --from=build /app/packages/server-core/dist ./packages/server-core/dist
 COPY --from=build /app/apps/bot/dist ./apps/bot/dist
 COPY --from=build /app/apps/api/dist ./apps/api/dist
-COPY --from=build /app/apps/client/dist ./apps/client/dist
+COPY --from=build /app/apps/miniapp/dist ./apps/miniapp/dist
 
 WORKDIR /app/apps/api
 

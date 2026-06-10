@@ -35,6 +35,15 @@
       <polyline points="9 18 15 12 9 6" />
     </svg>
   </NuxtLink>
+  <NuxtLink v-if="showSubscription" class="settings-row" to="/settings/subscription">
+    <div class="settings-row-text">
+      <span class="settings-row-title">Подписка</span>
+      <span class="settings-row-sub">Тариф и оплата</span>
+    </div>
+    <svg class="settings-row-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  </NuxtLink>
   <NuxtLink class="settings-row" to="/settings/help">
     <div class="settings-row-text">
       <span class="settings-row-title">Справка</span>

@@ -1,0 +1,143 @@
+.sub-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 400px;
+}
+
+.sub-hint {
+  font-size: 13px;
+  color: var(--tg-theme-hint-color);
+  line-height: 1.4;
+}
+
+.sub-error {
+  font-size: 14px;
+  color: #d12b2b;
+}
+
+.sub-current {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--tg-theme-secondary-bg-color, #f0f2f5);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.sub-current-label {
+  font-size: 13px;
+  color: var(--tg-theme-hint-color);
+  margin-bottom: 2px;
+}
+
+.sub-current-plan {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.sub-current-status {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--tg-theme-hint-color);
+}
+
+.sub-current-expires {
+  text-align: right;
+}
+
+.sub-plans {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sub-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--tg-theme-bg-color);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.sub-plan--current {
+  border-color: var(--tg-theme-button-color, #2ea6ff);
+  background: var(--tg-theme-secondary-bg-color, #f0f2f5);
+}
+
+.sub-plan-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sub-plan-name {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.sub-plan-price {
+  font-size: 14px;
+  color: var(--tg-theme-hint-color);
+}
+
+.sub-plan-badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: var(--tg-theme-button-text-color, #fff);
+  background: var(--tg-theme-button-color, #2ea6ff);
+}
+
+.sub-plan-features {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.sub-plan-features li {
+  font-size: 13px;
+  color: var(--tg-theme-text-color);
+  line-height: 1.3;
+}
+
+.sub-feature {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sub-feature-mark {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.sub-feature--locked {
+  color: var(--tg-theme-hint-color);
+}
+
+.sub-plan-cta {
+  align-self: flex-start;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  border: none;
+  color: var(--tg-theme-button-text-color, #fff);
+  background: var(--tg-theme-button-color, #2ea6ff);
+  opacity: 0.5;
+}
+
+.sub-plan-cta:disabled {
+  cursor: default;
+}

@@ -15,6 +15,8 @@ import type {
   CustomCategoryDto,
   CustomCategoryCreateRequest,
   CustomCategoryUpdateRequest,
+  SubscriptionInfo,
+  SubscriptionPlansResponse,
 } from "@finance-bot/shared";
 
 const BASE = typeof window !== "undefined" ? window.location.origin : "";
@@ -145,6 +147,26 @@ export async function setMemberFullAccess(
 
 export async function fetchUserSettings(): Promise<UserSettings> {
   const res = await fetch(`${BASE}/api/user/settings`, { headers: headers() });
+  return res.json();
+}
+
+export async function fetchSubscription(): Promise<SubscriptionInfo | { error: string }> {
+  const res = await fetch(`${BASE}/api/subscription`, { headers: headers() });
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    return { error: data.error ?? `Ошибка ${String(res.status)}` };
+  }
+  return res.json();
+}
+
+export async function fetchSubscriptionPlans(): Promise<
+  SubscriptionPlansResponse | { error: string }
+> {
+  const res = await fetch(`${BASE}/api/subscription/plans`, { headers: headers() });
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    return { error: data.error ?? `Ошибка ${String(res.status)}` };
+  }
   return res.json();
 }
 

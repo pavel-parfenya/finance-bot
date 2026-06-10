@@ -42,6 +42,13 @@ const mode = (process.env["MODE"] ?? "polling") as "polling" | "webhook";
 
 const apiMode = process.env["API_MODE"] === "test" ? "test" : "normal";
 
+/**
+ * Режим монетизации:
+ * - `free` (по умолчанию): всё бесплатно, подписки/тарифы нигде не показываются.
+ * - `paid`: подписки активны (команда /subscribe, billing API, лимиты тарифов).
+ */
+const paymentMode = process.env["PAYMENT_MODE"] === "paid" ? "paid" : "free";
+
 function readTestTelegramUserId(): number | null {
   if (apiMode !== "test") return null;
   const raw = process.env["TELEGRAM_USER_ID"];
@@ -71,6 +78,8 @@ export const config = {
   mode,
   /** `test`: Mini App API без init-data, от имени `testTelegramUserId` (локальная разработка). */
   apiMode: apiMode as "normal" | "test",
+  /** `free` (по умолчанию): всё бесплатно; `paid`: подписки/тарифы активны. */
+  paymentMode: paymentMode as "free" | "paid",
   testTelegramUserId: readTestTelegramUserId(),
   port: parseInt(process.env["PORT"] ?? "10000", 10),
   webhookPath: "/webhook",
@@ -109,6 +118,19 @@ export const config = {
   ),
   /** Секрет для POST /internal/telegram/send (API → bot). */
   internalBotSecret: process.env["INTERNAL_BOT_SECRET"] ?? "",
+  /** Billing: JWT-секрет для токенов авторизации бот → лендинг → API. */
+  billing: {
+    jwtSecret: process.env["BILLING_JWT_SECRET"] ?? "",
+  },
+  /** Базовый URL публичного лендинга (Next.js) для ссылок на оплату. */
+  landingBaseUrl: (
+    process.env["LANDING_BASE_URL"] ?? "https://valentinethebuhgalter.by"
+  ).replace(/\/$/, ""),
+  /** Базовый URL Strapi CMS — источник конфигурации тарифов/фич (только чтение). */
+  strapiApiUrl: (process.env["STRAPI_API_URL"] ?? "http://localhost:1337").replace(
+    /\/$/,
+    ""
+  ),
 } as const;
 
 export type Config = typeof config;

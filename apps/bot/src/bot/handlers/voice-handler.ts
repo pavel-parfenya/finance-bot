@@ -21,6 +21,15 @@ export function createVoiceHandler(deps: BotDeps) {
       return;
     }
 
+    if (!(await deps.featureService.hasFeature(user.id, "voice_input"))) {
+      await ctx.reply(
+        "🎙 Голосовой ввод доступен на платном тарифе.\n" +
+          "Оформить подписку можно в Mini App: Настройки → Подписка.\n" +
+          "А пока отправьте трату текстом — например «кофе 8.50»."
+      );
+      return;
+    }
+
     await ctx.reply("Распознаю голосовое сообщение...");
 
     try {

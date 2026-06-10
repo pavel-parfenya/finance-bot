@@ -3,7 +3,15 @@ import tseslint from "typescript-eslint";
 import eslintConfigPrettier from "eslint-config-prettier";
 
 export default tseslint.config(
-  { ignores: ["**/dist/**", "**/node_modules/**", "**/.nuxt/**"] },
+  {
+    ignores: [
+      "**/dist/**",
+      "**/node_modules/**",
+      "**/.nuxt/**",
+      // Автогенерируемые типы Strapi — не линтим (Strapi сам их перегенерирует).
+      "**/types/generated/**",
+    ],
+  },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {

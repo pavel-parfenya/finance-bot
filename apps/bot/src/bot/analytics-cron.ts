@@ -14,6 +14,7 @@ import type {
   DeepSeekWeeklyForecast,
   DeepSeekInactiveUserNudge,
   TransactionRepository,
+  FeatureService,
 } from "@finance-bot/server-core";
 import { sendInactiveUserMonthNudgeIfDue } from "./inactive-user-nudge-send";
 import type { Bot } from "grammy";
@@ -31,6 +32,7 @@ export interface AnalyticsCronDeps {
   endOfDayReminderGenerator: DeepSeekEndOfDayReminder;
   weeklyForecastGenerator: DeepSeekWeeklyForecast;
   inactiveUserNudgeGenerator: DeepSeekInactiveUserNudge;
+  featureService: FeatureService;
 }
 
 /** Каждый час: в 20:00 по локали пользователя — напоминание, отчёт в конце месяца, воскресный forecast. */
@@ -69,7 +71,8 @@ export function startAnalyticsCron(deps: AnalyticsCronDeps): void {
           user.analyticsMonthReport &&
           deps.monthlyReportGenerator &&
           isLastDayOfMonth(zoned) &&
-          user.lastMonthlyReportSentYm !== ym
+          user.lastMonthlyReportSentYm !== ym &&
+          (await deps.featureService.hasFeature(user.id, "advanced_analytics"))
         ) {
           await sendMonthlyReportForUserId(user.id, deps);
         }
@@ -77,7 +80,8 @@ export function startAnalyticsCron(deps: AnalyticsCronDeps): void {
         if (
           user.analyticsForecastWeekly &&
           zoned.getDay() === 0 &&
-          user.lastForecastSentLocalDate !== localYmd
+          user.lastForecastSentLocalDate !== localYmd &&
+          (await deps.featureService.hasFeature(user.id, "forecasts"))
         ) {
           await sendWeeklyForecastForUserId(user.id, deps, {
             localYmd,

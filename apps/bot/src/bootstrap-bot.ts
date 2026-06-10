@@ -20,6 +20,7 @@ export async function configureBotAfterInit(bot: Bot, core: CoreServices): Promi
     endOfDayReminderGenerator: core.endOfDayReminderGenerator,
     weeklyForecastGenerator: core.weeklyForecastGenerator,
     inactiveUserNudgeGenerator: core.inactiveUserNudgeGenerator,
+    featureService: core.featureService,
   });
 
   const miniAppUrl = config.publicBaseUrl ? `${config.publicBaseUrl}/app` : "";

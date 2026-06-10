@@ -16,6 +16,14 @@ export async function handleParsedMessage(
 
   switch (parsed.type) {
     case "debt": {
+      if (!(await deps.featureService.hasFeature(userId, "debts"))) {
+        await ctx.reply(
+          "💸 Учёт долгов доступен на платном тарифе.\n" +
+            "Оформить подписку можно в Mini App: Настройки → Подписка."
+        );
+        return;
+      }
+
       const { debt, linkedUserTelegramId, notificationMessage } =
         await deps.debtService.createFromParsed(
           userId,

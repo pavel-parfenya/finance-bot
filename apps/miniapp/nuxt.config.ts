@@ -23,6 +23,14 @@ export default defineNuxtConfig({
   ssr: false,
   devtools: { enabled: false },
 
+  runtimeConfig: {
+    public: {
+      // Глобальный режим монетизации (берётся из .env при сборке). Позволяет показывать
+      // пункт «Подписка» в настройках сразу, без ожидания запроса settings.
+      paymentMode: process.env.PAYMENT_MODE === "paid" ? "paid" : "free",
+    },
+  },
+
   app: {
     buildAssetsDir: "/assets/",
     head: {

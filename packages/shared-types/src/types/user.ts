@@ -9,5 +9,7 @@ export interface UserSettings {
   analyticsTimezone?: string | null;
   analyticsVoice?: AnalyticsVoice;
   isSuperAdmin?: boolean;
+  /** PAYMENT_MODE=paid: показывать раздел «Подписка» в настройках Mini App. */
+  subscriptionEnabled?: boolean;
   error?: string;
 }

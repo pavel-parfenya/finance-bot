@@ -1,0 +1,57 @@
+<div class="sub-panel">
+  <p v-if="loading" class="sub-hint">Загрузка…</p>
+
+  <p v-else-if="error" class="sub-error">{{ error }}</p>
+
+  <template v-else>
+    <div class="sub-current">
+      <div>
+        <p class="sub-current-label">Текущий тариф</p>
+        <p class="sub-current-plan">
+          {{ currentPlanLabel }}
+          <span class="sub-current-status">· {{ currentStatusLabel }}</span>
+        </p>
+      </div>
+      <div v-if="expiresLabel" class="sub-current-expires">
+        <p class="sub-current-label">Действует до</p>
+        <p class="sub-current-plan">{{ expiresLabel }}</p>
+      </div>
+    </div>
+
+    <div class="sub-plans">
+      <div
+        v-for="plan in plans"
+        :key="plan.planId || plan.name"
+        class="sub-plan"
+        :class="{ 'sub-plan--current': isCurrent(plan.planId) }"
+      >
+        <div class="sub-plan-head">
+          <span class="sub-plan-name">{{ plan.name }}</span>
+          <span v-if="isCurrent(plan.planId)" class="sub-plan-badge">Текущий</span>
+          <span v-else class="sub-plan-price">{{ priceLabel(plan) }}</span>
+        </div>
+        <ul class="sub-plan-features">
+          <li
+            v-for="f in plan.features"
+            :key="f.key"
+            class="sub-feature"
+            :class="{ 'sub-feature--locked': !isAvailable(f.key) }"
+          >
+            <span class="sub-feature-mark">{{ isAvailable(f.key) ? '✓' : '🔒' }}</span>
+            {{ f.label }}
+          </li>
+        </ul>
+        <button
+          v-if="!isCurrent(plan.planId) && plan.planId !== 'free'"
+          class="sub-plan-cta"
+          type="button"
+          disabled
+        >
+          Скоро
+        </button>
+      </div>
+    </div>
+
+    <p class="sub-hint">Оплата подписки появится в ближайшее время.</p>
+  </template>
+</div>

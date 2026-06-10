@@ -8,7 +8,8 @@
     "build": "strapi build",
     "strapi": "strapi",
     "dev": "strapi develop",
-    "db:seed": "psql \"$DATABASE_URL\" -f src/seeds/seed.sql"
+    "db:seed": "psql \"$DATABASE_URL\" -f src/seeds/seed.sql",
+    "db:seed:plan-features": "psql \"$DATABASE_URL\" -f src/seeds/seed-plan-features.sql"
   },
   "dependencies": {
     "@strapi/i18n": "^5.47.1",

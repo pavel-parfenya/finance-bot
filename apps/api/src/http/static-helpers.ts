@@ -3,7 +3,7 @@ import { join } from "node:path";
 import type { Response } from "express";
 
 const ROOT = join(process.cwd(), "..", "..");
-export const CLIENT_DIST = join(ROOT, "apps", "client", "dist");
+export const CLIENT_DIST = join(ROOT, "apps", "miniapp", "dist");
 const LEGACY_APP = join(ROOT, "public", "app.html");
 
 export function getAppHtml(): string {

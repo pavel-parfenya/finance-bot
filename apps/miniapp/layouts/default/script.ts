@@ -30,6 +30,7 @@ export default defineComponent({
       if (p.startsWith("/settings/help")) return "Справка";
       if (p.startsWith("/settings/expenses")) return "Траты";
       if (p.startsWith("/settings/analytics")) return "Аналитика";
+      if (p.startsWith("/settings/subscription")) return "Подписка";
       if (p.startsWith("/settings/app-stats")) return "Статистика приложения";
       if (p.startsWith("/settings/send-message")) return "Сообщение от бота";
       return "Мои расходы";

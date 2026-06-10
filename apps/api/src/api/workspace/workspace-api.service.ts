@@ -11,6 +11,7 @@ import {
   UserService,
   WorkspaceService,
   CustomCategoryService,
+  FeatureService,
 } from "@finance-bot/server-core";
 import { TELEGRAM_OUTBOUND } from "../tokens";
 import type { TelegramOutboundPort } from "../../di/telegram-outbound.port";
@@ -23,6 +24,7 @@ export class WorkspaceApiService {
     private readonly workspaceService: WorkspaceService,
     private readonly invitationRepo: InvitationRepository,
     private readonly customCategoryService: CustomCategoryService,
+    private readonly featureService: FeatureService,
     @Inject(TELEGRAM_OUTBOUND) private readonly telegram: TelegramOutboundPort
   ) {}
 
@@ -65,6 +67,13 @@ export class WorkspaceApiService {
       workspace.id
     );
     if (!isOwner) return { error: "Только владелец может приглашать участников" };
+
+    if (!(await this.featureService.hasFeature(resolved.userId, "collaborative"))) {
+      return {
+        error:
+          "Совместный учёт доступен на платном тарифе. Оформите подписку в разделе «Подписка».",
+      };
+    }
 
     const uname = username.replace(/^@/, "").trim();
     if (!uname) return { error: "Укажите @username" };

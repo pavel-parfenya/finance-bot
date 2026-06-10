@@ -32,6 +32,7 @@ export interface CmsHomePage {
 export interface CmsPricingPlan {
   id: number;
   name: string;
+  planId?: "free" | "pro_month" | "pro_year" | null;
   price: number | null;
   period: "month" | "year" | "once" | null;
   description: string;
@@ -88,17 +89,56 @@ export async function getCmsHomePage(): Promise<CmsHomePage | null> {
   return ("attributes" in data ? data.attributes : data) as CmsHomePage;
 }
 
+/** Strapi v5 отдаёт связь плоско, v4 — через `{ data: [{ attributes }] }`. */
+function planFeatureLabels(planFeatures: unknown): string[] {
+  const list = Array.isArray(planFeatures)
+    ? planFeatures
+    : planFeatures &&
+        typeof planFeatures === "object" &&
+        Array.isArray((planFeatures as { data?: unknown[] }).data)
+      ? (planFeatures as { data: unknown[] }).data
+      : [];
+  return list
+    .map((item) => {
+      const attrs =
+        item && typeof item === "object" && "attributes" in item
+          ? (item as { attributes: Record<string, unknown> }).attributes
+          : (item as Record<string, unknown>);
+      return {
+        label: typeof attrs?.label === "string" ? attrs.label : null,
+        sortOrder: typeof attrs?.sortOrder === "number" ? attrs.sortOrder : 0,
+      };
+    })
+    .filter((f): f is { label: string; sortOrder: number } => f.label !== null)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((f) => f.label);
+}
+
 export async function getCmsPricingPlans(): Promise<CmsPricingPlan[]> {
-  type Item = { id: number; attributes?: Omit<CmsPricingPlan, "id"> } & Omit<
-    CmsPricingPlan,
-    "id"
-  >;
-  const data = await fetchCms<Item[]>("/pricings?sort=sortOrder&populate=*");
+  type Item = {
+    id: number;
+    attributes?: Record<string, unknown>;
+  } & Record<string, unknown>;
+  const data = await fetchCms<Item[]>(
+    "/pricings?sort=sortOrder&populate[planFeatures]=true"
+  );
   if (!Array.isArray(data)) return [];
-  return data.map((item) => ({
-    id: item.id,
-    ...("attributes" in item ? item.attributes : item),
-  })) as CmsPricingPlan[];
+  return data.map((item) => {
+    const attrs = ("attributes" in item ? item.attributes : item) as Record<
+      string,
+      unknown
+    >;
+    const relationLabels = planFeatureLabels(attrs.planFeatures);
+    const jsonFeatures = Array.isArray(attrs.features)
+      ? (attrs.features as string[])
+      : [];
+    return {
+      id: item.id,
+      ...attrs,
+      // Источник истины для фич — связь planFeatures; json features оставляем как fallback.
+      features: relationLabels.length > 0 ? relationLabels : jsonFeatures,
+    };
+  }) as CmsPricingPlan[];
 }
 
 export async function getCmsFaqs(): Promise<CmsFaq[]> {

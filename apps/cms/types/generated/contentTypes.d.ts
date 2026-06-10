@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-object-type */
 import type { Schema, Struct } from "@strapi/strapi";
 
 export interface AdminApiToken extends Struct.CollectionTypeSchema {
@@ -456,6 +455,35 @@ export interface ApiFaqFaq extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiFeatureFeature extends Struct.CollectionTypeSchema {
+  collectionName: "features";
+  info: {
+    description: "\u0424\u0438\u0447\u0438 \u0442\u0430\u0440\u0438\u0444\u043E\u0432 (\u043A\u0430\u0442\u0430\u043B\u043E\u0433 \u0434\u043B\u044F \u0432\u044B\u0431\u043E\u0440\u0430 \u0432 \u043F\u043B\u0430\u043D\u0430\u0445 \u0438 \u0433\u0435\u0439\u0442\u0438\u043D\u0433\u0430 \u0444\u0443\u043D\u043A\u0446\u0438\u0439)";
+    displayName: "Feature";
+    pluralName: "features";
+    singularName: "feature";
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> &
+      Schema.Attribute.Private;
+    key: Schema.Attribute.String & Schema.Attribute.Required & Schema.Attribute.Unique;
+    label: Schema.Attribute.String & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<"oneToMany", "api::feature.feature"> &
+      Schema.Attribute.Private;
+    pricings: Schema.Attribute.Relation<"manyToMany", "api::pricing.pricing">;
+    publishedAt: Schema.Attribute.DateTime;
+    sortOrder: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiHomePageHomePage extends Struct.SingleTypeSchema {
   collectionName: "home_pages";
   info: {
@@ -551,6 +579,8 @@ export interface ApiPricingPricing extends Struct.CollectionTypeSchema {
     name: Schema.Attribute.String & Schema.Attribute.Required;
     period: Schema.Attribute.Enumeration<["month", "year", "once"]> &
       Schema.Attribute.DefaultTo<"month">;
+    planFeatures: Schema.Attribute.Relation<"manyToMany", "api::feature.feature">;
+    planId: Schema.Attribute.Enumeration<["free", "pro_month", "pro_year"]>;
     price: Schema.Attribute.Decimal;
     publishedAt: Schema.Attribute.DateTime;
     sortOrder: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
@@ -1063,7 +1093,7 @@ export interface PluginUsersPermissionsUser extends Struct.CollectionTypeSchema 
 }
 
 declare module "@strapi/strapi" {
-  export namespace Public {
+  export module Public {
     export interface ContentTypeSchemas {
       "admin::api-token": AdminApiToken;
       "admin::api-token-permission": AdminApiTokenPermission;
@@ -1074,6 +1104,7 @@ declare module "@strapi/strapi" {
       "admin::transfer-token-permission": AdminTransferTokenPermission;
       "admin::user": AdminUser;
       "api::faq.faq": ApiFaqFaq;
+      "api::feature.feature": ApiFeatureFeature;
       "api::home-page.home-page": ApiHomePageHomePage;
       "api::page.page": ApiPagePage;
       "api::pricing.pricing": ApiPricingPricing;
