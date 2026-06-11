@@ -45,9 +45,16 @@ const DEFAULT_DEMO_MESSAGES: CmsDemoMessage[] = [
 ];
 
 export async function generateMetadata(): Promise<Metadata> {
-  const page = await getCmsHomePage();
+  const [page, settings] = await Promise.all([
+    getCmsHomePage(),
+    getCmsSiteSettings(),
+  ]);
+  const brandName = settings?.companyName ?? "[BRAND_NAME]";
+  const seoTitle =
+    page?.seoTitle?.replaceAll("[BRAND_NAME]", brandName) ??
+    `${brandName} — учёт расходов голосом`;
   return {
-    title: page?.seoTitle ?? "[BRAND_NAME] — учёт расходов голосом",
+    title: seoTitle,
     description:
       page?.seoDescription ??
       "Telegram-бот для учёта финансов с распознаванием голосовых сообщений.",
@@ -90,7 +97,7 @@ export default async function HomePage() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: "[BRAND_NAME]",
+    name: "Бухгалтер Валентин",
     applicationCategory: "FinanceApplication",
     operatingSystem: "Telegram",
     description:

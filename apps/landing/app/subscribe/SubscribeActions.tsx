@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { CmsPricingPlan } from "@/lib/cms";
 import type { SubscriptionPlan } from "@/lib/billing";
 
@@ -16,13 +17,39 @@ function resolvePlanId(plan: CmsPricingPlan): SubscriptionPlan | null {
   return null;
 }
 
+/** Создаёт скрытую форму с полями WebPay и сабмитит её (редирект на оплату). */
+function submitWebpayForm(form: { formUrl: string; fields: Record<string, string> }) {
+  const el = document.createElement("form");
+  el.method = "POST";
+  el.action = form.formUrl;
+  el.style.display = "none";
+  for (const [name, value] of Object.entries(form.fields)) {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = name;
+    input.value = value;
+    el.appendChild(input);
+  }
+  document.body.appendChild(el);
+  el.submit();
+}
+
 interface Props {
   token: string;
   plans: CmsPricingPlan[];
   currentPlan: SubscriptionPlan;
+  downgradeScheduled: boolean;
 }
 
-export default function SubscribeActions({ token, plans, currentPlan }: Props) {
+const FREE: SubscriptionPlan = "free";
+
+export default function SubscribeActions({
+  token,
+  plans,
+  currentPlan,
+  downgradeScheduled,
+}: Props) {
+  const router = useRouter();
   const [loadingPlan, setLoadingPlan] = useState<SubscriptionPlan | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -41,19 +68,50 @@ export default function SubscribeActions({ token, plans, currentPlan }: Props) {
         body: JSON.stringify({ plan: planId }),
       });
       const body = (await res.json().catch(() => null)) as {
-        redirectUrl?: string | null;
+        mode?: "test" | "webpay";
         message?: string;
         error?: string;
+        form?: { formUrl: string; fields: Record<string, string> };
       } | null;
       if (!res.ok) {
         setError(body?.error ?? "Не удалось создать оплату");
         return;
       }
-      if (body?.redirectUrl) {
-        window.location.href = body.redirectUrl;
+      // WebPay: создаём скрытую форму и сабмитим — редирект на платёжный шлюз.
+      if (body?.mode === "webpay" && body.form) {
+        submitWebpayForm(body.form);
         return;
       }
-      setMessage(body?.message ?? "Заявка принята.");
+      // Тестовый режим: оплата считается успешной — ведём на отдельную страницу,
+      // как и реальный возврат с WebPay.
+      router.push("/payment-success");
+    } catch {
+      setError("Сервис временно недоступен. Попробуйте позже.");
+    } finally {
+      setLoadingPlan(null);
+    }
+  }
+
+  // Понижение до Free: оплата не нужна, Pro сохраняется до конца оплаченного
+  // периода (status=canceled, expiresAt не меняется), затем фичи режутся до Free.
+  async function downgradeToFree() {
+    setLoadingPlan(FREE);
+    setMessage(null);
+    setError(null);
+    try {
+      const res = await fetch(`${API_URL}/api/billing/cancel`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        setError(body?.error ?? "Не удалось перейти на Free");
+        return;
+      }
+      setMessage(
+        "Готово. Pro продолжит действовать до конца оплаченного периода, затем тариф станет Free."
+      );
+      router.refresh();
     } catch {
       setError("Сервис временно недоступен. Попробуйте позже.");
     } finally {
@@ -63,7 +121,7 @@ export default function SubscribeActions({ token, plans, currentPlan }: Props) {
 
   return (
     <div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="flex flex-col md:flex-row flex-wrap justify-center gap-6">
         {plans.map((plan) => {
           const planId = resolvePlanId(plan);
           const isCurrent = planId === currentPlan;
@@ -71,7 +129,7 @@ export default function SubscribeActions({ token, plans, currentPlan }: Props) {
           return (
             <div
               key={plan.id}
-              className={`rounded-2xl border p-8 flex flex-col ${
+              className={`w-full md:w-72 rounded-2xl border p-8 flex flex-col ${
                 plan.isPopular
                   ? "border-gray-900 bg-gray-900 text-white"
                   : "border-gray-200 bg-white text-gray-900"
@@ -143,6 +201,19 @@ export default function SubscribeActions({ token, plans, currentPlan }: Props) {
                   }`}
                 >
                   {loadingPlan === planId ? "Создаём оплату…" : (plan.ctaText ?? "Выбрать")}
+                </button>
+              ) : planId === FREE && downgradeScheduled ? (
+                <span className="block text-center rounded-md px-4 py-2.5 text-sm font-semibold bg-gray-100 text-gray-500">
+                  Подключится после Pro
+                </span>
+              ) : planId === FREE ? (
+                <button
+                  type="button"
+                  onClick={() => downgradeToFree()}
+                  disabled={loadingPlan !== null}
+                  className="block w-full text-center rounded-md px-4 py-2.5 text-sm font-semibold border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-60"
+                >
+                  {loadingPlan === FREE ? "Переключаем…" : "Перейти на Free"}
                 </button>
               ) : (
                 <span className="block text-center rounded-md px-4 py-2.5 text-sm font-semibold bg-gray-100 text-gray-500">

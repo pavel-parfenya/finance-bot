@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getCmsPage } from "@/lib/cms";
+import { getCmsPage, getCmsSiteSettings } from "@/lib/cms";
 import { renderMarkdown } from "@/lib/markdown";
 import { DocPageFallback } from "@/components/DocPageFallback";
 
@@ -10,6 +10,11 @@ export const metadata: Metadata = {
 
 export default async function OfferPage() {
   const page = await getCmsPage("offer");
+  const settings = await getCmsSiteSettings();
+  const brandName = settings?.companyName ?? "[BRAND_NAME]";
+  const unp = settings?.unp ?? "[UNP]";
+  const address = settings?.address ?? "[ADDRESS]";
+  const email = settings?.email ?? "[EMAIL]";
 
   if (page?.content) {
     const html = renderMarkdown(page.content);
@@ -41,8 +46,8 @@ export default async function OfferPage() {
       <div className="space-y-8 text-sm leading-relaxed text-gray-600">
         <Section title="1. Общие положения">
           <p>
-            Настоящий документ является публичной офертой [BRAND_NAME] (далее —
-            «Исполнитель», УНП: [UNP]) и содержит условия оказания услуг доступа
+            Настоящий документ является публичной офертой {brandName} (далее —
+            «Исполнитель», УНП: {unp}) и содержит условия оказания услуг доступа
             к Telegram-боту для учёта финансов.
           </p>
           <p className="mt-2">
@@ -120,10 +125,10 @@ export default async function OfferPage() {
           <table className="w-full mt-2">
             <tbody className="divide-y divide-gray-100">
               {[
-                ["Наименование", "[BRAND_NAME]"],
-                ["УНП", "[UNP]"],
-                ["Адрес", "[ADDRESS]"],
-                ["Email", "[EMAIL]"],
+                ["Наименование", brandName],
+                ["УНП", unp],
+                ["Адрес", address],
+                ["Email", email],
               ].map(([label, value]) => (
                 <tr key={label}>
                   <td className="py-2 pr-4 text-gray-400">{label}</td>

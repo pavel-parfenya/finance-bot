@@ -44,6 +44,10 @@ const schema = {
       type: "boolean" as const,
       default: false,
     },
+    visible: {
+      type: "boolean" as const,
+      default: true,
+    },
     ctaText: {
       type: "string" as const,
     },

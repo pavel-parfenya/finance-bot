@@ -83,11 +83,11 @@ export default async function PricingPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="flex flex-col md:flex-row flex-wrap justify-center gap-6">
         {plans.map((plan) => (
           <div
             key={plan.id}
-            className={`rounded-2xl border p-8 flex flex-col ${
+            className={`w-full md:w-72 rounded-2xl border p-8 flex flex-col ${
               plan.isPopular
                 ? "border-gray-900 bg-gray-900 text-white"
                 : "border-gray-200 bg-white text-gray-900"

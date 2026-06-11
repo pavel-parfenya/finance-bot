@@ -44,6 +44,10 @@
       "type": "boolean",
       "default": false
     },
+    "visible": {
+      "type": "boolean",
+      "default": true
+    },
     "ctaText": {
       "type": "string"
     },

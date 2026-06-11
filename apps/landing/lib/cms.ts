@@ -38,6 +38,7 @@ export interface CmsPricingPlan {
   description: string;
   features: string[];
   isPopular: boolean;
+  visible?: boolean;
   ctaText: string;
   sortOrder: number;
 }
@@ -123,7 +124,7 @@ export async function getCmsPricingPlans(): Promise<CmsPricingPlan[]> {
     "/pricings?sort=sortOrder&populate[planFeatures]=true"
   );
   if (!Array.isArray(data)) return [];
-  return data.map((item) => {
+  const plans = data.map((item) => {
     const attrs = ("attributes" in item ? item.attributes : item) as Record<
       string,
       unknown
@@ -139,6 +140,8 @@ export async function getCmsPricingPlans(): Promise<CmsPricingPlan[]> {
       features: relationLabels.length > 0 ? relationLabels : jsonFeatures,
     };
   }) as CmsPricingPlan[];
+  // visible === false скрывает план на лендинге; undefined (старые записи) считаем видимым.
+  return plans.filter((plan) => plan.visible !== false);
 }
 
 export async function getCmsFaqs(): Promise<CmsFaq[]> {
