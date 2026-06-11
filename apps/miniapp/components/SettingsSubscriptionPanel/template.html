@@ -18,40 +18,25 @@
       </div>
     </div>
 
-    <div class="sub-plans">
-      <div
-        v-for="plan in plans"
-        :key="plan.planId || plan.name"
-        class="sub-plan"
-        :class="{ 'sub-plan--current': isCurrent(plan.planId) }"
-      >
-        <div class="sub-plan-head">
-          <span class="sub-plan-name">{{ plan.name }}</span>
-          <span v-if="isCurrent(plan.planId)" class="sub-plan-badge">Текущий</span>
-          <span v-else class="sub-plan-price">{{ priceLabel(plan) }}</span>
-        </div>
-        <ul class="sub-plan-features">
-          <li
-            v-for="f in plan.features"
-            :key="f.key"
-            class="sub-feature"
-            :class="{ 'sub-feature--locked': !isAvailable(f.key) }"
-          >
-            <span class="sub-feature-mark">{{ isAvailable(f.key) ? '✓' : '🔒' }}</span>
-            {{ f.label }}
-          </li>
-        </ul>
-        <button
-          v-if="!isCurrent(plan.planId) && plan.planId !== 'free'"
-          class="sub-plan-cta"
-          type="button"
-          disabled
-        >
-          Скоро
-        </button>
-      </div>
+    <div v-if="currentFeatures.length" class="sub-features">
+      <p class="sub-current-label">Доступно в вашем тарифе</p>
+      <ul class="sub-features-list">
+        <li v-for="f in currentFeatures" :key="f.key" class="sub-feature">
+          <span class="sub-feature-mark">✓</span>
+          {{ f.label }}
+        </li>
+      </ul>
     </div>
 
-    <p class="sub-hint">Оплата подписки появится в ближайшее время.</p>
+    <button
+      class="sub-plan-cta"
+      type="button"
+      :disabled="checkoutLoading"
+      @click="changePlan"
+    >
+      {{ checkoutLoading ? 'Открываем…' : 'Сменить план' }}
+    </button>
+
+    <p v-if="checkoutError" class="sub-error">{{ checkoutError }}</p>
   </template>
 </div>

@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from "@nestjs/common";
+import { Controller, Get, Post, UseGuards } from "@nestjs/common";
 import { TelegramInitDataGuard } from "../telegram/telegram-init-data.guard";
 import { TelegramUser } from "../telegram/telegram-user.decorator";
 import type { ResolvedTelegramUser } from "../telegram/telegram-auth.types";
@@ -22,5 +22,11 @@ export class SubscriptionController {
   @Get("plans")
   getPlans(@TelegramUser() user: ResolvedTelegramUser) {
     return this.subscriptionApi.getPlansOverview(user);
+  }
+
+  /** Ссылка на оплату (лендинг /subscribe c billing-JWT) для открытия из Mini App. */
+  @Post("checkout-link")
+  getCheckoutLink(@TelegramUser() user: ResolvedTelegramUser) {
+    return this.subscriptionApi.getCheckoutLink(user);
   }
 }

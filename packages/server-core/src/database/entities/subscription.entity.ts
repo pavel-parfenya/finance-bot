@@ -54,6 +54,14 @@ export class Subscription {
   @Column({ type: "varchar", nullable: true })
   webpayRecurringId: string | null;
 
+  /**
+   * Момент гашения ссылки на оплату. Billing-JWT с `iat <= linkRevokedAt`
+   * считается использованным (одноразовость ссылки `/subscribe`). Ставится при
+   * успешной активации платного тарифа.
+   */
+  @Column({ type: "timestamptz", nullable: true })
+  linkRevokedAt: Date | null;
+
   @CreateDateColumn({ type: "timestamptz" })
   createdAt: Date;
 

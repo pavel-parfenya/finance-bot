@@ -6,7 +6,9 @@ describe("BillingTokenService", () => {
 
   it("round-trips telegramId через подпись/проверку", () => {
     const token = svc.sign(42);
-    expect(svc.verify(token)).toEqual({ telegramId: 42 });
+    const payload = svc.verify(token);
+    expect(payload?.telegramId).toBe(42);
+    expect(typeof payload?.iat).toBe("number");
   });
 
   it("отклоняет токен, подписанный другим секретом", () => {

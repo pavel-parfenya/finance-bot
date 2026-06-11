@@ -15,6 +15,33 @@ function computeExpiresAt(plan: SubscriptionPlan, from: Date): Date | null {
   return null; // Free — без срока
 }
 
+const PAID_PLANS = new Set<SubscriptionPlan>([
+  SubscriptionPlan.ProMonth,
+  SubscriptionPlan.ProYear,
+]);
+
+/**
+ * Эффективный (реально действующий сейчас) тариф подписки.
+ *
+ * Платный тариф продолжает действовать до `expiresAt` независимо от статуса
+ * (в т.ч. после отмены — `canceled`), а по истечении срока фичи обрезаются до
+ * Free. Это позволяет не держать отдельный cron-даунгрейд: гейтинг сам видит
+ * Free, как только период оплаты закончился.
+ */
+export function resolveEffectivePlan(
+  sub: Pick<Subscription, "plan" | "expiresAt">,
+  now: Date = new Date()
+): SubscriptionPlan {
+  if (
+    PAID_PLANS.has(sub.plan) &&
+    sub.expiresAt &&
+    sub.expiresAt.getTime() <= now.getTime()
+  ) {
+    return SubscriptionPlan.Free;
+  }
+  return sub.plan;
+}
+
 export class SubscriptionService {
   private readonly repo: Repository<Subscription>;
 
@@ -69,6 +96,50 @@ export class SubscriptionService {
     sub.expiresAt = computeExpiresAt(plan, now);
 
     return this.repo.save(sub);
+  }
+
+  /**
+   * Активировать платный тариф после успешной оплаты. Ставит статус active,
+   * рассчитывает срок и (опционально) сохраняет идентификаторы платежа WebPay.
+   */
+  async activatePaid(
+    userId: number,
+    plan: SubscriptionPlan,
+    meta?: { webpayOrderId?: string | null; paymentId?: string | null }
+  ): Promise<Subscription> {
+    const now = new Date();
+    let sub = await this.findCurrent(userId);
+
+    if (!sub) {
+      sub = this.repo.create({ userId });
+    }
+
+    sub.plan = plan;
+    sub.status = SubscriptionStatus.Active;
+    sub.startsAt = now;
+    sub.expiresAt = computeExpiresAt(plan, now);
+    // Оплата прошла — гасим ссылку: токены с iat <= now становятся недействительны.
+    sub.linkRevokedAt = now;
+    if (meta?.webpayOrderId) sub.webpayOrderId = meta.webpayOrderId;
+    if (meta?.paymentId) sub.paymentId = meta.paymentId;
+
+    return this.repo.save(sub);
+  }
+
+  /**
+   * Использована ли (погашена) ссылка на оплату для этого пользователя.
+   * Billing-JWT с `iat` не позднее `linkRevokedAt` считается одноразово
+   * израсходованным. Хранение в БД переживает рестарты и работает на нескольких
+   * инстансах. `iatSeconds` — поле `iat` токена (Unix seconds).
+   */
+  async isPaymentLinkRevoked(
+    userId: number,
+    iatSeconds: number | undefined
+  ): Promise<boolean> {
+    if (typeof iatSeconds !== "number") return false;
+    const sub = await this.findCurrent(userId);
+    if (!sub?.linkRevokedAt) return false;
+    return iatSeconds <= Math.floor(sub.linkRevokedAt.getTime() / 1000);
   }
 
   /** Отменить подписку (status = canceled). До expiresAt доступ обычно сохраняется. */

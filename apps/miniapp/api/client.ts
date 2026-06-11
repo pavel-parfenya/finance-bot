@@ -170,6 +170,18 @@ export async function fetchSubscriptionPlans(): Promise<
   return res.json();
 }
 
+export async function fetchCheckoutLink(): Promise<{ url: string } | { error: string }> {
+  const res = await fetch(`${BASE}/api/subscription/checkout-link`, {
+    method: "POST",
+    headers: headers(),
+  });
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    return { error: data.error ?? `Ошибка ${String(res.status)}` };
+  }
+  return res.json();
+}
+
 function adminApiErrorMessage(data: Record<string, unknown>, status: number): string {
   const message = typeof data["message"] === "string" ? data["message"] : null;
   const nested =

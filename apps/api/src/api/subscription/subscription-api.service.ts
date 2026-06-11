@@ -1,5 +1,11 @@
-import { Injectable } from "@nestjs/common";
-import { SubscriptionService, FeatureService } from "@finance-bot/server-core";
+import { Injectable, InternalServerErrorException } from "@nestjs/common";
+import {
+  SubscriptionService,
+  FeatureService,
+  BillingTokenService,
+  UserService,
+  config,
+} from "@finance-bot/server-core";
 import type { SubscriptionInfo, SubscriptionPlansResponse } from "@finance-bot/shared";
 import type { ResolvedTelegramUser } from "../telegram/telegram-auth.types";
 
@@ -8,7 +14,9 @@ import type { ResolvedTelegramUser } from "../telegram/telegram-auth.types";
 export class SubscriptionApiService {
   constructor(
     private readonly subscriptionService: SubscriptionService,
-    private readonly featureService: FeatureService
+    private readonly featureService: FeatureService,
+    private readonly billingTokenService: BillingTokenService,
+    private readonly userService: UserService
   ) {}
 
   async getCurrent(resolved: ResolvedTelegramUser): Promise<SubscriptionInfo> {
@@ -35,5 +43,24 @@ export class SubscriptionApiService {
       currentFeatureKeys: userFeatures ? Array.from(userFeatures) : null,
       plans: plans ?? [],
     };
+  }
+
+  /**
+   * Ссылка на страницу оплаты лендинга с короткоживущим billing-JWT.
+   * Mini App открывает её во внешнем браузере, где пользователь выбирает тариф и платит.
+   */
+  async getCheckoutLink(resolved: ResolvedTelegramUser): Promise<{ url: string }> {
+    if (!this.billingTokenService.isConfigured) {
+      throw new InternalServerErrorException({
+        error: "Оплата временно недоступна (не настроен BILLING_JWT_SECRET).",
+      });
+    }
+    const user = await this.userService.findById(resolved.userId);
+    if (!user) {
+      throw new InternalServerErrorException({ error: "Пользователь не найден." });
+    }
+    const token = this.billingTokenService.sign(Number(user.telegramId));
+    const url = `${config.landingBaseUrl}/subscribe?token=${encodeURIComponent(token)}`;
+    return { url };
   }
 }

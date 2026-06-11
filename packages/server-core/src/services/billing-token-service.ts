@@ -2,6 +2,8 @@ import jwt from "jsonwebtoken";
 
 export interface BillingTokenPayload {
   telegramId: number;
+  /** Момент выпуска токена (Unix seconds) — для отзыва после оплаты. */
+  iat?: number;
 }
 
 /**
@@ -37,7 +39,8 @@ export class BillingTokenService {
         decoded !== null &&
         typeof (decoded as { telegramId?: unknown }).telegramId === "number"
       ) {
-        return { telegramId: (decoded as { telegramId: number }).telegramId };
+        const obj = decoded as { telegramId: number; iat?: number };
+        return { telegramId: obj.telegramId, iat: obj.iat };
       }
       return null;
     } catch {

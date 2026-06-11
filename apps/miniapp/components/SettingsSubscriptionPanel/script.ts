@@ -3,8 +3,21 @@ import type {
   SubscriptionInfo,
   SubscriptionPlanCard,
   SubscriptionPlanId,
+  PlanFeatureItem,
 } from "@finance-bot/shared";
-import { fetchSubscriptionPlans } from "~/api/client";
+import { fetchSubscriptionPlans, fetchCheckoutLink } from "~/api/client";
+
+/** Открыть внешнюю ссылку из Telegram Mini App (или обычным переходом — для дев-режима). */
+function openExternal(url: string): void {
+  const tg = (
+    window as unknown as { Telegram?: { WebApp?: { openLink?: (u: string) => void } } }
+  ).Telegram?.WebApp;
+  if (tg?.openLink) {
+    tg.openLink(url);
+  } else {
+    window.open(url, "_blank");
+  }
+}
 
 const PLAN_LABEL: Record<SubscriptionPlanId, string> = {
   free: "Free",
@@ -30,21 +43,14 @@ function formatDate(iso: string | null): string | null {
   });
 }
 
-function priceLabel(plan: SubscriptionPlanCard): string {
-  if (plan.planId === "free" || plan.price === 0) return "Бесплатно";
-  if (plan.price == null) return "—";
-  const per = plan.period === "month" ? " / мес" : plan.period === "year" ? " / год" : "";
-  return `${plan.price} BYN${per}`;
-}
-
 export default defineComponent({
   setup() {
     const loading = ref(true);
     const error = ref("");
     const subscription = ref<SubscriptionInfo | null>(null);
     const plans = ref<SubscriptionPlanCard[]>([]);
-    // null — доступ ко всему (free-режим монетизации или конфиг Strapi недоступен)
-    const availableKeys = ref<string[] | null>(null);
+    const checkoutLoading = ref(false);
+    const checkoutError = ref("");
 
     const currentPlanLabel = computed(() =>
       subscription.value ? PLAN_LABEL[subscription.value.plan] : ""
@@ -56,6 +62,13 @@ export default defineComponent({
       subscription.value ? formatDate(subscription.value.expiresAt) : null
     );
 
+    /** Фичи, входящие в текущий тариф пользователя (из карточки этого тарифа). */
+    const currentFeatures = computed<PlanFeatureItem[]>(() => {
+      const planId = subscription.value?.plan;
+      if (!planId) return [];
+      return plans.value.find((p) => p.planId === planId)?.features ?? [];
+    });
+
     onMounted(async () => {
       const data = await fetchSubscriptionPlans();
       if ("error" in data) {
@@ -63,31 +76,35 @@ export default defineComponent({
       } else {
         subscription.value = data.current;
         plans.value = data.plans;
-        availableKeys.value = data.currentFeatureKeys;
       }
       loading.value = false;
     });
 
-    function isCurrent(planId: SubscriptionPlanId | null): boolean {
-      return !!planId && subscription.value?.plan === planId;
-    }
-
-    /** Доступна ли фича пользователю сейчас (для пометки замком/галочкой). */
-    function isAvailable(key: string): boolean {
-      return availableKeys.value === null || availableKeys.value.includes(key);
+    /** Получить ссылку и открыть страницу подписки на сайте во внешнем браузере. */
+    async function changePlan(): Promise<void> {
+      if (checkoutLoading.value) return;
+      checkoutLoading.value = true;
+      checkoutError.value = "";
+      const res = await fetchCheckoutLink();
+      checkoutLoading.value = false;
+      if ("error" in res) {
+        checkoutError.value = res.error;
+        return;
+      }
+      openExternal(res.url);
     }
 
     return {
       loading,
       error,
       subscription,
-      plans,
       currentPlanLabel,
       currentStatusLabel,
       expiresLabel,
-      isCurrent,
-      isAvailable,
-      priceLabel,
+      currentFeatures,
+      checkoutLoading,
+      checkoutError,
+      changePlan,
     };
   },
 });

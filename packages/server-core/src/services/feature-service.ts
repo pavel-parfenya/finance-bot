@@ -3,7 +3,7 @@ import type {
   SubscriptionPlanCard,
   SubscriptionPlanId,
 } from "@finance-bot/shared";
-import type { SubscriptionService } from "./subscription-service";
+import { resolveEffectivePlan, type SubscriptionService } from "./subscription-service";
 import type { StrapiPlanConfig } from "../infrastructure/strapi/strapi-plan-config";
 
 /**
@@ -33,7 +33,7 @@ export class FeatureService {
     const map = await this.planConfig.getPlanFeatureMap();
     if (!map) return true; // конфиг недоступен — не блокируем
     const sub = await this.subscriptionService.getCurrentOrFree(userId);
-    const set = map.get(sub.plan as SubscriptionPlanId);
+    const set = map.get(resolveEffectivePlan(sub) as SubscriptionPlanId);
     if (!set) return true; // план не сконфигурирован — не блокируем
     return set.has(key);
   }
@@ -47,6 +47,6 @@ export class FeatureService {
     const map = await this.planConfig.getPlanFeatureMap();
     if (!map) return null;
     const sub = await this.subscriptionService.getCurrentOrFree(userId);
-    return map.get(sub.plan as SubscriptionPlanId) ?? null;
+    return map.get(resolveEffectivePlan(sub) as SubscriptionPlanId) ?? null;
   }
 }

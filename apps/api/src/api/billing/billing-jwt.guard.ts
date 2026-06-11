@@ -6,7 +6,11 @@ import {
   Injectable,
 } from "@nestjs/common";
 import type { Request } from "express";
-import { BillingTokenService, UserService } from "@finance-bot/server-core";
+import {
+  BillingTokenService,
+  SubscriptionService,
+  UserService,
+} from "@finance-bot/server-core";
 
 /** Достаёт токен из `Authorization: Bearer …` или из query `?token=…`. */
 function extractToken(req: Request): string {
@@ -23,7 +27,8 @@ function extractToken(req: Request): string {
 export class BillingJwtGuard implements CanActivate {
   constructor(
     private readonly billingTokenService: BillingTokenService,
-    private readonly userService: UserService
+    private readonly userService: UserService,
+    private readonly subscriptionService: SubscriptionService
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -41,6 +46,14 @@ export class BillingJwtGuard implements CanActivate {
     if (!user) {
       throw new HttpException(
         { error: "Пользователь не найден. Добавьте расходы в боте." },
+        HttpStatus.UNAUTHORIZED
+      );
+    }
+
+    // Ссылка одноразовая: после успешной оплаты токен отозван.
+    if (await this.subscriptionService.isPaymentLinkRevoked(user.id, payload.iat)) {
+      throw new HttpException(
+        { error: "Ссылка уже использована. Откройте новую из бота." },
         HttpStatus.UNAUTHORIZED
       );
     }

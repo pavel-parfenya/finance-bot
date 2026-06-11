@@ -8,6 +8,10 @@ export type SubscriptionStatus = "active" | "canceled" | "expired" | "past_due";
 
 export interface BillingSubscription {
   plan: SubscriptionPlan;
+  /** Тариф, действующий сейчас (после expiresAt платный понижается до free). */
+  effectivePlan: SubscriptionPlan;
+  /** Понижение до free запланировано на конец оплаченного периода. */
+  downgradeScheduled: boolean;
   status: SubscriptionStatus;
   startsAt: string | null;
   expiresAt: string | null;

@@ -39,6 +39,10 @@ export default ({ env }: { env: (key: string, defaultValue?: string) => string }
         connection: {
           ...conn,
           ssl,
+          // Strapi определяет рабочую схему через connection.schema (getSchemaName),
+          // а НЕ через searchPath. Без этого инспектор схемы читает из "public" (пусто)
+          // и при любом изменении content-type генерирует CREATE TABLE вместо ALTER.
+          schema,
         },
         searchPath: [schema, "public"],
         acquireConnectionTimeout: 60000,

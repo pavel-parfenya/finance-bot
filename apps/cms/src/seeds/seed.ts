@@ -107,13 +107,46 @@ const PRICING_PLANS = [
   },
 ];
 
-/** Каталог фич (коллекция Feature). `key` совпадает с FeatureKey в коде (гейтинг). */
+/**
+ * Каталог фич (коллекция Feature). `key` совпадает с FeatureKey в коде (гейтинг).
+ * `description` — служебное поле: к какому функционалу на сервере фича даёт доступ
+ * (см. точки применения FeatureService.hasFeature).
+ */
 const FEATURES = [
-  { key: "voice_input", label: "Голосовые сообщения", sortOrder: 0 },
-  { key: "advanced_analytics", label: "Аналитика", sortOrder: 1 },
-  { key: "forecasts", label: "Прогнозы трат", sortOrder: 2 },
-  { key: "debts", label: "Долги", sortOrder: 3 },
-  { key: "collaborative", label: "Совместный бюджет", sortOrder: 4 },
+  {
+    key: "voice_input",
+    label: "Голосовые сообщения",
+    description:
+      "Распознавание и запись трат из голосовых сообщений в боте (voice-handler). Без фичи бот предлагает отправить трату текстом.",
+    sortOrder: 0,
+  },
+  {
+    key: "advanced_analytics",
+    label: "Аналитика",
+    description:
+      "Ежемесячный аналитический отчёт по расписанию (analytics-cron, sendMonthlyReport).",
+    sortOrder: 1,
+  },
+  {
+    key: "forecasts",
+    label: "Прогнозы трат",
+    description:
+      "Еженедельный прогноз трат по расписанию (analytics-cron, sendWeeklyForecast).",
+    sortOrder: 2,
+  },
+  {
+    key: "debts",
+    label: "Долги",
+    description:
+      "Создание записей о долгах — в боте (message-handler) и через API/Mini App (DebtsApiService.create).",
+    sortOrder: 3,
+  },
+  {
+    key: "collaborative",
+    label: "Совместный бюджет",
+    description: "Приглашение участников в общий workspace (WorkspaceApiService.invite).",
+    sortOrder: 4,
+  },
 ];
 
 const HOME_PAGE = {

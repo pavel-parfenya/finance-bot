@@ -49,6 +49,13 @@ const apiMode = process.env["API_MODE"] === "test" ? "test" : "normal";
  */
 const paymentMode = process.env["PAYMENT_MODE"] === "paid" ? "paid" : "free";
 
+/**
+ * Платёжный шлюз:
+ * - `test` (по умолчанию): оплата сразу считается успешной, подписка оформляется без перехода в банк.
+ * - `webpay`: реальная оплата через WebPay (редирект на платёжную форму + notify-webhook).
+ */
+const paymentGateway = process.env["PAYMENT_GATEWAY"] === "webpay" ? "webpay" : "test";
+
 function readTestTelegramUserId(): number | null {
   if (apiMode !== "test") return null;
   const raw = process.env["TELEGRAM_USER_ID"];
@@ -80,6 +87,8 @@ export const config = {
   apiMode: apiMode as "normal" | "test",
   /** `free` (по умолчанию): всё бесплатно; `paid`: подписки/тарифы активны. */
   paymentMode: paymentMode as "free" | "paid",
+  /** `test` (по умолчанию): оплата мокается; `webpay`: реальная оплата через WebPay. */
+  paymentGateway: paymentGateway as "webpay" | "test",
   testTelegramUserId: readTestTelegramUserId(),
   port: parseInt(process.env["PORT"] ?? "10000", 10),
   webhookPath: "/webhook",
@@ -131,6 +140,19 @@ export const config = {
     /\/$/,
     ""
   ),
+  /** Параметры платёжного шлюза WebPay (используются только при PAYMENT_GATEWAY=webpay). */
+  webpay: {
+    storeId: process.env["WEBPAY_STORE_ID"] ?? "",
+    secretKey: process.env["WEBPAY_SECRET_KEY"] ?? "",
+    formUrl: (process.env["WEBPAY_FORM_URL"] ?? "https://payment.webpay.by").replace(
+      /\/$/,
+      ""
+    ),
+    /** Тестовый режим самого WebPay (wsb_test=1) — деньги не списываются. */
+    testMode: process.env["WEBPAY_TEST_MODE"] === "true",
+    /** Валюта платежа (тарифы в Strapi указаны в BYN). */
+    currency: process.env["WEBPAY_CURRENCY"] ?? "BYN",
+  },
 } as const;
 
 export type Config = typeof config;

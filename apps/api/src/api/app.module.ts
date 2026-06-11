@@ -12,6 +12,7 @@ import {
   SubscriptionService,
   BillingTokenService,
   FeatureService,
+  PaymentService,
 } from "@finance-bot/server-core";
 import { getApiContainer } from "../di/api-container.context";
 import { HttpTelegramOutboundAdapter } from "../di/http-telegram-outbound.adapter";
@@ -72,6 +73,10 @@ import { AppStatsSnapshotScheduler } from "./app-stats-snapshot.scheduler";
       provide: FeatureService,
       useFactory: () => getApiContainer().featureService,
     },
+    {
+      provide: PaymentService,
+      useFactory: () => getApiContainer().paymentService,
+    },
     { provide: BOT_TOKEN, useFactory: () => requireEnv("TELEGRAM_BOT_TOKEN") },
     { provide: TELEGRAM_OUTBOUND, useClass: HttpTelegramOutboundAdapter },
     TelegramAuthService,
@@ -89,6 +94,7 @@ import { AppStatsSnapshotScheduler } from "./app-stats-snapshot.scheduler";
     SubscriptionService,
     BillingTokenService,
     FeatureService,
+    PaymentService,
     BOT_TOKEN,
     TELEGRAM_OUTBOUND,
     TelegramAuthService,

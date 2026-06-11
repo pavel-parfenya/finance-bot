@@ -103,6 +103,9 @@ export default async function SubscribePage({
 }) {
   const token = searchParams.token;
 
+  // Возврат пользователя после WebPay обрабатывают отдельные страницы
+  // /payment-success и /payment-failed (returnUrl/cancelUrl шлюза).
+
   if (!token) {
     return (
       <Notice
@@ -144,15 +147,22 @@ export default async function SubscribePage({
         <div>
           <p className="text-sm text-gray-500 mb-1">Текущий тариф</p>
           <p className="text-xl font-bold text-gray-900">
-            {PLAN_LABEL[subscription.plan]}{" "}
+            {PLAN_LABEL[subscription.effectivePlan]}{" "}
             <span className="text-sm font-medium text-gray-500">
               · {STATUS_LABEL[subscription.status]}
             </span>
           </p>
+          {subscription.downgradeScheduled && expiresLabel && (
+            <p className="text-sm text-gray-500 mt-1">
+              Pro отключится {expiresLabel}, затем — Free.
+            </p>
+          )}
         </div>
         {expiresLabel && (
           <div className="text-right">
-            <p className="text-sm text-gray-500 mb-1">Действует до</p>
+            <p className="text-sm text-gray-500 mb-1">
+              {subscription.downgradeScheduled ? "Pro действует до" : "Действует до"}
+            </p>
             <p className="text-lg font-semibold text-gray-900">{expiresLabel}</p>
           </div>
         )}
@@ -161,7 +171,8 @@ export default async function SubscribePage({
       <SubscribeActions
         token={token}
         plans={plans}
-        currentPlan={subscription.plan}
+        currentPlan={subscription.effectivePlan}
+        downgradeScheduled={subscription.downgradeScheduled}
       />
 
       <p className="text-center text-sm text-gray-400 mt-10">

@@ -21,6 +21,9 @@ const schema = {
       type: "string" as const,
       required: true,
     },
+    description: {
+      type: "text" as const,
+    },
     sortOrder: {
       type: "integer" as const,
       default: 0,

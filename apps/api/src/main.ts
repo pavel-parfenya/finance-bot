@@ -21,6 +21,8 @@ async function bootstrap(): Promise<void> {
 
   const expressApp = express();
   expressApp.use(express.json({ limit: "10mb" }));
+  // WebPay шлёт notify (webhook) как application/x-www-form-urlencoded.
+  expressApp.use(express.urlencoded({ extended: false }));
 
   if (shouldEmbedTelegramBotInApi()) {
     const core = createCoreServices(config, dataSource);

@@ -6,9 +6,9 @@ import type {
   StrapiPlanConfig,
 } from "../infrastructure/strapi/strapi-plan-config";
 
-function fakeSub(plan: string): SubscriptionService {
+function fakeSub(plan: string, expiresAt: Date | null = null): SubscriptionService {
   return {
-    getCurrentOrFree: async () => ({ plan }),
+    getCurrentOrFree: async () => ({ plan, expiresAt }),
   } as unknown as SubscriptionService;
 }
 
@@ -51,5 +51,25 @@ describe("FeatureService", () => {
     const svc = new FeatureService("paid", fakeSub("pro_year"), fakeConfig(proMonthMap));
     expect(await svc.hasFeature(1, "voice_input")).toBe(true);
     expect(await svc.getUserFeatures(1)).toBeNull();
+  });
+
+  it("Pro действует до expiresAt", async () => {
+    const future = new Date(Date.now() + 86_400_000);
+    const svc = new FeatureService(
+      "paid",
+      fakeSub("pro_month", future),
+      fakeConfig(proMonthMap)
+    );
+    expect(await svc.hasFeature(1, "voice_input")).toBe(true);
+  });
+
+  it("после expiresAt платный план деградирует до free и фичи режутся", async () => {
+    const past = new Date(Date.now() - 86_400_000);
+    const svc = new FeatureService(
+      "paid",
+      fakeSub("pro_month", past),
+      fakeConfig(proMonthMap)
+    );
+    expect(await svc.hasFeature(1, "voice_input")).toBe(false);
   });
 });

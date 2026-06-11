@@ -11,7 +11,9 @@ import { AppStatsService } from "../services/app-stats-service";
 import { SubscriptionService } from "../services/subscription-service";
 import { BillingTokenService } from "../services/billing-token-service";
 import { FeatureService } from "../services/feature-service";
+import { PaymentService } from "../services/payment-service";
 import { StrapiPlanConfig } from "../infrastructure/strapi/strapi-plan-config";
+import { buildPaymentGatewayConfig } from "./payment-gateway-config";
 
 export interface ApiServices {
   userService: UserService;
@@ -24,6 +26,7 @@ export interface ApiServices {
   subscriptionService: SubscriptionService;
   billingTokenService: BillingTokenService;
   featureService: FeatureService;
+  paymentService: PaymentService;
 }
 
 /** Минимальный набор для Nest Mini App API (без LLM/STT и т.д.). */
@@ -38,10 +41,16 @@ export function createApiServices(config: Config, dataSource: DataSource): ApiSe
   const appStatsService = new AppStatsService(dataSource);
   const subscriptionService = new SubscriptionService(dataSource);
   const billingTokenService = new BillingTokenService(config.billing.jwtSecret);
+  const strapiPlanConfig = new StrapiPlanConfig(config.strapiApiUrl);
   const featureService = new FeatureService(
     config.paymentMode,
     subscriptionService,
-    new StrapiPlanConfig(config.strapiApiUrl)
+    strapiPlanConfig
+  );
+  const paymentService = new PaymentService(
+    buildPaymentGatewayConfig(config),
+    subscriptionService,
+    strapiPlanConfig
   );
 
   return {
@@ -55,5 +64,6 @@ export function createApiServices(config: Config, dataSource: DataSource): ApiSe
     subscriptionService,
     billingTokenService,
     featureService,
+    paymentService,
   };
 }

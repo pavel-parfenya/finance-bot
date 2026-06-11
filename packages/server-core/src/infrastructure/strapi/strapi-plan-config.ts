@@ -49,6 +49,18 @@ function extractFeatures(planFeatures: unknown): PlanFeatureItem[] {
     .map((f) => ({ key: f.key, label: f.label }));
 }
 
+/**
+ * Fallback-фичи из json-поля `features` (массив строк-подписей без машинных ключей).
+ * Используются для отображения, когда связь `planFeatures` не заполнена. Ключ = подпись:
+ * для гейтинга такие ключи отсеиваются `isFeatureKey`, так что на блокировки не влияют.
+ */
+function extractJsonFeatures(features: unknown): PlanFeatureItem[] {
+  if (!Array.isArray(features)) return [];
+  return features
+    .filter((f): f is string => typeof f === "string" && f.trim().length > 0)
+    .map((label) => ({ key: label, label }));
+}
+
 /** Запасной вывод planId из цены/периода, если поле planId не заполнено. */
 function resolvePlanId(price: unknown, period: unknown): SubscriptionPlanId | null {
   const p = typeof price === "number" ? price : Number(price);
@@ -110,12 +122,18 @@ export class StrapiPlanConfig {
           : null) ?? resolvePlanId(attrs["price"], attrs["period"]);
       const price =
         attrs["price"] == null || attrs["price"] === "" ? null : Number(attrs["price"]);
+      // Источник истины для фич — связь planFeatures; json features оставляем как fallback.
+      const relationFeatures = extractFeatures(attrs["planFeatures"]);
+      const features =
+        relationFeatures.length > 0
+          ? relationFeatures
+          : extractJsonFeatures(attrs["features"]);
       return {
         planId,
         name: typeof attrs["name"] === "string" ? (attrs["name"] as string) : "",
         price: price != null && Number.isFinite(price) ? price : null,
         period: (attrs["period"] as SubscriptionPlanCard["period"]) ?? null,
-        features: extractFeatures(attrs["planFeatures"]),
+        features,
         isPopular: attrs["isPopular"] === true,
         ctaText: typeof attrs["ctaText"] === "string" ? (attrs["ctaText"] as string) : "",
         sortOrder:
