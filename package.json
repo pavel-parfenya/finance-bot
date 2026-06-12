@@ -29,6 +29,7 @@
     "format:check": "prettier --check \"packages/**/*.ts\" \"apps/**/*.{ts,vue,html,css}\"",
     "test": "vitest run",
     "test:watch": "vitest",
+    "seed": "DB=$(grep -E '^DATABASE_URL=' .env | head -1 | cut -d= -f2- | tr -d '\"'); psql \"$DB\" -f apps/cms/src/seeds/seed.sql && psql \"$DB\" -f apps/cms/src/seeds/seed-plan-features.sql",
     "migrations": "npm run migrations -w @finance-bot/server-core",
     "migrations:generate": "npm run migrations:generate -w @finance-bot/server-core",
     "migrations:revert": "npm run migrations:revert -w @finance-bot/server-core",

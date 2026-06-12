@@ -14,9 +14,6 @@
   "dependencies": {
     "@finance-bot/shared": "*",
     "dotenv": "^16.4.7",
-    "google-auth-library": "^9.15.1",
-    "google-spreadsheet": "^4.1.4",
-    "googleapis": "^171.4.0",
     "jsonwebtoken": "^9.0.2",
     "openai": "^4.85.4",
     "pg": "^8.20.0",

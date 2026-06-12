@@ -11,6 +11,20 @@ COPY packages ./packages
 COPY apps ./apps
 
 RUN npm ci
+
+# Build-time переменные для лендинга (Next.js инлайнит STRAPI_API_URL и NEXT_PUBLIC_*
+# на этапе сборки). Дефолты рассчитаны на docker-compose сеть/хост.
+ARG STRAPI_API_URL=http://cms:1337
+ARG NEXT_PUBLIC_API_URL=http://localhost:10000
+ARG NEXT_PUBLIC_BASE_URL=http://localhost:3001
+ARG NEXT_PUBLIC_BOT_USERNAME=
+ARG PAYMENT_MODE=free
+ENV STRAPI_API_URL=$STRAPI_API_URL \
+    NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
+    NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL \
+    NEXT_PUBLIC_BOT_USERNAME=$NEXT_PUBLIC_BOT_USERNAME \
+    PAYMENT_MODE=$PAYMENT_MODE
+
 RUN npm run build
 
 FROM node:22-alpine AS bot
@@ -56,3 +70,40 @@ WORKDIR /app/apps/api
 EXPOSE 10000
 
 CMD ["node", "dist/main.js"]
+
+# ---- migrate: разовый запуск TypeORM-миграций (нужны dev-зависимости: ts-node/typeorm) ----
+FROM build AS migrate
+
+WORKDIR /app
+
+CMD ["npm", "run", "migrations"]
+
+# ---- cms: Strapi (нужны исходники + node_modules + build-артефакты целиком) ----
+FROM build AS cms
+
+ENV NODE_ENV=production
+
+WORKDIR /app/apps/cms
+
+EXPOSE 1337
+
+CMD ["npm", "run", "start"]
+
+# ---- landing: Next.js (next start) ----
+FROM build AS landing
+
+ENV NODE_ENV=production
+
+WORKDIR /app/apps/landing
+
+EXPOSE 3001
+
+CMD ["npm", "run", "start"]
+
+# ---- miniapp: статическая SSG-сборка Nuxt, отдаётся nginx, /api проксируется на api ----
+FROM nginx:alpine AS miniapp
+
+COPY apps/miniapp/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/apps/miniapp/dist /usr/share/nginx/html
+
+EXPOSE 80

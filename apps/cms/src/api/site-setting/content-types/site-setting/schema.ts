@@ -33,6 +33,11 @@ const schema = {
     telegramSupport: {
       type: "string" as const,
     },
+    logo: {
+      type: "media" as const,
+      multiple: false,
+      allowedTypes: ["images"],
+    },
   },
 };
 

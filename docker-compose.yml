@@ -1,15 +1,7 @@
 services:
-  # bot:
-  #   build: .
-  #   restart: unless-stopped
-  #   env_file:
-  #     - .env
-  #   environment:
-  #     DATABASE_URL: postgresql://${DB_USER:-finance}:${DB_PASSWORD:-finance}@postgres:5432/${DB_NAME:-finance_bot}
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-
+  # ---------------------------------------------------------------------------
+  # База данных (общая для api/bot и Strapi — в отдельной схеме strapi)
+  # ---------------------------------------------------------------------------
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -27,5 +19,141 @@ services:
       timeout: 3s
       retries: 5
 
-# volumes:
-#   pgdata:
+  # ---------------------------------------------------------------------------
+  # Разовый прогон миграций перед стартом приложений.
+  # Создаёт схему strapi и запускает TypeORM-миграции. Seed НЕ запускается.
+  # ---------------------------------------------------------------------------
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migrate
+    restart: "no"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-finance}:${DB_PASSWORD:-finance}@postgres:5432/${DB_NAME:-finance_bot}
+    command:
+      - sh
+      - -c
+      - |
+        node -e "const {Client}=require('pg');const c=new Client({connectionString:process.env.DATABASE_URL});c.connect().then(()=>c.query('CREATE SCHEMA IF NOT EXISTS strapi')).then(()=>c.end()).catch(e=>{console.error(e);process.exit(1)})"
+        npm run migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # NestJS API (+ статика Mini App на /app). Порт 10000.
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-finance}:${DB_PASSWORD:-finance}@postgres:5432/${DB_NAME:-finance_bot}
+      PORT: "10000"
+      MODE: polling
+      EMBED_TELEGRAM_BOT: "false"
+      BOT_SERVICE_URL: http://bot:10001
+      PUBLIC_BASE_URL: http://localhost:10000
+    ports:
+      - "10000:10000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  # ---------------------------------------------------------------------------
+  # Telegram-бот (grammY, polling). Порт 10001.
+  # ---------------------------------------------------------------------------
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-finance}:${DB_PASSWORD:-finance}@postgres:5432/${DB_NAME:-finance_bot}
+      MODE: polling
+      BOT_HTTP_PORT: "10001"
+      PUBLIC_BASE_URL: http://localhost:10000
+    ports:
+      - "10001:10001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  # ---------------------------------------------------------------------------
+  # Strapi CMS. Порт 1337. Та же БД, схема strapi.
+  # ---------------------------------------------------------------------------
+  cms:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: cms
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-finance}:${DB_PASSWORD:-finance}@postgres:5432/${DB_NAME:-finance_bot}
+      STRAPI_HOST: 0.0.0.0
+      STRAPI_PORT: "1337"
+      STRAPI_DATABASE_CLIENT: postgres
+      STRAPI_DATABASE_SCHEMA: strapi
+    ports:
+      - "1337:1337"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  # ---------------------------------------------------------------------------
+  # Лендинг (Next.js). Порт 3001. STRAPI_API_URL/NEXT_PUBLIC_* инлайнятся при сборке.
+  # ---------------------------------------------------------------------------
+  landing:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: landing
+      args:
+        STRAPI_API_URL: http://cms:1337
+        NEXT_PUBLIC_API_URL: http://localhost:10000
+        NEXT_PUBLIC_BASE_URL: http://localhost:3001
+        NEXT_PUBLIC_BOT_USERNAME: ${NEXT_PUBLIC_BOT_USERNAME:-}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      STRAPI_API_URL: http://cms:1337
+    ports:
+      - "3001:3001"
+    depends_on:
+      - cms
+
+  # ---------------------------------------------------------------------------
+  # Mini App (статическая SSG-сборка Nuxt, отдаётся nginx). Порт 3000.
+  # ---------------------------------------------------------------------------
+  miniapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: miniapp
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:

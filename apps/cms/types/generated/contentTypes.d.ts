@@ -617,6 +617,7 @@ export interface ApiSiteSettingSiteSetting extends Struct.SingleTypeSchema {
       "api::site-setting.site-setting"
     > &
       Schema.Attribute.Private;
+    logo: Schema.Attribute.Media<"images">;
     phone: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
     telegramSupport: Schema.Attribute.String;

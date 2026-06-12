@@ -58,6 +58,8 @@ export interface CmsSiteSettings {
   address: string;
   botUsername: string;
   telegramSupport: string;
+  /** Абсолютный URL логотипа из media library Strapi (или null, если не задан). */
+  logoUrl: string | null;
 }
 
 export interface CmsPage {
@@ -154,12 +156,33 @@ export async function getCmsFaqs(): Promise<CmsFaq[]> {
   })) as CmsFaq[];
 }
 
+/** Strapi v5 отдаёт media плоско, v4 — через `{ data: { attributes } }`. Возвращает абсолютный URL. */
+function mediaUrl(media: unknown): string | null {
+  if (!media || typeof media !== "object") return null;
+  const node = "data" in media ? (media as { data: unknown }).data : media;
+  if (!node || typeof node !== "object") return null;
+  const attrs =
+    "attributes" in node
+      ? (node as { attributes: Record<string, unknown> }).attributes
+      : (node as Record<string, unknown>);
+  const url = typeof attrs?.url === "string" ? attrs.url : null;
+  if (!url) return null;
+  return url.startsWith("http") ? url : `${API_URL}${url}`;
+}
+
 export async function getCmsSiteSettings(): Promise<CmsSiteSettings | null> {
-  const data = await fetchCms<{ attributes?: CmsSiteSettings } & CmsSiteSettings>(
-    "/site-setting?populate=*"
-  );
+  const data = await fetchCms<
+    { attributes?: Record<string, unknown> } & Record<string, unknown>
+  >("/site-setting?populate=*");
   if (!data) return null;
-  return ("attributes" in data ? data.attributes : data) as CmsSiteSettings;
+  const attrs = ("attributes" in data ? data.attributes : data) as Record<
+    string,
+    unknown
+  >;
+  return {
+    ...attrs,
+    logoUrl: mediaUrl(attrs.logo),
+  } as unknown as CmsSiteSettings;
 }
 
 export async function getCmsPage(slug: string): Promise<CmsPage | null> {
