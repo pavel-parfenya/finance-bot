@@ -24,14 +24,24 @@ export async function configureBotAfterInit(bot: Bot, core: CoreServices): Promi
   });
 
   const miniAppUrl = config.publicBaseUrl ? `${config.publicBaseUrl}/app` : "";
-  if (miniAppUrl) {
-    await bot.api.setChatMenuButton({
-      menu_button: {
-        type: "web_app",
-        text: "Открыть",
-        web_app: { url: miniAppUrl },
-      },
-    });
+  // Telegram принимает кнопку Mini App только с HTTPS-URL. Локально (http://localhost)
+  // или при сбое API не валим бот — логируем и продолжаем работу.
+  if (miniAppUrl && miniAppUrl.startsWith("https://")) {
+    try {
+      await bot.api.setChatMenuButton({
+        menu_button: {
+          type: "web_app",
+          text: "Открыть",
+          web_app: { url: miniAppUrl },
+        },
+      });
+    } catch (err) {
+      console.warn(`Не удалось установить кнопку Mini App (${miniAppUrl}):`, err);
+    }
+  } else if (miniAppUrl) {
+    console.warn(
+      `Кнопка Mini App пропущена: PUBLIC_BASE_URL не HTTPS (${miniAppUrl}). Telegram требует HTTPS.`
+    );
   }
 
   if (config.mode === "webhook") {

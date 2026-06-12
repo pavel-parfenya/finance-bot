@@ -6,11 +6,18 @@ FROM node:22-alpine AS build
 
 WORKDIR /app
 
+# Тулчейн для сборки нативных модулей (better-sqlite3 в составе Strapi:
+# готовых бинарников под musl/arm64 нет, node-gyp компилирует из исходников).
+RUN apk add --no-cache python3 make g++
+
 COPY package.json package-lock.json ./
 COPY packages ./packages
 COPY apps ./apps
 
 RUN npm ci
+
+# turbo build читает turbo.json в корне; пакеты наследуют корневой tsconfig.json
+COPY turbo.json tsconfig.json ./
 
 # Build-time переменные для лендинга (Next.js инлайнит STRAPI_API_URL и NEXT_PUBLIC_*
 # на этапе сборки). Дефолты рассчитаны на docker-compose сеть/хост.
@@ -24,6 +31,9 @@ ENV STRAPI_API_URL=$STRAPI_API_URL \
     NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL \
     NEXT_PUBLIC_BOT_USERNAME=$NEXT_PUBLIC_BOT_USERNAME \
     PAYMENT_MODE=$PAYMENT_MODE
+
+# Сборка админки Strapi прожорлива по памяти — даём heap запас, иначе OOM (exit 137).
+ENV NODE_OPTIONS=--max-old-space-size=4096
 
 RUN npm run build
 
