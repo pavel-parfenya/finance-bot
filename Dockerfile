@@ -6,14 +6,13 @@
 # Для `docker build` без --target последним идёт `miniapp`. Образы `api`/`bot` —
 # через `--target` или docker-compose.
 
-# ---- base: исходники + тулчейн для нативных модулей ----
-FROM node:22-alpine AS base
+# ---- base: исходники ----
+# Debian-slim (glibc), а не alpine: нативные модули (better-sqlite3, sharp,
+# @parcel/watcher) под glibc ставят ГОТОВЫЕ prebuilt-бинарники, поэтому node-gyp
+# и тулчейн (python3/make/g++) не нужны вовсе — это убирает основную долю npm ci.
+FROM node:22-slim AS base
 
 WORKDIR /app
-
-# Тулчейн для сборки нативных модулей (better-sqlite3 в составе Strapi:
-# готовых бинарников под musl/arm64 нет, node-gyp компилирует из исходников).
-RUN apk add --no-cache python3 make g++
 
 COPY package.json package-lock.json ./
 COPY packages ./packages
@@ -51,10 +50,12 @@ ENV STRAPI_API_URL=$STRAPI_API_URL \
 # Сборка админки Strapi прожорлива по памяти — даём heap запас, иначе OOM (exit 137).
 ENV NODE_OPTIONS=--max-old-space-size=4096
 
-RUN npm run build
+# cache-mount turbo: при форке стадии (landing передаёт build-args) и при повторных
+# сборках турбо переиспользует артефакты вместо повторной сборки всех 5 приложений.
+RUN --mount=type=cache,target=/app/.turbo npm run build
 
 # ---- bot: прод node_modules (из prod-deps) + только нужные dist ----
-FROM node:22-alpine AS bot
+FROM node:22-slim AS bot
 
 ENV EMBED_TELEGRAM_BOT=false
 
@@ -73,7 +74,7 @@ EXPOSE 10001
 CMD ["node", "dist/main.js"]
 
 # ---- api ----
-FROM node:22-alpine AS api
+FROM node:22-slim AS api
 
 WORKDIR /app
 
