@@ -3,8 +3,10 @@
 # `api`/`bot` копируют готовые node_modules + dist. Это убирает параллельные npm ci,
 # из-за которых на 1-CPU сервере сборка деградировала до ~1600s на каждую установку.
 #
-# Для `docker build` без --target последним идёт `miniapp`. Образы `api`/`bot` —
-# через `--target` или docker-compose.
+# Каждый сервис собирается СВОЕЙ командой `npm run build:<service>` в отдельной
+# build-стадии (build-api/build-bot/build-cms/build-landing/build-miniapp), чтобы
+# при `--target` собиралось только нужное приложение, а не все пять сразу.
+# Рантайм-стадии копируют dist из соответствующей build-стадии.
 
 # ---- base: исходники ----
 # Debian-slim (glibc), а не alpine: нативные модули (better-sqlite3, sharp,
@@ -28,8 +30,9 @@ FROM deps AS prod-deps
 
 RUN npm prune --omit=dev
 
-# ---- build: сборка всех приложений ----
-FROM deps AS build
+# ---- build-base: общее окружение сборки (turbo + tsconfig + build-time env) ----
+# Сами приложения здесь НЕ собираются — это делают наследники (build-<service>).
+FROM deps AS build-base
 
 # turbo build читает turbo.json в корне; пакеты наследуют корневой tsconfig.json
 COPY turbo.json tsconfig.json ./
@@ -50,9 +53,27 @@ ENV STRAPI_API_URL=$STRAPI_API_URL \
 # Сборка админки Strapi прожорлива по памяти — даём heap запас, иначе OOM (exit 137).
 ENV NODE_OPTIONS=--max-old-space-size=4096
 
-# cache-mount turbo: при форке стадии (landing передаёт build-args) и при повторных
-# сборках турбо переиспользует артефакты вместо повторной сборки всех 5 приложений.
-RUN --mount=type=cache,target=/app/.turbo npm run build
+# cache-mount turbo переиспользует артефакты между сборками отдельных сервисов.
+
+# ---- build-api: shared → server-core → bot → api ----
+FROM build-base AS build-api
+RUN --mount=type=cache,target=/app/.turbo npm run build:api
+
+# ---- build-bot: shared → server-core → bot ----
+FROM build-base AS build-bot
+RUN --mount=type=cache,target=/app/.turbo npm run build:bot
+
+# ---- build-miniapp: статическая SSG-сборка Nuxt ----
+FROM build-base AS build-miniapp
+RUN --mount=type=cache,target=/app/.turbo npm run build:miniapp
+
+# ---- build-landing: Next.js (инлайнит STRAPI_API_URL/NEXT_PUBLIC_* из build-base) ----
+FROM build-base AS build-landing
+RUN --mount=type=cache,target=/app/.turbo npm run build:landing
+
+# ---- build-cms: Strapi build ----
+FROM build-base AS build-cms
+RUN --mount=type=cache,target=/app/.turbo npm run build:cms
 
 # ---- bot: прод node_modules (из prod-deps) + только нужные dist ----
 FROM node:22-slim AS bot
@@ -63,9 +84,9 @@ WORKDIR /app
 
 # Готовое прод-дерево с корректной раскладкой workspace (симлинки @finance-bot/* сохраняются).
 COPY --from=prod-deps /app ./
-COPY --from=build /app/packages/shared/dist ./packages/shared/dist
-COPY --from=build /app/packages/server-core/dist ./packages/server-core/dist
-COPY --from=build /app/apps/bot/dist ./apps/bot/dist
+COPY --from=build-bot /app/packages/shared/dist ./packages/shared/dist
+COPY --from=build-bot /app/packages/server-core/dist ./packages/server-core/dist
+COPY --from=build-bot /app/apps/bot/dist ./apps/bot/dist
 
 WORKDIR /app/apps/bot
 
@@ -79,11 +100,11 @@ FROM node:22-slim AS api
 WORKDIR /app
 
 COPY --from=prod-deps /app ./
-COPY --from=build /app/packages/shared/dist ./packages/shared/dist
-COPY --from=build /app/packages/server-core/dist ./packages/server-core/dist
-COPY --from=build /app/apps/bot/dist ./apps/bot/dist
-COPY --from=build /app/apps/api/dist ./apps/api/dist
-COPY --from=build /app/apps/miniapp/dist ./apps/miniapp/dist
+COPY --from=build-api /app/packages/shared/dist ./packages/shared/dist
+COPY --from=build-api /app/packages/server-core/dist ./packages/server-core/dist
+COPY --from=build-api /app/apps/bot/dist ./apps/bot/dist
+COPY --from=build-api /app/apps/api/dist ./apps/api/dist
+COPY --from=build-miniapp /app/apps/miniapp/dist ./apps/miniapp/dist
 
 WORKDIR /app/apps/api
 
@@ -91,15 +112,17 @@ EXPOSE 10000
 
 CMD ["node", "dist/main.js"]
 
-# ---- migrate: разовый запуск TypeORM-миграций (нужны dev-зависимости: ts-node/typeorm) ----
-FROM build AS migrate
+# ---- migrate: разовый запуск TypeORM-миграций ----
+# typeorm-ts-node-commonjs гоняет миграции по исходникам — сборка не нужна,
+# хватает dev-зависимостей (deps) + корневого tsconfig.json.
+FROM build-base AS migrate
 
 WORKDIR /app
 
 CMD ["npm", "run", "migrations"]
 
 # ---- cms: Strapi (нужны исходники + node_modules + build-артефакты целиком) ----
-FROM build AS cms
+FROM build-cms AS cms
 
 ENV NODE_ENV=production
 
@@ -110,7 +133,7 @@ EXPOSE 1337
 CMD ["npm", "run", "start"]
 
 # ---- landing: Next.js (next start) ----
-FROM build AS landing
+FROM build-landing AS landing
 
 ENV NODE_ENV=production
 
@@ -124,6 +147,6 @@ CMD ["npm", "run", "start"]
 FROM nginx:alpine AS miniapp
 
 COPY apps/miniapp/nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/apps/miniapp/dist /usr/share/nginx/html
+COPY --from=build-miniapp /app/apps/miniapp/dist /usr/share/nginx/html
 
 EXPOSE 80
