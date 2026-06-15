@@ -1,3 +1,11 @@
+# zstd-сжатие новых слоёв при сборке. gzip (дефолт) на 1-CPU сервере тратит
+# десятки минут на «exporting layers» больших node_modules; zstd жмёт заметно
+# быстрее при схожем размере. Без force-compression: перепаковывать уже сжатые
+# слои базового образа не нужно — только новые слои сборки.
+x-zstd-bake: &zstd-bake
+  output:
+    - "type=image,compression=zstd"
+
 services:
   # ---------------------------------------------------------------------------
   # База данных (общая для api/bot и Strapi — в отдельной схеме strapi)
@@ -28,6 +36,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: migrate
+      x-bake: *zstd-bake
     restart: "no"
     env_file:
       - .env
@@ -52,6 +61,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: api
+      x-bake: *zstd-bake
     restart: unless-stopped
     env_file:
       - .env
@@ -79,6 +89,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: bot
+      x-bake: *zstd-bake
     restart: unless-stopped
     env_file:
       - .env
@@ -104,6 +115,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: cms
+      x-bake: *zstd-bake
     restart: unless-stopped
     env_file:
       - .env
@@ -129,6 +141,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: landing
+      x-bake: *zstd-bake
       args:
         STRAPI_API_URL: http://cms:1337
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:10000}
@@ -152,6 +165,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: miniapp
+      x-bake: *zstd-bake
     restart: unless-stopped
     ports:
       - "3000:80"
