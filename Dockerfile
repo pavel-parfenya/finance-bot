@@ -75,15 +75,15 @@ RUN --mount=type=cache,target=/app/.turbo npm run build:landing
 FROM build-base AS build-cms
 RUN --mount=type=cache,target=/app/.turbo npm run build:cms
 
-# ---- bot: прод node_modules (из prod-deps) + только нужные dist ----
-FROM node:22-slim AS bot
+# ---- bot: наследуем готовое прод-дерево (prod-deps) + докладываем только dist ----
+# FROM prod-deps (а не COPY --from=prod-deps на чистый node:22-slim): так образ
+# ПЕРЕИСПОЛЬЗУЕТ уже существующий слой node_modules вместо создания нового жирного
+# слоя на каждый сервис. Это кардинально сокращает «exporting layers» — главный
+# тормоз сборки на слабом сервере. Симлинки workspace @finance-bot/* сохраняются.
+FROM prod-deps AS bot
 
 ENV EMBED_TELEGRAM_BOT=false
 
-WORKDIR /app
-
-# Готовое прод-дерево с корректной раскладкой workspace (симлинки @finance-bot/* сохраняются).
-COPY --from=prod-deps /app ./
 COPY --from=build-bot /app/packages/shared/dist ./packages/shared/dist
 COPY --from=build-bot /app/packages/server-core/dist ./packages/server-core/dist
 COPY --from=build-bot /app/apps/bot/dist ./apps/bot/dist
@@ -94,12 +94,9 @@ EXPOSE 10001
 
 CMD ["node", "dist/main.js"]
 
-# ---- api ----
-FROM node:22-slim AS api
+# ---- api: тоже наследуем prod-deps, докладываем dist приложений + miniapp ----
+FROM prod-deps AS api
 
-WORKDIR /app
-
-COPY --from=prod-deps /app ./
 COPY --from=build-api /app/packages/shared/dist ./packages/shared/dist
 COPY --from=build-api /app/packages/server-core/dist ./packages/server-core/dist
 COPY --from=build-api /app/apps/bot/dist ./apps/bot/dist
