@@ -1,8 +1,13 @@
-# Multi-stage: для `docker build` без --target последним должен быть тот образ, который
-# публикуешь на публичный URL (Mini App + API). Образ `bot` — для webhook / internal
-# (отдельный сервис или `docker build --target bot`).
+# Multi-stage. Ключевой принцип: зависимости устанавливаются ОДИН раз (стадия `deps`).
+# Прод-дерево получаем через `npm prune` (без повторного npm ci), рантайм-образы
+# `api`/`bot` копируют готовые node_modules + dist. Это убирает параллельные npm ci,
+# из-за которых на 1-CPU сервере сборка деградировала до ~1600s на каждую установку.
+#
+# Для `docker build` без --target последним идёт `miniapp`. Образы `api`/`bot` —
+# через `--target` или docker-compose.
 
-FROM node:22-alpine AS build
+# ---- base: исходники + тулчейн для нативных модулей ----
+FROM node:22-alpine AS base
 
 WORKDIR /app
 
@@ -14,7 +19,18 @@ COPY package.json package-lock.json ./
 COPY packages ./packages
 COPY apps ./apps
 
-RUN npm ci
+# ---- deps: единственная полная установка (вкл. dev). Cache-mount ускоряет повторные сборки ----
+FROM base AS deps
+
+RUN --mount=type=cache,target=/root/.npm npm ci
+
+# ---- prod-deps: прод-дерево из готового deps, без повторного npm ci ----
+FROM deps AS prod-deps
+
+RUN npm prune --omit=dev
+
+# ---- build: сборка всех приложений ----
+FROM deps AS build
 
 # turbo build читает turbo.json в корне; пакеты наследуют корневой tsconfig.json
 COPY turbo.json tsconfig.json ./
@@ -37,18 +53,15 @@ ENV NODE_OPTIONS=--max-old-space-size=4096
 
 RUN npm run build
 
+# ---- bot: прод node_modules (из prod-deps) + только нужные dist ----
 FROM node:22-alpine AS bot
 
 ENV EMBED_TELEGRAM_BOT=false
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-COPY packages ./packages
-COPY apps ./apps
-
-RUN npm ci --omit=dev --ignore-scripts
-
+# Готовое прод-дерево с корректной раскладкой workspace (симлинки @finance-bot/* сохраняются).
+COPY --from=prod-deps /app ./
 COPY --from=build /app/packages/shared/dist ./packages/shared/dist
 COPY --from=build /app/packages/server-core/dist ./packages/server-core/dist
 COPY --from=build /app/apps/bot/dist ./apps/bot/dist
@@ -59,16 +72,12 @@ EXPOSE 10001
 
 CMD ["node", "dist/main.js"]
 
+# ---- api ----
 FROM node:22-alpine AS api
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-COPY packages ./packages
-COPY apps ./apps
-
-RUN npm ci --omit=dev --ignore-scripts
-
+COPY --from=prod-deps /app ./
 COPY --from=build /app/packages/shared/dist ./packages/shared/dist
 COPY --from=build /app/packages/server-core/dist ./packages/server-core/dist
 COPY --from=build /app/apps/bot/dist ./apps/bot/dist
