@@ -1,0 +1,152 @@
+# Прод-стек для VPS. Образы НЕ собираются на сервере — тянутся готовыми из GHCR
+# (см. .github/workflows/deploy.yml). Сервер делает только `pull` + `up`.
+#
+# HTTPS и проксирование сабдоменов выполняет HOST-nginx сервера (не контейнер):
+# он уже настроен с Cloudflare Origin Cert и проксирует на 127.0.0.1:<порт>.
+# Поэтому сервисы публикуют порты ТОЛЬКО на loopback (127.0.0.1) — наружу их
+# отдаёт host-nginx. Конфиг host-nginx версионируется в deploy/nginx/.
+#
+# Запуск/обновление вручную (CI делает то же по SSH):
+#   docker compose -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.prod.yml up -d --wait postgres
+#   docker compose -f docker-compose.prod.yml run --rm migrate
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# ${REGISTRY}/${IMAGE_PREFIX} и ${TAG} приходят из .env на сервере (дефолты ниже).
+# Прикладные секреты/конфиг — из того же .env (env_file).
+
+services:
+  # ---------------------------------------------------------------------------
+  # БД (общая для api/bot и Strapi — в отдельной схеме strapi). Данные в pgdata.
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-finance}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-finance}
+      POSTGRES_DB: ${DB_NAME:-finance_bot}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-finance}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Разовый прогон миграций ПЕРЕД стартом приложений (CREATE SCHEMA strapi +
+  # TypeORM migration:run). Запускается явно `run --rm migrate` на каждом деплое.
+  # ---------------------------------------------------------------------------
+  migrate:
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_PREFIX:-pavel-parfenya/finance-bot}-migrate:${TAG:-latest}
+    restart: "no"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-finance}:${DB_PASSWORD:-finance}@postgres:5432/${DB_NAME:-finance_bot}
+      DATABASE_SSL: "false"
+    command:
+      - sh
+      - -c
+      - |
+        node -e "const {Client}=require('pg');const c=new Client({connectionString:process.env.DATABASE_URL});c.connect().then(()=>c.query('CREATE SCHEMA IF NOT EXISTS strapi')).then(()=>c.end()).catch(e=>{console.error(e);process.exit(1)})"
+        npm run migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # NestJS API (+ статика Mini App на /app). host-nginx: api.finance-bot.by.
+  # ---------------------------------------------------------------------------
+  api:
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_PREFIX:-pavel-parfenya/finance-bot}-api:${TAG:-latest}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-finance}:${DB_PASSWORD:-finance}@postgres:5432/${DB_NAME:-finance_bot}
+      DATABASE_SSL: "false"
+      PORT: "10000"
+      MODE: ${MODE:-polling}
+      EMBED_TELEGRAM_BOT: "false"
+      BOT_SERVICE_URL: http://bot:10001
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://api.finance-bot.by}
+    ports:
+      - "127.0.0.1:10000:10000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # Telegram-бот (grammY, polling). host-nginx: bot.finance-bot.by.
+  # ---------------------------------------------------------------------------
+  bot:
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_PREFIX:-pavel-parfenya/finance-bot}-bot:${TAG:-latest}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-finance}:${DB_PASSWORD:-finance}@postgres:5432/${DB_NAME:-finance_bot}
+      DATABASE_SSL: "false"
+      MODE: ${MODE:-polling}
+      BOT_HTTP_PORT: "10001"
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://api.finance-bot.by}
+    ports:
+      - "127.0.0.1:10001:10001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # Strapi CMS. host-nginx: cms.finance-bot.by. Та же БД, схема strapi.
+  # Heap 512МБ: тяжёлая сборка админки уже в CI, рантайму столько не нужно.
+  # ---------------------------------------------------------------------------
+  cms:
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_PREFIX:-pavel-parfenya/finance-bot}-cms:${TAG:-latest}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-finance}:${DB_PASSWORD:-finance}@postgres:5432/${DB_NAME:-finance_bot}
+      STRAPI_HOST: 0.0.0.0
+      STRAPI_PORT: "1337"
+      STRAPI_DATABASE_CLIENT: postgres
+      STRAPI_DATABASE_SCHEMA: strapi
+      NODE_OPTIONS: --max-old-space-size=512
+    ports:
+      - "127.0.0.1:1337:1337"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # Лендинг (Next.js). host-nginx: finance-bot.by. NEXT_PUBLIC_* вшиты в образ
+  # при сборке в CI; SSR-обращение к Strapi — по внутренней docker-сети.
+  # ---------------------------------------------------------------------------
+  landing:
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_PREFIX:-pavel-parfenya/finance-bot}-landing:${TAG:-latest}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      STRAPI_API_URL: http://cms:1337
+    ports:
+      - "127.0.0.1:3001:3001"
+    depends_on:
+      - cms
+
+  # ---------------------------------------------------------------------------
+  # Mini App (статическая SSG-сборка Nuxt, отдаётся внутренним nginx, /api→api).
+  # host-nginx: app.finance-bot.by → 127.0.0.1:3000.
+  # ---------------------------------------------------------------------------
+  miniapp:
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_PREFIX:-pavel-parfenya/finance-bot}-miniapp:${TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:80"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:

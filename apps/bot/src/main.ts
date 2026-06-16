@@ -39,6 +39,10 @@ async function bootstrap(): Promise<void> {
     res.type("text/plain").send("OK");
   });
 
+  httpApp.get("/health.json", (_req, res) => {
+    res.json({ status: "ok", service: "bot" });
+  });
+
   attachTelegramBotHttpRoutes(httpApp, bot);
 
   await new Promise<void>((resolve) => {

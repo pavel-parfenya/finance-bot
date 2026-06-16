@@ -12,6 +12,10 @@ export function setupExpressLayer(expressApp: Application): void {
     res.type("text/plain").send("OK");
   });
 
+  expressApp.get("/health.json", (_req, res) => {
+    res.json({ status: "ok", service: "api" });
+  });
+
   expressApp.use("/assets", express.static(join(CLIENT_DIST, "assets")));
 
   expressApp.use((req, res, next) => {
