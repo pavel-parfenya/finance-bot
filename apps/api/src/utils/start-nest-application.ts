@@ -8,8 +8,17 @@ import { config } from "@finance-bot/server-core";
 function buildAllowedOrigins(): (string | RegExp)[] {
   const origins: (string | RegExp)[] = [];
 
-  if (config.publicBaseUrl) {
-    origins.push(config.publicBaseUrl.replace(/\/$/, ""));
+  // Лендинг (finance-bot.by) и сам API живут на РАЗНЫХ доменах — лендинг шлёт
+  // cross-origin запросы на /api/billing/*, поэтому его origin обязателен в CORS.
+  // publicBaseUrl — это домен самого API; для CORS он не нужен, но не мешает.
+  const urlEnvs = [
+    config.publicBaseUrl,
+    process.env["LANDING_BASE_URL"],
+    process.env["NEXT_PUBLIC_BASE_URL"],
+  ];
+  for (const u of urlEnvs) {
+    const v = u?.trim().replace(/\/$/, "");
+    if (v && !origins.includes(v)) origins.push(v);
   }
 
   if (process.env["NODE_ENV"] !== "production") {
