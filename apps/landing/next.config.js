@@ -6,6 +6,11 @@ const strapi = new URL(strapiUrl);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // standalone: Next трейсит реально используемые модули и кладёт минимальный их
+  // набор в .next/standalone — на рантайме не нужен полный node_modules (~400МБ Next).
+  output: "standalone",
+  // монорепа: корень трассировки — корень репозитория, иначе трейс неполный.
+  outputFileTracingRoot: path.join(__dirname, "../../"),
   env: {
     STRAPI_API_URL: process.env.STRAPI_API_URL,
     NEXT_PUBLIC_BOT_USERNAME: process.env.NEXT_PUBLIC_BOT_USERNAME,
