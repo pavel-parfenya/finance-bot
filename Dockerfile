@@ -61,10 +61,12 @@ RUN node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.
  && npm install --omit=dev --no-audit --no-fund --no-package-lock
 
 # ---- cms-deps: изолированная prod-установка только Strapi (без монорепы) ----
+# npm ci по закоммиченному lock → ВОСПРОИЗВОДИМЫЙ слой node_modules: не меняется
+# между сборками, поэтому сервер не перекачивает ~900МБ cms на каждом деплое.
 FROM node:22-slim AS cms-deps
 WORKDIR /app/apps/cms
-COPY apps/cms/package.json ./
-RUN npm install --omit=dev --no-audit --no-fund --no-package-lock
+COPY apps/cms/package.json apps/cms/package-lock.json ./
+RUN npm ci --omit=dev --no-audit --no-fund
 
 # ---- bot: только свои зависимости + dist ----
 FROM node:22-slim AS bot

@@ -76,6 +76,9 @@ jobs:
             export TAG="${{ github.sha }}"
             cd /opt/finance-bot
             git pull --ff-only                # обновить docker-compose.prod.yml и deploy/nginx
+            # освободить место от неиспользуемых образов старых sha ДО pull (диск 9.8ГБ тесный);
+            # образы запущенных контейнеров in-use и не удаляются
+            docker image prune -af
             docker compose -f docker-compose.prod.yml pull
             # поднять БД и дождаться healthy (healthcheck знает DB_USER из .env)
             docker compose -f docker-compose.prod.yml up -d --wait postgres
