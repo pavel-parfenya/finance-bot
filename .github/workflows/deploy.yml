@@ -66,6 +66,9 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
+          # Дефолт ssh-action = 10m, чего мало для первого pull тяжёлых образов на
+          # слабом VPS с медленным каналом. Даём запас (последующие pull быстрые — слои кэшируются).
+          command_timeout: 40m
           # TAG пиннит ВСЕ образы на коммит этого релиза — атомарный откат по sha.
           script: |
             set -e
