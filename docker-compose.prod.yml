@@ -133,6 +133,8 @@ services:
       - .env
     environment:
       STRAPI_API_URL: http://cms:1337
+      # Next standalone слушает $PORT; без этого наследует PORT=10000 из общего .env.
+      PORT: "3001"
     ports:
       - "127.0.0.1:3001:3001"
     depends_on:
