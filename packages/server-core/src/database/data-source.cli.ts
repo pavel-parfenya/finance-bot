@@ -29,7 +29,11 @@ export const AppDataSource = new DataSource({
     CustomCategory,
     AppUserStatsSnapshot,
   ],
-  migrations: [path.join(__dirname, "migrations/*.ts")],
+  // .ts — для ts-node (dev), .js — для скомпилированного прод-запуска (dist).
+  migrations: [
+    path.join(__dirname, "migrations/*.ts"),
+    path.join(__dirname, "migrations/*.js"),
+  ],
   synchronize: false,
   logging: false,
 });

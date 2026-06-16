@@ -21,7 +21,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [api, bot, cms, landing, miniapp, migrate]
+        # migrate-образа нет: миграции гоняет образ api (скомпилированный прод-раннер).
+        service: [api, bot, cms, landing, miniapp]
     steps:
       - uses: actions/checkout@v4
 

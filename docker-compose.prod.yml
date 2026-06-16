@@ -36,10 +36,12 @@ services:
 
   # ---------------------------------------------------------------------------
   # Разовый прогон миграций ПЕРЕД стартом приложений (CREATE SCHEMA strapi +
-  # TypeORM migration:run). Запускается явно `run --rm migrate` на каждом деплое.
+  # TypeORM migration:run по СКОМПИЛИРОВАННОМУ коду). Переиспользует образ api —
+  # отдельный тяжёлый migrate-образ с dev-зависимостями не нужен.
+  # Запускается явно `run --rm migrate` на каждом деплое.
   # ---------------------------------------------------------------------------
   migrate:
-    image: ${REGISTRY:-ghcr.io}/${IMAGE_PREFIX:-pavel-parfenya/finance-bot}-migrate:${TAG:-latest}
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_PREFIX:-pavel-parfenya/finance-bot}-api:${TAG:-latest}
     restart: "no"
     env_file:
       - .env
@@ -51,7 +53,7 @@ services:
       - -c
       - |
         node -e "const {Client}=require('pg');const c=new Client({connectionString:process.env.DATABASE_URL});c.connect().then(()=>c.query('CREATE SCHEMA IF NOT EXISTS strapi')).then(()=>c.end()).catch(e=>{console.error(e);process.exit(1)})"
-        npm run migrations
+        node /app/packages/server-core/dist/database/run-migrations.js
     depends_on:
       postgres:
         condition: service_healthy
