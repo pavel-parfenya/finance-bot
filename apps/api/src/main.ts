@@ -20,8 +20,8 @@ async function bootstrap(): Promise<void> {
   setApiContainer(apiServices);
 
   const expressApp = express();
+  // bePaid шлёт notify (webhook) как application/json — покрывается express.json.
   expressApp.use(express.json({ limit: "10mb" }));
-  // WebPay шлёт notify (webhook) как application/x-www-form-urlencoded.
   expressApp.use(express.urlencoded({ extended: false }));
 
   if (shouldEmbedTelegramBotInApi()) {

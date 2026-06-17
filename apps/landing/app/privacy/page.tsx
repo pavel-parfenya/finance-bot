@@ -64,7 +64,7 @@ export default async function PrivacyPage() {
         </p>
         <ul className="list-disc pl-5 space-y-1 mt-2">
           <li>Groq / OpenAI — распознавание голоса (текст передаётся без идентификаторов).</li>
-          <li>WebPay — обработка платежей.</li>
+          <li>bePaid — обработка платежей.</li>
         </ul>
       </Section>
 

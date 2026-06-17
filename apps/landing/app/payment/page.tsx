@@ -31,7 +31,7 @@ export default async function PaymentPage() {
       <h1 className="text-4xl font-bold text-gray-900 mb-4">Оплата</h1>
       <p className="text-gray-500 mb-12">
         Подписка оформляется в боте. Оплата проходит через защищённый платёжный
-        шлюз WebPay.
+        шлюз bePaid.
       </p>
 
       <div className="space-y-8">
@@ -66,7 +66,7 @@ export default async function PaymentPage() {
           <h2 className="font-semibold text-gray-900 mb-3">Валюта и безопасность</h2>
           <p className="text-sm text-gray-600 leading-relaxed">
             Оплата принимается в белорусских рублях (BYN). Все транзакции
-            обрабатываются через сертифицированный платёжный шлюз WebPay. Данные
+            обрабатываются через сертифицированный платёжный шлюз bePaid. Данные
             карты не хранятся на наших серверах.
           </p>
         </div>

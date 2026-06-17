@@ -17,21 +17,51 @@ function resolvePlanId(plan: CmsPricingPlan): SubscriptionPlan | null {
   return null;
 }
 
-/** Создаёт скрытую форму с полями WebPay и сабмитит её (редирект на оплату). */
-function submitWebpayForm(form: { formUrl: string; fields: Record<string, string> }) {
-  const el = document.createElement("form");
-  el.method = "POST";
-  el.action = form.formUrl;
-  el.style.display = "none";
-  for (const [name, value] of Object.entries(form.fields)) {
-    const input = document.createElement("input");
-    input.type = "hidden";
-    input.name = name;
-    input.value = value;
-    el.appendChild(input);
+const BEPAID_WIDGET_SRC = "https://js.bepaid.by/widget/be_gateway.js";
+
+interface BeGatewayParams {
+  checkout_url: string;
+  token: string;
+  checkout: { iframe: boolean; test: boolean };
+  closeWidget: (status: string | null) => void;
+}
+
+interface BeGatewayCtor {
+  new (params: BeGatewayParams): { createWidget: () => void };
+}
+
+declare global {
+  interface Window {
+    BeGateway?: BeGatewayCtor;
   }
-  document.body.appendChild(el);
-  el.submit();
+}
+
+/** Однократно подгружает скрипт виджета bePaid и резолвит конструктор BeGateway. */
+function loadBeGateway(): Promise<BeGatewayCtor> {
+  return new Promise((resolve, reject) => {
+    if (window.BeGateway) {
+      resolve(window.BeGateway);
+      return;
+    }
+    const existing = document.querySelector<HTMLScriptElement>(
+      `script[src="${BEPAID_WIDGET_SRC}"]`
+    );
+    const onReady = () => {
+      if (window.BeGateway) resolve(window.BeGateway);
+      else reject(new Error("BeGateway не загрузился"));
+    };
+    if (existing) {
+      existing.addEventListener("load", onReady);
+      existing.addEventListener("error", () => reject(new Error("Ошибка загрузки виджета")));
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = BEPAID_WIDGET_SRC;
+    script.async = true;
+    script.addEventListener("load", onReady);
+    script.addEventListener("error", () => reject(new Error("Ошибка загрузки виджета")));
+    document.body.appendChild(script);
+  });
 }
 
 interface Props {
@@ -68,22 +98,37 @@ export default function SubscribeActions({
         body: JSON.stringify({ plan: planId }),
       });
       const body = (await res.json().catch(() => null)) as {
-        mode?: "test" | "webpay";
+        mode?: "test" | "widget";
         message?: string;
         error?: string;
-        form?: { formUrl: string; fields: Record<string, string> };
+        token?: string;
+        checkoutUrl?: string;
+        test?: boolean;
       } | null;
       if (!res.ok) {
         setError(body?.error ?? "Не удалось создать оплату");
         return;
       }
-      // WebPay: создаём скрытую форму и сабмитим — редирект на платёжный шлюз.
-      if (body?.mode === "webpay" && body.form) {
-        submitWebpayForm(body.form);
+      // bePaid: открываем виджет оплаты прямо на странице (iframe).
+      if (body?.mode === "widget" && body.token && body.checkoutUrl) {
+        const BeGateway = await loadBeGateway();
+        new BeGateway({
+          checkout_url: body.checkoutUrl,
+          token: body.token,
+          checkout: { iframe: true, test: body.test ?? false },
+          // Активация подписки гарантируется webhook'ом; callback — только для UX.
+          closeWidget: (status) => {
+            if (status === "successful" || status === "pending") {
+              router.push("/payment-success");
+            } else if (status === "failed" || status === "error") {
+              setError("Оплата не прошла. Попробуйте ещё раз.");
+            }
+            setLoadingPlan(null);
+          },
+        }).createWidget();
         return;
       }
-      // Тестовый режим: оплата считается успешной — ведём на отдельную страницу,
-      // как и реальный возврат с WebPay.
+      // Тестовый режим: оплата считается успешной — ведём на отдельную страницу.
       router.push("/payment-success");
     } catch {
       setError("Сервис временно недоступен. Попробуйте позже.");

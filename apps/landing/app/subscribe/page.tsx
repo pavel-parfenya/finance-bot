@@ -103,7 +103,7 @@ export default async function SubscribePage({
 }) {
   const token = searchParams.token;
 
-  // Возврат пользователя после WebPay обрабатывают отдельные страницы
+  // Возврат пользователя после оплаты bePaid обрабатывают отдельные страницы
   // /payment-success и /payment-failed (returnUrl/cancelUrl шлюза).
 
   if (!token) {

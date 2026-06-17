@@ -1,5 +1,4 @@
-import { createHash } from "node:crypto";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   PaymentService,
   PaymentError,
@@ -25,10 +24,11 @@ function makePlanConfig(price: number | null) {
   };
 }
 
-const WEBPAY_CFG: PaymentGatewayConfig["webpay"] = {
-  storeId: "store-1",
+const BEPAID_CFG: PaymentGatewayConfig["bepaid"] = {
+  shopId: "shop-1",
   secretKey: "secret-xyz",
-  formUrl: "https://payment.webpay.by",
+  checkoutBaseUrl: "https://checkout.bepaid.by",
+  gatewayBaseUrl: "https://gateway.bepaid.by",
   testMode: true,
   currency: "BYN",
   returnUrl: "https://l/payment-success",
@@ -37,14 +37,14 @@ const WEBPAY_CFG: PaymentGatewayConfig["webpay"] = {
 };
 
 function makeService(
-  gateway: "test" | "webpay",
+  gateway: "test" | "bepaid",
   price: number | null = 9.99,
-  webpay = WEBPAY_CFG
+  bepaid = BEPAID_CFG
 ) {
   const subscriptionService = makeSubscriptionService();
   const planConfig = makePlanConfig(price);
   const service = new PaymentService(
-    { gateway, webpay },
+    { gateway, bepaid },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subscriptionService as any,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -52,6 +52,25 @@ function makeService(
   );
   return { service, subscriptionService, planConfig };
 }
+
+/** Мок fetch с очередью ответов (по порядку вызовов). */
+function mockFetchOnce(handler: (url: string, init?: RequestInit) => unknown) {
+  const fn = vi.fn(async (url: string, init?: RequestInit) => {
+    const body = handler(url, init);
+    return {
+      ok: true,
+      status: 200,
+      json: async () => body,
+      text: async () => JSON.stringify(body),
+    } as unknown as Response;
+  });
+  vi.stubGlobal("fetch", fn);
+  return fn;
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe("PaymentService.checkout", () => {
   it("в test-режиме сразу оформляет подписку", async () => {
@@ -64,66 +83,54 @@ describe("PaymentService.checkout", () => {
     );
   });
 
-  it("в webpay-режиме возвращает форму с подписанными полями", async () => {
-    const { service } = makeService("webpay", 9.99);
+  it("в bepaid-режиме создаёт checkout и возвращает токен виджета", async () => {
+    let capturedBody: Record<string, unknown> | null = null;
+    mockFetchOnce((_url, init) => {
+      capturedBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      return { checkout: { token: "tok-123", redirect_url: "https://pay" } };
+    });
+    const { service } = makeService("bepaid", 9.99);
     const result = await service.checkout(42, SubscriptionPlan.ProMonth);
-    if (result.mode !== "webpay") throw new Error("ожидался webpay");
-    expect(result.form.formUrl).toBe(WEBPAY_CFG.formUrl);
-    expect(result.form.fields.wsb_order_num).toMatch(/^42-m-/);
-    expect(result.form.fields.wsb_total).toBe("9.99");
-    expect(result.form.fields.wsb_signature).toMatch(/^[a-f0-9]{32}$/);
+    if (result.mode !== "widget") throw new Error("ожидался widget");
+    expect(result.token).toBe("tok-123");
+    expect(result.checkoutUrl).toBe(BEPAID_CFG.checkoutBaseUrl);
+    expect(result.test).toBe(true);
+
+    // Тело запроса: сумма в минимальных единицах, валюта, tracking_id вида "42-m-…".
+    const order = (
+      capturedBody as unknown as { checkout: { order: Record<string, unknown> } }
+    ).checkout.order;
+    expect(order.amount).toBe(999);
+    expect(order.currency).toBe("BYN");
+    expect(String(order.tracking_id)).toMatch(/^42-m-/);
   });
 
-  it("бросает PaymentError, если WebPay не настроен", async () => {
-    const { service } = makeService("webpay", 9.99, { ...WEBPAY_CFG, storeId: "" });
+  it("бросает PaymentError, если bePaid не настроен", async () => {
+    const { service } = makeService("bepaid", 9.99, { ...BEPAID_CFG, shopId: "" });
     await expect(service.checkout(1, SubscriptionPlan.ProMonth)).rejects.toBeInstanceOf(
       PaymentError
     );
   });
 
   it("бросает PaymentError, если цена тарифа не задана", async () => {
-    const { service } = makeService("webpay", null);
+    const { service } = makeService("bepaid", null);
     await expect(service.checkout(1, SubscriptionPlan.ProMonth)).rejects.toBeInstanceOf(
       PaymentError
     );
   });
 });
 
-/** Считает подпись notify так же, как verifyNotifySignature. */
-function notifySignature(fields: Record<string, string>, secret: string): string {
-  const raw =
-    fields.batch_timestamp +
-    fields.currency_id +
-    fields.amount +
-    fields.payment_method +
-    fields.order_id +
-    fields.site_order_id +
-    fields.transaction_id +
-    fields.payment_type +
-    fields.rrn +
-    secret;
-  return createHash("md5").update(raw, "utf8").digest("hex");
-}
-
 describe("PaymentService.handleNotify", () => {
-  function buildPayload(orderId: string): Record<string, string> {
-    const base: Record<string, string> = {
-      batch_timestamp: "1700000000",
-      currency_id: "BYN",
-      amount: "9.99",
-      payment_method: "cc",
-      order_id: orderId,
-      site_order_id: "",
-      transaction_id: "tx-777",
-      payment_type: "1",
-      rrn: "rrn-1",
-    };
-    return { ...base, wsb_signature: notifySignature(base, WEBPAY_CFG.secretKey) };
-  }
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
 
-  it("активирует подписку при валидной подписи", async () => {
-    const { service, subscriptionService } = makeService("webpay");
-    const res = await service.handleNotify(buildPayload("42-m-abc"));
+  it("активирует подписку при подтверждённом успешном статусе", async () => {
+    mockFetchOnce(() => ({
+      transaction: { uid: "tx-777", status: "successful", tracking_id: "42-m-abc" },
+    }));
+    const { service, subscriptionService } = makeService("bepaid");
+    const res = await service.handleNotify({ transaction: { uid: "tx-777" } });
     expect(res).toEqual({ received: true, activated: true });
     expect(subscriptionService.activatePaid).toHaveBeenCalledWith(
       42,
@@ -132,18 +139,28 @@ describe("PaymentService.handleNotify", () => {
     );
   });
 
-  it("не активирует при неверной подписи", async () => {
-    const { service, subscriptionService } = makeService("webpay");
-    const payload = buildPayload("42-m-abc");
-    payload.wsb_signature = "deadbeef";
-    const res = await service.handleNotify(payload);
+  it("не активирует, если статус транзакции не successful", async () => {
+    mockFetchOnce(() => ({
+      transaction: { uid: "tx-777", status: "failed", tracking_id: "42-m-abc" },
+    }));
+    const { service, subscriptionService } = makeService("bepaid");
+    const res = await service.handleNotify({ transaction: { uid: "tx-777" } });
     expect(res).toEqual({ received: true, activated: false });
+    expect(subscriptionService.activatePaid).not.toHaveBeenCalled();
+  });
+
+  it("не активирует без uid в теле webhook", async () => {
+    const fetchFn = mockFetchOnce(() => ({}));
+    const { service, subscriptionService } = makeService("bepaid");
+    const res = await service.handleNotify({ transaction: {} });
+    expect(res).toEqual({ received: true, activated: false });
+    expect(fetchFn).not.toHaveBeenCalled();
     expect(subscriptionService.activatePaid).not.toHaveBeenCalled();
   });
 
   it("игнорирует notify в test-режиме", async () => {
     const { service, subscriptionService } = makeService("test");
-    const res = await service.handleNotify(buildPayload("42-m-abc"));
+    const res = await service.handleNotify({ transaction: { uid: "tx-777" } });
     expect(res).toEqual({ received: true, activated: false });
     expect(subscriptionService.activatePaid).not.toHaveBeenCalled();
   });

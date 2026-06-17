@@ -76,7 +76,7 @@ export class BillingApiService {
   /**
    * Создать сессию оплаты.
    * - `test`-шлюз: подписка оформляется сразу, фронту возвращается `mode: "test"`.
-   * - `webpay`-шлюз: возвращаются поля формы (`mode: "webpay"`) для редиректа на WebPay.
+   * - `bepaid`-шлюз: возвращается токен виджета (`mode: "widget"`) для оплаты на лендинге.
    */
   async checkout(billingUser: BillingUser, plan: unknown) {
     if (!isValidPlan(plan) || !PAID_PLANS.has(plan)) {
@@ -94,8 +94,10 @@ export class BillingApiService {
       }
       return {
         ok: true,
-        mode: "webpay" as const,
-        form: result.form,
+        mode: "widget" as const,
+        token: result.token,
+        checkoutUrl: result.checkoutUrl,
+        test: result.test,
       };
     } catch (e) {
       if (e instanceof PaymentError) {
@@ -125,7 +127,7 @@ export class BillingApiService {
   }
 
   /**
-   * Webhook (notify-url) WebPay: проверка подписи и активация подписки.
+   * Webhook (notify-url) bePaid: проверка статуса транзакции по API и активация подписки.
    * Всегда отвечаем 200, чтобы платёжная система не ретраила бесконечно.
    */
   async handleWebhook(payload: unknown) {

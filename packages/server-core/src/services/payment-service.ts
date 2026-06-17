@@ -1,28 +1,26 @@
 import { Subscription, SubscriptionPlan } from "../database/entities";
 import type { SubscriptionService } from "./subscription-service";
 import type { StrapiPlanConfig } from "../infrastructure/strapi/strapi-plan-config";
-import { buildPaymentForm, type PaymentForm } from "../infrastructure/webpay/webpay-form";
-import { verifyNotifySignature } from "../infrastructure/webpay/webpay-signature";
+import {
+  createCheckout,
+  getTransactionStatus,
+  type BepaidConfig,
+} from "../infrastructure/bepaid/bepaid-client";
 
 /** Конфигурация платёжного шлюза для PaymentService. */
 export interface PaymentGatewayConfig {
-  gateway: "webpay" | "test";
-  webpay: {
-    storeId: string;
-    secretKey: string;
-    formUrl: string;
-    testMode: boolean;
-    currency: string;
+  gateway: "bepaid" | "test";
+  bepaid: BepaidConfig & {
     returnUrl: string;
     cancelUrl: string;
     notifyUrl: string;
   };
 }
 
-/** Результат checkout: тест-режим (подписка уже оформлена) или редирект на WebPay. */
+/** Результат checkout: тест-режим (подписка уже оформлена) или токен виджета bePaid. */
 export type CheckoutResult =
   | { mode: "test"; subscription: Subscription }
-  | { mode: "webpay"; form: PaymentForm };
+  | { mode: "widget"; token: string; checkoutUrl: string; test: boolean };
 
 export class PaymentError extends Error {}
 
@@ -45,8 +43,8 @@ const PAID_PLANS = new Set<SubscriptionPlan>([
  * Оформление оплаты подписки.
  *
  * - `test`: оплата сразу считается успешной — подписка оформляется немедленно.
- * - `webpay`: возвращает поля формы для редиректа на платёжный шлюз; фактическая
- *   активация подписки происходит в `handleNotify` (server-to-server webhook).
+ * - `bepaid`: возвращает токен для виджета bePaid; фактическая активация подписки
+ *   происходит в `handleNotify` (server-to-server webhook с проверкой статуса по API).
  */
 export class PaymentService {
   constructor(
@@ -66,75 +64,62 @@ export class PaymentService {
       return { mode: "test", subscription };
     }
 
-    const { storeId, secretKey } = this.cfg.webpay;
-    if (!storeId || !secretKey) {
-      throw new PaymentError("WebPay не настроен (WEBPAY_STORE_ID / WEBPAY_SECRET_KEY)");
+    const { shopId, secretKey } = this.cfg.bepaid;
+    if (!shopId || !secretKey) {
+      throw new PaymentError("bePaid не настроен (BEPAID_SHOP_ID / BEPAID_SECRET_KEY)");
     }
 
     const amount = await this.resolveAmount(plan);
     const orderNum = `${userId}-${PLAN_CODE[plan]}-${Date.now().toString(36)}`;
-    const form = buildPaymentForm(
-      {
-        storeId,
-        secretKey,
-        formUrl: this.cfg.webpay.formUrl,
-        testMode: this.cfg.webpay.testMode,
-        returnUrl: this.cfg.webpay.returnUrl,
-        cancelUrl: this.cfg.webpay.cancelUrl,
-        notifyUrl: this.cfg.webpay.notifyUrl,
-      },
-      {
-        orderNum,
-        amount: amount.toFixed(2),
-        currency: this.cfg.webpay.currency,
-        description:
-          plan === SubscriptionPlan.ProYear
-            ? "Подписка Pro (год)"
-            : "Подписка Pro (месяц)",
-      }
-    );
-    return { mode: "webpay", form };
+    const checkout = await createCheckout(this.cfg.bepaid, {
+      trackingId: orderNum,
+      amountMinor: Math.round(amount * 100),
+      description:
+        plan === SubscriptionPlan.ProYear ? "Подписка Pro (год)" : "Подписка Pro (месяц)",
+      returnUrl: this.cfg.bepaid.returnUrl,
+      notifyUrl: this.cfg.bepaid.notifyUrl,
+    });
+    return {
+      mode: "widget",
+      token: checkout.token,
+      checkoutUrl: this.cfg.bepaid.checkoutBaseUrl,
+      test: this.cfg.bepaid.testMode,
+    };
   }
 
   /**
-   * Обработка notify-webhook от WebPay: проверка подписи + активация подписки.
+   * Обработка notify-webhook от bePaid: статус транзакции подтверждается повторным
+   * запросом к bePaid (тело webhook не доверяем), затем активируется подписка.
    * Возвращает `activated`, чтобы вызывающий мог залогировать результат.
    */
   async handleNotify(
     payload: Record<string, unknown>
   ): Promise<{ received: boolean; activated: boolean }> {
-    if (this.cfg.gateway !== "webpay") return { received: true, activated: false };
+    if (this.cfg.gateway !== "bepaid") return { received: true, activated: false };
 
-    const get = (k: string): string => {
-      const v = payload[k];
-      return typeof v === "string" ? v : v == null ? "" : String(v);
-    };
+    const tx =
+      payload.transaction && typeof payload.transaction === "object"
+        ? (payload.transaction as Record<string, unknown>)
+        : null;
+    const uid = tx && typeof tx.uid === "string" ? tx.uid : null;
+    if (!uid) return { received: true, activated: false };
 
-    const valid = verifyNotifySignature(
-      {
-        batchTimestamp: get("batch_timestamp"),
-        currencyId: get("currency_id"),
-        amount: get("amount"),
-        paymentMethod: get("payment_method"),
-        orderId: get("order_id"),
-        siteOrderId: get("site_order_id"),
-        transactionId: get("transaction_id"),
-        paymentType: get("payment_type"),
-        rrn: get("rrn"),
-        signature: get("wsb_signature"),
-      },
-      this.cfg.webpay.secretKey
-    );
-    if (!valid) return { received: true, activated: false };
+    // Источник истины — статус из API bePaid, а не тело webhook.
+    const verified = await getTransactionStatus(this.cfg.bepaid, uid);
+    if (!verified || verified.status !== "successful") {
+      return { received: true, activated: false };
+    }
 
-    const orderNum = get("order_id");
-    const parsed = parseOrder(orderNum);
+    const orderNum =
+      verified.trackingId ??
+      (typeof tx?.tracking_id === "string" ? tx.tracking_id : null);
+    const parsed = orderNum ? parseOrder(orderNum) : null;
     if (!parsed) return { received: true, activated: false };
 
     // activatePaid гасит ссылку (ставит linkRevokedAt) — одноразовость.
     await this.subscriptionService.activatePaid(parsed.userId, parsed.plan, {
-      webpayOrderId: orderNum,
-      paymentId: get("transaction_id") || null,
+      webpayOrderId: parsed.orderNum,
+      paymentId: verified.uid,
     });
     return { received: true, activated: true };
   }
@@ -151,11 +136,13 @@ export class PaymentService {
 }
 
 /** Восстанавливает userId и план из номера заказа `<userId>-<code>-<ts>`. */
-function parseOrder(orderNum: string): { userId: number; plan: SubscriptionPlan } | null {
+function parseOrder(
+  orderNum: string
+): { userId: number; plan: SubscriptionPlan; orderNum: string } | null {
   const parts = orderNum.split("-");
   if (parts.length < 2) return null;
   const userId = Number(parts[0]);
   const plan = CODE_PLAN[parts[1]];
   if (!Number.isInteger(userId) || userId <= 0 || !plan) return null;
-  return { userId, plan };
+  return { userId, plan, orderNum };
 }

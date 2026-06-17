@@ -76,7 +76,7 @@ export default async function OfferPage() {
               /pricing
             </a>
             . Оплата производится в белорусских рублях (BYN) через платёжный
-            шлюз WebPay.
+            шлюз bePaid.
           </p>
         </Section>
 

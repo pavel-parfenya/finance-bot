@@ -41,7 +41,7 @@ export class BillingController {
     return this.billingApi.cancel(user);
   }
 
-  /** Webhook платёжной системы (без JWT-guard). Реализация — Sprint 4. */
+  /** Webhook платёжной системы bePaid (без JWT-guard). */
   @Post("webhook")
   @HttpCode(200)
   webhook(@Body() payload: unknown) {

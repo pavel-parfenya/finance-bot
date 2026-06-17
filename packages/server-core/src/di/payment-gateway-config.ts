@@ -3,18 +3,19 @@ import type { PaymentGatewayConfig } from "../services/payment-service";
 
 /**
  * Собирает конфигурацию платёжного шлюза из `Config`.
- * Сервисные URL WebPay выводятся из лендинга (возврат пользователя) и
+ * Сервисные URL bePaid выводятся из лендинга (возврат пользователя) и
  * публичного URL API (server-to-server notify).
  */
 export function buildPaymentGatewayConfig(config: Config): PaymentGatewayConfig {
   return {
     gateway: config.paymentGateway,
-    webpay: {
-      storeId: config.webpay.storeId,
-      secretKey: config.webpay.secretKey,
-      formUrl: config.webpay.formUrl,
-      testMode: config.webpay.testMode,
-      currency: config.webpay.currency,
+    bepaid: {
+      shopId: config.bepaid.shopId,
+      secretKey: config.bepaid.secretKey,
+      checkoutBaseUrl: config.bepaid.checkoutBaseUrl,
+      gatewayBaseUrl: config.bepaid.gatewayBaseUrl,
+      testMode: config.bepaid.testMode,
+      currency: config.bepaid.currency,
       returnUrl: `${config.landingBaseUrl}/payment-success`,
       cancelUrl: `${config.landingBaseUrl}/payment-failed`,
       notifyUrl: `${config.publicBaseUrl}/api/billing/webhook`,

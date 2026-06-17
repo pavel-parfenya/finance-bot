@@ -52,9 +52,9 @@ const paymentMode = process.env["PAYMENT_MODE"] === "paid" ? "paid" : "free";
 /**
  * Платёжный шлюз:
  * - `test` (по умолчанию): оплата сразу считается успешной, подписка оформляется без перехода в банк.
- * - `webpay`: реальная оплата через WebPay (редирект на платёжную форму + notify-webhook).
+ * - `bepaid`: реальная оплата через bePaid (виджет оплаты + notify-webhook).
  */
-const paymentGateway = process.env["PAYMENT_GATEWAY"] === "webpay" ? "webpay" : "test";
+const paymentGateway = process.env["PAYMENT_GATEWAY"] === "bepaid" ? "bepaid" : "test";
 
 function readTestTelegramUserId(): number | null {
   if (apiMode !== "test") return null;
@@ -87,8 +87,8 @@ export const config = {
   apiMode: apiMode as "normal" | "test",
   /** `free` (по умолчанию): всё бесплатно; `paid`: подписки/тарифы активны. */
   paymentMode: paymentMode as "free" | "paid",
-  /** `test` (по умолчанию): оплата мокается; `webpay`: реальная оплата через WebPay. */
-  paymentGateway: paymentGateway as "webpay" | "test",
+  /** `test` (по умолчанию): оплата мокается; `bepaid`: реальная оплата через bePaid. */
+  paymentGateway: paymentGateway as "bepaid" | "test",
   testTelegramUserId: readTestTelegramUserId(),
   port: parseInt(process.env["PORT"] ?? "10000", 10),
   webhookPath: "/webhook",
@@ -140,18 +140,22 @@ export const config = {
     /\/$/,
     ""
   ),
-  /** Параметры платёжного шлюза WebPay (используются только при PAYMENT_GATEWAY=webpay). */
-  webpay: {
-    storeId: process.env["WEBPAY_STORE_ID"] ?? "",
-    secretKey: process.env["WEBPAY_SECRET_KEY"] ?? "",
-    formUrl: (process.env["WEBPAY_FORM_URL"] ?? "https://payment.webpay.by").replace(
-      /\/$/,
-      ""
-    ),
-    /** Тестовый режим самого WebPay (wsb_test=1) — деньги не списываются. */
-    testMode: process.env["WEBPAY_TEST_MODE"] === "true",
+  /** Параметры платёжного шлюза bePaid (используются только при PAYMENT_GATEWAY=bepaid). */
+  bepaid: {
+    shopId: process.env["BEPAID_SHOP_ID"] ?? "",
+    secretKey: process.env["BEPAID_SECRET_KEY"] ?? "",
+    /** База checkout-API (создание токена виджета). */
+    checkoutBaseUrl: (
+      process.env["BEPAID_CHECKOUT_URL"] ?? "https://checkout.bepaid.by"
+    ).replace(/\/$/, ""),
+    /** База gateway-API (проверка статуса транзакции). */
+    gatewayBaseUrl: (
+      process.env["BEPAID_GATEWAY_URL"] ?? "https://gateway.bepaid.by"
+    ).replace(/\/$/, ""),
+    /** Тестовый режим bePaid (checkout.test=true) — деньги не списываются. */
+    testMode: process.env["BEPAID_TEST_MODE"] === "true",
     /** Валюта платежа (тарифы в Strapi указаны в BYN). */
-    currency: process.env["WEBPAY_CURRENCY"] ?? "BYN",
+    currency: process.env["BEPAID_CURRENCY"] ?? "BYN",
   },
 } as const;
 
