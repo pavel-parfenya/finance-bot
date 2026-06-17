@@ -38,8 +38,8 @@ import { AppStatsSnapshotScheduler } from "./app-stats-snapshot.scheduler";
     UserModule,
     DebtsModule,
     AdminModule,
-    // Billing/подписка (/api/billing/*, /api/subscription) — только в paid-режиме.
-    ...(config.paymentMode === "paid" ? [BillingModule, SubscriptionModule] : []),
+    // Billing/подписка (/api/billing/*, /api/subscription) — в paid и test режимах (не в free).
+    ...(config.paymentMode !== "free" ? [BillingModule, SubscriptionModule] : []),
   ],
   providers: [
     { provide: UserService, useFactory: () => getApiContainer().userService },

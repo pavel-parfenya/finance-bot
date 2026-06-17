@@ -45,9 +45,19 @@ const apiMode = process.env["API_MODE"] === "test" ? "test" : "normal";
 /**
  * Режим монетизации:
  * - `free` (по умолчанию): всё бесплатно, подписки/тарифы нигде не показываются.
- * - `paid`: подписки активны (команда /subscribe, billing API, лимиты тарифов).
+ * - `paid`: подписки активны, реальные оплаты (на проде: + PAYMENT_GATEWAY=bepaid).
+ * - `test`: подписки активны, но bePaid в тестовом режиме (checkout.test=true) — деньги не списываются.
+ *
+ * «Подписки активны» = `paymentMode !== "free"` (значения `paid` и `test` ведут себя одинаково,
+ * различаются только флагом теста у bePaid). Комбинация `test` + PAYMENT_GATEWAY=test — полный
+ * мок без обращения к bePaid (локальная разработка).
  */
-const paymentMode = process.env["PAYMENT_MODE"] === "paid" ? "paid" : "free";
+const paymentMode =
+  process.env["PAYMENT_MODE"] === "paid"
+    ? "paid"
+    : process.env["PAYMENT_MODE"] === "test"
+      ? "test"
+      : "free";
 
 /**
  * Платёжный шлюз:
@@ -85,8 +95,8 @@ export const config = {
   mode,
   /** `test`: Mini App API без init-data, от имени `testTelegramUserId` (локальная разработка). */
   apiMode: apiMode as "normal" | "test",
-  /** `free` (по умолчанию): всё бесплатно; `paid`: подписки/тарифы активны. */
-  paymentMode: paymentMode as "free" | "paid",
+  /** `free`: всё бесплатно; `paid`: подписки + реальные оплаты; `test`: подписки + тестовые оплаты bePaid. */
+  paymentMode: paymentMode as "free" | "paid" | "test",
   /** `test` (по умолчанию): оплата мокается; `bepaid`: реальная оплата через bePaid. */
   paymentGateway: paymentGateway as "bepaid" | "test",
   testTelegramUserId: readTestTelegramUserId(),
@@ -152,8 +162,8 @@ export const config = {
     gatewayBaseUrl: (
       process.env["BEPAID_GATEWAY_URL"] ?? "https://gateway.bepaid.by"
     ).replace(/\/$/, ""),
-    /** Тестовый режим bePaid (checkout.test=true) — деньги не списываются. */
-    testMode: process.env["BEPAID_TEST_MODE"] === "true",
+    /** Тестовый режим bePaid (checkout.test=true) — деньги не списываются; включается через PAYMENT_MODE=test. */
+    testMode: paymentMode === "test",
     /** Валюта платежа (тарифы в Strapi указаны в BYN). */
     currency: process.env["BEPAID_CURRENCY"] ?? "BYN",
   },

@@ -10,14 +10,14 @@ import type { StrapiPlanConfig } from "../infrastructure/strapi/strapi-plan-conf
  * Гейтинг функций по фичам тарифа. Источник истины — Strapi (через `StrapiPlanConfig`).
  *
  * Мягкая деградация: доступ открыт (все фичи), если
- *  - монетизация выключена (`paymentMode !== "paid"`),
+ *  - монетизация выключена (`paymentMode === "free"`),
  *  - конфиг Strapi недоступен (нет связи и нет кэша),
  *  - план пользователя вовсе не сконфигурирован в Strapi.
  * Гейтинг реально блокирует только когда план есть в конфиге и нужной фичи в нём нет.
  */
 export class FeatureService {
   constructor(
-    private readonly paymentMode: "free" | "paid",
+    private readonly paymentMode: "free" | "paid" | "test",
     private readonly subscriptionService: SubscriptionService,
     private readonly planConfig: StrapiPlanConfig
   ) {}
@@ -29,7 +29,7 @@ export class FeatureService {
 
   /** Есть ли у пользователя доступ к фиче по его текущему тарифу. */
   async hasFeature(userId: number, key: FeatureKey): Promise<boolean> {
-    if (this.paymentMode !== "paid") return true;
+    if (this.paymentMode === "free") return true;
     const map = await this.planConfig.getPlanFeatureMap();
     if (!map) return true; // конфиг недоступен — не блокируем
     const sub = await this.subscriptionService.getCurrentOrFree(userId);
@@ -43,7 +43,7 @@ export class FeatureService {
    * конфиг недоступен или план не сконфигурирован).
    */
   async getUserFeatures(userId: number): Promise<Set<FeatureKey> | null> {
-    if (this.paymentMode !== "paid") return null;
+    if (this.paymentMode === "free") return null;
     const map = await this.planConfig.getPlanFeatureMap();
     if (!map) return null;
     const sub = await this.subscriptionService.getCurrentOrFree(userId);

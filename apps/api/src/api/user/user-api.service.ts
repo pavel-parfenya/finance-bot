@@ -29,7 +29,7 @@ export class UserApiService {
       analyticsTimezone: user?.analyticsTimezone?.trim() || DEFAULT_ANALYTICS_TIMEZONE,
       analyticsVoice: await this.userService.getAnalyticsVoice(resolved.userId),
       isSuperAdmin,
-      subscriptionEnabled: config.paymentMode === "paid",
+      subscriptionEnabled: config.paymentMode !== "free",
     };
   }
 

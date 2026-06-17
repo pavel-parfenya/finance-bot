@@ -27,7 +27,11 @@ export default defineNuxtConfig({
     public: {
       // Глобальный режим монетизации (берётся из .env при сборке). Позволяет показывать
       // пункт «Подписка» в настройках сразу, без ожидания запроса settings.
-      paymentMode: process.env.PAYMENT_MODE === "paid" ? "paid" : "free",
+      // `paid`/`test` → подписка видна; всё прочее → `free` (скрыта).
+      paymentMode:
+        process.env.PAYMENT_MODE === "paid" || process.env.PAYMENT_MODE === "test"
+          ? process.env.PAYMENT_MODE
+          : "free",
     },
   },
 

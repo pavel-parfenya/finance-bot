@@ -5,8 +5,8 @@ import type { ResolvedTelegramUser } from "../telegram/telegram-auth.types";
 import { SubscriptionApiService } from "./subscription-api.service";
 
 /**
- * Подписка для Mini App (Настройки → Подписка). Модуль подключается только при
- * PAYMENT_MODE=paid (см. app.module), поэтому в free-режиме маршрут отсутствует.
+ * Подписка для Mini App (Настройки → Подписка). Модуль подключается при
+ * PAYMENT_MODE=paid|test (см. app.module), поэтому в free-режиме маршрут отсутствует.
  */
 @Controller("subscription")
 @UseGuards(TelegramInitDataGuard)
