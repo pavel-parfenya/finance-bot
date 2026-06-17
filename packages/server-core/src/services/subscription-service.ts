@@ -21,6 +21,25 @@ const PAID_PLANS = new Set<SubscriptionPlan>([
 ]);
 
 /**
+ * Действует ли у подписки оплаченный период прямо сейчас.
+ *
+ * `true`, если план платный и `expiresAt` ещё в будущем — даже при статусе
+ * `canceled` (отмена лишь выключает продление, доступ сохраняется до конца
+ * оплаченного срока).
+ */
+function hasActivePaidPeriod(
+  sub: Pick<Subscription, "plan" | "expiresAt"> | null,
+  now: Date
+): boolean {
+  return (
+    !!sub &&
+    PAID_PLANS.has(sub.plan) &&
+    !!sub.expiresAt &&
+    sub.expiresAt.getTime() > now.getTime()
+  );
+}
+
+/**
  * Эффективный (реально действующий сейчас) тариф подписки.
  *
  * Платный тариф продолжает действовать до `expiresAt` независимо от статуса
@@ -101,6 +120,11 @@ export class SubscriptionService {
   /**
    * Активировать платный тариф после успешной оплаты. Ставит статус active,
    * рассчитывает срок и (опционально) сохраняет идентификаторы платежа WebPay.
+   *
+   * Если у пользователя ещё действует оплаченный период (в т.ч. после `cancel`),
+   * новый период пристыковывается к его концу, а не к «сейчас»: покупка поверх
+   * годовой подписки 01.01.26–01.01.27 продлевает её до 01.01.28, а не сжигает
+   * остаток. Если же срок истёк (или подписки не было) — отсчёт идёт от now.
    */
   async activatePaid(
     userId: number,
@@ -110,14 +134,19 @@ export class SubscriptionService {
     const now = new Date();
     let sub = await this.findCurrent(userId);
 
+    const extending = hasActivePaidPeriod(sub, now);
+    // База нового периода: конец текущего оплаченного срока либо «сейчас».
+    const periodStart = extending ? sub!.expiresAt! : now;
+
     if (!sub) {
       sub = this.repo.create({ userId });
     }
 
     sub.plan = plan;
     sub.status = SubscriptionStatus.Active;
-    sub.startsAt = now;
-    sub.expiresAt = computeExpiresAt(plan, now);
+    // При продлении сохраняем исходное начало периода, иначе — текущий момент.
+    if (!extending) sub.startsAt = now;
+    sub.expiresAt = computeExpiresAt(plan, periodStart);
     // Оплата прошла — гасим ссылку: токены с iat <= now становятся недействительны.
     sub.linkRevokedAt = now;
     if (meta?.webpayOrderId) sub.webpayOrderId = meta.webpayOrderId;
