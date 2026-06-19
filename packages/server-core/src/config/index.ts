@@ -79,6 +79,25 @@ function readTestTelegramUserId(): number | null {
   return n;
 }
 
+/**
+ * URL Strapi CMS (источник тарифов/фич). В docker-сети это `http://cms:1337`,
+ * локально — `http://localhost:1337`. Переменную легко забыть задать на проде:
+ * тогда код молча уходит на дефолт `localhost` внутри api-контейнера, тарифы не
+ * читаются и оплата падает с «Цена тарифа не задана в Strapi». Поэтому при активных
+ * подписках (`paymentMode !== "free"`) отсутствие явного значения логируется как ошибка.
+ */
+function resolveStrapiApiUrl(): string {
+  const explicit = process.env["STRAPI_API_URL"]?.trim();
+  if (!explicit && paymentMode !== "free") {
+    console.error(
+      "[config] STRAPI_API_URL не задан — используется дефолт http://localhost:1337. " +
+        "В docker-окружении задайте STRAPI_API_URL=http://cms:1337, иначе тарифы из Strapi " +
+        "не прочитаются и оплата будет недоступна («Цена тарифа не задана в Strapi»)."
+    );
+  }
+  return (explicit || "http://localhost:1337").replace(/\/$/, "");
+}
+
 function getWebhookUrl(): string {
   const explicit = process.env["WEBHOOK_URL"];
   if (explicit) return explicit;
@@ -146,10 +165,7 @@ export const config = {
     process.env["LANDING_BASE_URL"] ?? "https://valentinethebuhgalter.by"
   ).replace(/\/$/, ""),
   /** Базовый URL Strapi CMS — источник конфигурации тарифов/фич (только чтение). */
-  strapiApiUrl: (process.env["STRAPI_API_URL"] ?? "http://localhost:1337").replace(
-    /\/$/,
-    ""
-  ),
+  strapiApiUrl: resolveStrapiApiUrl(),
   /** Параметры платёжного шлюза bePaid (используются только при PAYMENT_GATEWAY=bepaid). */
   bepaid: {
     shopId: process.env["BEPAID_SHOP_ID"] ?? "",
