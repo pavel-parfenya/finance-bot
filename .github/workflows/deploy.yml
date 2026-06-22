@@ -1,7 +1,8 @@
 name: Build & Deploy
 
-# Сборка 6 образов (api/bot/cms/landing/miniapp/migrate) на GitHub-раннерах →
-# пуш в GHCR → деплой на VPS по SSH (pull + миграции + up). На сервере НЕ собираем.
+# Сборка 5 образов (api/bot/cms/landing/miniapp) на GitHub-раннерах → пуш в GHCR →
+# деплой на VPS по SSH (pull + миграции + up). На сервере НЕ собираем.
+# (migrate-образа нет — миграции гоняет образ api.)
 on:
   push:
     # development — текущая рабочая/деплой-ветка. main добавлять, когда появится разделение сред.
@@ -71,18 +72,46 @@ jobs:
           # слабом VPS с медленным каналом. Даём запас (последующие pull быстрые — слои кэшируются).
           command_timeout: 40m
           # TAG пиннит ВСЕ образы на коммит этого релиза — атомарный откат по sha.
+          #
+          # Деплой устойчив к двум прежним падениям (см. историю инцидентов):
+          #  1) ENOSPC: диск VPS 9.8ГБ не вмещает старый+новый набор образов сразу,
+          #     а `docker compose pull` тянул все 5 разом (старые ещё in-use) →
+          #     переполнение на тяжёлом слое CMS. Решение — switch-then-prune:
+          #     лёгкие сервисы (pull→пересоздать→prune освобождает их старые образы),
+          #     затем CMS уже с запасом места.
+          #  2) postgres:16-alpine из Docker Hub: bare-pull дёргал флапающий
+          #     auth.docker.io (404 на токене). postgres уже есть на диске и почти
+          #     не меняется — его НЕ пуллим вовсе (pull только образов из GHCR).
           script: |
             set -e
             export TAG="${{ github.sha }}"
             cd /opt/finance-bot
             git pull --ff-only                # обновить docker-compose.prod.yml и deploy/nginx
-            # освободить место от неиспользуемых образов старых sha ДО pull (диск 9.8ГБ тесный);
-            # образы запущенных контейнеров in-use и не удаляются
+            dc() { docker compose -f docker-compose.prod.yml "$@"; }
+            # pull с ретраями — гасит транзиентные сбои реестра (GHCR/сеть).
+            pull_retry() {
+              for i in 1 2 3; do
+                dc pull "$@" && return 0
+                echo "pull '$*' не удался (попытка $i/3), повтор через 10с..."; sleep 10
+              done
+              return 1
+            }
+            # убрать неиспользуемые образы старых sha ДО pull (in-use не трогаются)
             docker image prune -af
-            docker compose -f docker-compose.prod.yml pull
-            # поднять БД и дождаться healthy (healthcheck знает DB_USER из .env)
-            docker compose -f docker-compose.prod.yml up -d --wait postgres
-            # миграции ДО старта приложений; падение здесь обрывает деплой
-            docker compose -f docker-compose.prod.yml run --rm migrate
-            docker compose -f docker-compose.prod.yml up -d
+
+            # 1) Лёгкие сервисы (GHCR) + миграции. postgres НЕ пуллим — образ на
+            #    диске; `up` тянет только отсутствующее, так что Docker Hub не дёргаем.
+            pull_retry api bot landing miniapp
+            dc up -d --wait postgres                       # ждём healthy (DB_USER из .env)
+            dc run --rm migrate                            # миграции ДО старта приложений
+            dc up -d --no-deps api bot landing miniapp     # пересоздать на новых образах
+            docker image prune -af                         # освободить их старые образы → место под CMS
+
+            # 2) Тяжёлый CMS — теперь с высвободившимся местом.
+            pull_retry cms
+            dc up -d --no-deps cms
+            docker image prune -af
+
+            # финальная сходимость (идемпотентно, без pull — образы на месте)
+            dc up -d
             docker image prune -f

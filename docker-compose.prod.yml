@@ -6,11 +6,11 @@
 # Поэтому сервисы публикуют порты ТОЛЬКО на loopback (127.0.0.1) — наружу их
 # отдаёт host-nginx. Конфиг host-nginx версионируется в deploy/nginx/.
 #
-# Запуск/обновление вручную (CI делает то же по SSH):
-#   docker compose -f docker-compose.prod.yml pull
-#   docker compose -f docker-compose.prod.yml up -d --wait postgres
-#   docker compose -f docker-compose.prod.yml run --rm migrate
-#   docker compose -f docker-compose.prod.yml up -d
+# Обновление делает CI по SSH (.github/workflows/deploy.yml) — switch-then-prune,
+# чтобы на диске 9.8ГБ не оказалось двух наборов образов сразу, и БЕЗ pull postgres
+# (он из Docker Hub и уже на диске). Полностью вручную НЕ пуллить `compose pull`
+# целиком: bare-pull тянет все 5 образов разом (ENOSPC) и postgres из Docker Hub
+# (флапающий auth.docker.io). Пуллить только GHCR-сервисы: `pull api bot cms landing miniapp`.
 #
 # ${REGISTRY}/${IMAGE_PREFIX} и ${TAG} приходят из .env на сервере (дефолты ниже).
 # Прикладные секреты/конфиг — из того же .env (env_file).
