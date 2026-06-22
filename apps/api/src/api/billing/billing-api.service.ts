@@ -106,17 +106,6 @@ export class BillingApiService {
     }
   }
 
-  async changePlan(billingUser: BillingUser, plan: unknown) {
-    if (!isValidPlan(plan)) {
-      throw new BadRequestException({ error: "Недопустимый тариф" });
-    }
-    const subscription = await this.subscriptionService.changePlan(
-      billingUser.userId,
-      plan
-    );
-    return serializeSubscription(subscription);
-  }
-
   async cancel(billingUser: BillingUser) {
     // Останавливает автопродление в bePaid и помечает подписку отменённой.
     const subscription = await this.paymentService.cancelSubscription(billingUser.userId);

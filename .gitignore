@@ -6,3 +6,4 @@ credentials.json
 .nuxt/
 .output/
 .turbo/
+.DS_Store

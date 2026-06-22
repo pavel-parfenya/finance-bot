@@ -62,12 +62,12 @@ export class PaymentService {
     const planId = await this.ensurePlanId(plan, amountMinor);
 
     // Если у пользователя уже есть подписка bePaid — отменяем её, чтобы не было
-    // двойных списаний после оформления новой (best-effort).
+    // двойных списаний после оформления новой. Если отменить не удалось и прежняя
+    // подписка всё ещё активна — прерываемся (иначе появятся две списывающие
+    // подписки); см. ensureBepaidCanceled.
     const existing = await this.subscriptionService.findCurrent(userId);
     if (existing?.bepaidSubscriptionId) {
-      await cancelSubscription(this.cfg.bepaid, existing.bepaidSubscriptionId).catch(
-        () => undefined
-      );
+      await this.ensureBepaidCanceled(existing.bepaidSubscriptionId);
     }
 
     const trackingId = `${userId}-${PLAN_CODE[plan]}`;
@@ -136,16 +136,38 @@ export class PaymentService {
 
   /**
    * Отмена автопродления: останавливает подписку bePaid и помечает её отменённой.
-   * Доступ сохраняется до конца оплаченного периода (`expiresAt`).
+   * Локальный статус ставится `canceled` только после подтверждённой остановки в
+   * bePaid — иначе бросаем PaymentError, чтобы не показать «отменено», пока карту
+   * продолжают списывать. Доступ сохраняется до конца оплаченного периода.
    */
   async cancelSubscription(userId: number): Promise<Subscription | null> {
     const sub = await this.subscriptionService.findCurrent(userId);
     if (this.cfg.gateway === "bepaid" && sub?.bepaidSubscriptionId) {
-      await cancelSubscription(this.cfg.bepaid, sub.bepaidSubscriptionId).catch(
-        () => undefined
-      );
+      await this.ensureBepaidCanceled(sub.bepaidSubscriptionId);
     }
     return this.subscriptionService.cancel(userId);
+  }
+
+  /**
+   * Гарантирует остановку автопродления подписки bePaid. Пытается отменить; если
+   * не вышло — перепроверяет состояние в bePaid и считает успехом только когда
+   * подписка уже не активна. Иначе бросает PaymentError (списания могут
+   * продолжаться — нельзя помечать подписку отменённой локально вслепую).
+   */
+  private async ensureBepaidCanceled(bepaidSubscriptionId: string): Promise<void> {
+    const ok = await cancelSubscription(this.cfg.bepaid, bepaidSubscriptionId).catch(
+      () => false
+    );
+    if (ok) return;
+
+    const verified = await getSubscription(this.cfg.bepaid, bepaidSubscriptionId).catch(
+      () => null
+    );
+    if (verified && !ACTIVE_STATES.has(verified.state)) return; // уже остановлена
+
+    throw new PaymentError(
+      "Не удалось отменить автопродление в платёжной системе. Попробуйте ещё раз позже."
+    );
   }
 
   /** id плана bePaid для тарифа+цены: из кэша, иначе ищет/создаёт в bePaid. */

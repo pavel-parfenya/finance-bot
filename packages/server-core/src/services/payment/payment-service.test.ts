@@ -94,6 +94,35 @@ function mockFetchRoutes(routes: (call: FetchCall) => unknown): {
   return { calls, fn };
 }
 
+/**
+ * Гибкий мок fetch: route возвращает `{ ok, status?, body }` — чтобы
+ * проверять ветки с не-2xx ответами bePaid (отказ в cancel и т.п.).
+ */
+function stubFetch(
+  handler: (call: FetchCall) => { ok: boolean; status?: number; body: unknown }
+): { calls: FetchCall[]; fn: ReturnType<typeof vi.fn> } {
+  const calls: FetchCall[] = [];
+  const fn = vi.fn(async (url: string, init?: RequestInit) => {
+    const call: FetchCall = {
+      url,
+      method: (init?.method ?? "GET").toUpperCase(),
+      body: init?.body
+        ? (JSON.parse(String(init.body)) as Record<string, unknown>)
+        : null,
+    };
+    calls.push(call);
+    const r = handler(call);
+    return {
+      ok: r.ok,
+      status: r.status ?? (r.ok ? 200 : 400),
+      json: async () => r.body,
+      text: async () => JSON.stringify(r.body),
+    } as unknown as Response;
+  });
+  vi.stubGlobal("fetch", fn);
+  return { calls, fn };
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });
@@ -175,6 +204,34 @@ describe("PaymentService.checkout", () => {
     });
     await service.checkout(42, SubscriptionPlan.ProMonth);
     expect(calls.some((c) => c.url.includes("/subscriptions/sbs_old/cancel"))).toBe(true);
+  });
+
+  it("прерывает checkout, если прежнюю активную подписку bePaid не удалось отменить", async () => {
+    const { calls } = stubFetch((call) => {
+      if (call.url.includes("/subscriptions/sbs_old/cancel"))
+        return { ok: false, status: 500, body: {} };
+      if (call.url.endsWith("/subscriptions/sbs_old") && call.method === "GET")
+        return {
+          ok: true,
+          body: { id: "sbs_old", state: "active", tracking_id: "42-m" },
+        };
+      if (call.url.endsWith("/plans") && call.method === "GET")
+        return {
+          ok: true,
+          body: { plans: [{ id: "pln_x", title: "fb-pro_month-999-BYN" }] },
+        };
+      return { ok: true, body: {} };
+    });
+    const { service } = makeService("bepaid", 9.99, {
+      bepaidSubscriptionId: "sbs_old",
+    });
+    await expect(service.checkout(42, SubscriptionPlan.ProMonth)).rejects.toBeInstanceOf(
+      PaymentError
+    );
+    // Новая подписка не создаётся, пока прежняя активна.
+    expect(
+      calls.some((c) => c.url.endsWith("/subscriptions") && c.method === "POST")
+    ).toBe(false);
   });
 
   it("бросает PaymentError, если bePaid не настроен", async () => {
@@ -283,6 +340,34 @@ describe("PaymentService.cancelSubscription", () => {
 
   it("без bePaid-подписки просто помечает запись отменённой", async () => {
     const { service, subscriptionService } = makeService("bepaid", 9.99, null);
+    await service.cancelSubscription(42);
+    expect(subscriptionService.cancel).toHaveBeenCalledWith(42);
+  });
+
+  it("бросает PaymentError и не помечает отменённой, если cancel не прошёл, а подписка ещё активна", async () => {
+    stubFetch((call) => {
+      if (call.url.includes("/cancel")) return { ok: false, status: 500, body: {} };
+      // GET /subscriptions/{id} — состояние всё ещё active
+      return { ok: true, body: { id: "sbs_99", state: "active", tracking_id: "42-m" } };
+    });
+    const { service, subscriptionService } = makeService("bepaid", 9.99, {
+      bepaidSubscriptionId: "sbs_99",
+    });
+    await expect(service.cancelSubscription(42)).rejects.toBeInstanceOf(PaymentError);
+    expect(subscriptionService.cancel).not.toHaveBeenCalled();
+  });
+
+  it("помечает отменённой, если cancel не прошёл, но подписка уже не активна", async () => {
+    stubFetch((call) => {
+      if (call.url.includes("/cancel")) return { ok: false, status: 400, body: {} };
+      return {
+        ok: true,
+        body: { id: "sbs_99", state: "canceled", tracking_id: "42-m" },
+      };
+    });
+    const { service, subscriptionService } = makeService("bepaid", 9.99, {
+      bepaidSubscriptionId: "sbs_99",
+    });
     await service.cancelSubscription(42);
     expect(subscriptionService.cancel).toHaveBeenCalledWith(42);
   });

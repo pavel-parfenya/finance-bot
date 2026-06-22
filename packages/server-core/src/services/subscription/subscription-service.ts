@@ -136,27 +136,6 @@ export class SubscriptionService {
   }
 
   /**
-   * Сменить/назначить тариф. Создаёт запись, если её нет, иначе обновляет
-   * существующую. Без оплаты — здесь только доменное состояние подписки
-   * (оплата идёт через PaymentService.activatePaid).
-   */
-  async changePlan(userId: number, plan: SubscriptionPlan): Promise<Subscription> {
-    const now = new Date();
-    let sub = await this.findCurrent(userId);
-
-    if (!sub) {
-      sub = this.repo.create({ userId });
-    }
-
-    sub.plan = plan;
-    sub.status = SubscriptionStatus.Active;
-    sub.startsAt = plan === SubscriptionPlan.Free ? null : now;
-    sub.expiresAt = computeExpiresAt(plan, now);
-
-    return this.repo.save(sub);
-  }
-
-  /**
    * Активировать платный тариф после успешной оплаты/продления. Ставит статус
    * active, выставляет срок и сохраняет идентификаторы подписки bePaid.
    *
