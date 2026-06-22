@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { FeatureService } from "./feature-service";
-import type { SubscriptionService } from "./subscription-service";
+import type { SubscriptionService } from "../subscription/subscription-service";
 import type {
   PlanFeatureMap,
   StrapiPlanConfig,
-} from "../infrastructure/strapi/strapi-plan-config";
+} from "../../infrastructure/strapi/strapi-plan-config";
 
 function fakeSub(plan: string, expiresAt: Date | null = null): SubscriptionService {
   return {

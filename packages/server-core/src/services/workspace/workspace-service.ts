@@ -1,5 +1,5 @@
 import { DataSource, Repository } from "typeorm";
-import { Workspace, WorkspaceMember, WorkspaceRole } from "../database/entities";
+import { Workspace, WorkspaceMember, WorkspaceRole } from "../../database/entities";
 
 export class WorkspaceService {
   private readonly workspaceRepo: Repository<Workspace>;

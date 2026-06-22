@@ -50,11 +50,33 @@ All domain logic, services, infrastructure implementations, and the TypeORM `Dat
 
 - `domain/` — interfaces and models (zero external dependencies)
 - `infrastructure/` — DeepSeek (LLM parsing), Whisper (STT)
-- `services/` — application services: `UserService`, `WorkspaceService`, `ExpenseService`, `DebtService`, `AnalyticsInsightService`, `AppStatsService`, etc.
+- `services/` — application services, **one folder per service** (see below): `payment/`, `subscription/`, `feature/`, `user/`, `workspace/`, `expense/`, `debt/`, etc.
 - `repositories/` — TypeORM repositories (`TransactionRepository`, `DebtRepository`, etc.)
 - `database/` — TypeORM `DataSource` factory + entities; `synchronize: false` (schema is managed manually)
 - `analytics/` — transaction aggregation utilities with exchange-rate fetching
 - `di/create-core-services.ts` — composition root; wires all services/repos together from a `Config` + `DataSource`
+
+#### Service folder layout
+
+Each service lives in its own folder under `services/<name>/` (folder name = service file without the `-service` suffix, e.g. `payment-service.ts` → `services/payment/`). Inside a folder, responsibilities are split by file suffix:
+
+| File | Holds |
+|---|---|
+| `<name>-service.ts` | the class / application logic (the only required file) |
+| `<name>-service.types.ts` | `interface` / `type` declarations for that service (no runtime code) |
+| `<name>-service.utils.ts` | pure helpers + module-level constants used by the service |
+| `<name>-service.test.ts` | the Vitest suite |
+
+Rules:
+- **No `index.ts` barrel inside the folder.** Import directly from the concrete file, e.g. `import { PaymentService } from "../payment/payment-service"` and `import type { CheckoutResult } from "../payment/payment-service.types"`.
+- `.types.ts` / `.utils.ts` are created **only when there is content** — a single-file service is just `services/<name>/<name>-service.ts`. Don't add empty placeholder files.
+- A type that is also a runtime value (a `class`, e.g. `PaymentError`) **stays in `-service.ts`** — `.types.ts` is declaration-only.
+- The `-service.ts` file may `export type { … } from "./<name>-service.types"` so the public surface (and the `src/index.ts` barrel) can keep importing types from the service path; but the canonical definition lives in `.types.ts`.
+- Reference: `services/payment/` is the worked example — `payment-service.ts` (logic) + `payment-service.types.ts` (`PaymentGatewayConfig`, `CheckoutResult`) + `payment-service.utils.ts` (order codec, bePaid state sets) + `payment-service.test.ts`.
+- Standalone non-service modules (a bare helper function, not a class service — e.g. `inactive-user-nudge-qualifies.ts`) stay flat at `services/` root.
+- The public package API is `src/index.ts` (barrel). External packages (`apps/api`, `apps/bot`) import only from `@finance-bot/server-core`, never from deep `services/**` paths — so moving a service folder only requires fixing the barrel + internal relative imports.
+
+> The same folder-per-feature idea already applies in `apps/api`: each REST resource is a folder (`api/billing/`, `api/subscription/`, …) with its controller, `*-api.service.ts`, and a `dto/` subfolder of one-interface-per-file DTOs (`checkout.dto.ts`, `change-plan.dto.ts`).
 
 ### `apps/api` — NestJS process
 

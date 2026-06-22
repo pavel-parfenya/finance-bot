@@ -170,15 +170,12 @@ export const config = {
   bepaid: {
     shopId: process.env["BEPAID_SHOP_ID"] ?? "",
     secretKey: process.env["BEPAID_SECRET_KEY"] ?? "",
-    /** База checkout-API (создание токена виджета). */
-    checkoutBaseUrl: (
-      process.env["BEPAID_CHECKOUT_URL"] ?? "https://checkout.bepaid.by"
-    ).replace(/\/$/, ""),
-    /** База gateway-API (проверка статуса транзакции). */
-    gatewayBaseUrl: (
-      process.env["BEPAID_GATEWAY_URL"] ?? "https://gateway.bepaid.by"
-    ).replace(/\/$/, ""),
-    /** Тестовый режим bePaid (checkout.test=true) — деньги не списываются; включается через PAYMENT_MODE=test. */
+    /** База API планов и подписок (рекуррентные платежи). */
+    apiBaseUrl: (process.env["BEPAID_API_URL"] ?? "https://api.bepaid.by").replace(
+      /\/$/,
+      ""
+    ),
+    /** Тестовый режим bePaid (test=true) — деньги не списываются; включается через PAYMENT_MODE=test. */
     testMode: paymentMode === "test",
     /** Валюта платежа (тарифы в Strapi указаны в BYN). */
     currency: process.env["BEPAID_CURRENCY"] ?? "BYN",

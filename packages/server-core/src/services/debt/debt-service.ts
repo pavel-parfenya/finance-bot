@@ -1,7 +1,7 @@
-import { DebtRepository } from "../repositories/debt-repository";
-import { UserService } from "./user-service";
-import { DebtStatus } from "../database/entities";
-import { ParsedDebt } from "../domain/models/debt";
+import { DebtRepository } from "../../repositories/debt-repository";
+import { UserService } from "../user/user-service";
+import { DebtStatus } from "../../database/entities";
+import { ParsedDebt } from "../../domain/models/debt";
 
 function parseDeadline(hint: string | undefined): Date | null {
   if (!hint?.trim()) return null;

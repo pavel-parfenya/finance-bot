@@ -2,10 +2,10 @@ import { buildPeriodRange } from "@finance-bot/shared";
 import {
   aggregateByCategoryAndCurrency,
   aggregateExpensesByCategoryOnly,
-} from "../analytics/aggregate-transactions";
-import { fetchExchangeRates } from "../analytics/fetch-exchange-rates";
-import type { MonthlyReportData } from "../infrastructure/deepseek/deepseek-monthly-report";
-import type { TransactionRepository } from "../repositories/transaction-repository";
+} from "../../analytics/aggregate-transactions";
+import { fetchExchangeRates } from "../../analytics/fetch-exchange-rates";
+import type { MonthlyReportData } from "../../infrastructure/deepseek/deepseek-monthly-report";
+import type { TransactionRepository } from "../../repositories/transaction-repository";
 
 export interface AnalyticsInsightServiceDeps {
   transactionRepo: TransactionRepository;

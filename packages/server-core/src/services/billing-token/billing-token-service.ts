@@ -1,10 +1,7 @@
 import jwt from "jsonwebtoken";
+import type { BillingTokenPayload } from "./billing-token-service.types";
 
-export interface BillingTokenPayload {
-  telegramId: number;
-  /** Момент выпуска токена (Unix seconds) — для отзыва после оплаты. */
-  iat?: number;
-}
+export type { BillingTokenPayload };
 
 /**
  * Подписывает/проверяет короткоживущие JWT для авторизации на лендинге.

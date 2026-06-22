@@ -5,6 +5,9 @@ import type {
   SubscriptionPlanId,
 } from "@finance-bot/shared";
 import { isFeatureKey } from "@finance-bot/shared";
+import type { PlanFeatureMap } from "./strapi-plan-config.types";
+
+export type { PlanFeatureMap };
 
 /**
  * Read-only чтение конфигурации тарифов из Strapi (источник истины).
@@ -14,7 +17,6 @@ import { isFeatureKey } from "@finance-bot/shared";
  * Если Strapi недоступен и кэша ещё нет — возвращает `null` (сигнал «конфиг
  * недоступен», обрабатывается выше как полный доступ, чтобы не ломать пользователей).
  */
-export type PlanFeatureMap = Map<SubscriptionPlanId, Set<FeatureKey>>;
 
 /** Strapi v5 отдаёт связи плоско, v4 — через `{ data: [{ attributes }] }`. */
 function unwrap(value: unknown): Record<string, unknown> {

@@ -1,4 +1,4 @@
-import { APP_STATS_ACTIVE_HOURS } from "./app-stats-service";
+import { APP_STATS_ACTIVE_HOURS } from "./app-stats/app-stats-service";
 import type { TransactionRepository } from "../repositories/transaction-repository";
 
 /**

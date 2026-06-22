@@ -1,5 +1,9 @@
 import { DataSource, Repository } from "typeorm";
-import { Subscription, SubscriptionPlan, SubscriptionStatus } from "../database/entities";
+import {
+  Subscription,
+  SubscriptionPlan,
+  SubscriptionStatus,
+} from "../../database/entities";
 
 /** Сколько длится платный период в зависимости от тарифа. */
 function computeExpiresAt(plan: SubscriptionPlan, from: Date): Date | null {
@@ -93,7 +97,42 @@ export class SubscriptionService {
       recurringToken: null,
       webpayOrderId: null,
       webpayRecurringId: null,
+      bepaidSubscriptionId: null,
+      bepaidPlanId: null,
     });
+  }
+
+  /** Подписка по идентификатору bePaid (`sbs_…`) или null. */
+  async findByBepaidSubscriptionId(
+    bepaidSubscriptionId: string
+  ): Promise<Subscription | null> {
+    return this.repo.findOne({
+      where: { bepaidSubscriptionId },
+      order: { createdAt: "DESC" },
+    });
+  }
+
+  /**
+   * Сохранить id создаваемой подписки bePaid ДО подтверждения оплаты — чтобы при
+   * повторном checkout можно было отменить прежнюю (нет двойных списаний) и чтобы
+   * webhook нашёл строку. Доступ НЕ выдаёт: `plan`/`expiresAt` не трогаются,
+   * гейтинг по-прежнему видит текущий (Free) тариф до прихода notify.
+   */
+  async setPendingBepaidSubscription(
+    userId: number,
+    meta: { bepaidSubscriptionId: string; bepaidPlanId: string }
+  ): Promise<void> {
+    let sub = await this.findCurrent(userId);
+    if (!sub) {
+      sub = this.repo.create({
+        userId,
+        plan: SubscriptionPlan.Free,
+        status: SubscriptionStatus.Active,
+      });
+    }
+    sub.bepaidSubscriptionId = meta.bepaidSubscriptionId;
+    sub.bepaidPlanId = meta.bepaidPlanId;
+    await this.repo.save(sub);
   }
 
   /**
@@ -118,25 +157,43 @@ export class SubscriptionService {
   }
 
   /**
-   * Активировать платный тариф после успешной оплаты. Ставит статус active,
-   * рассчитывает срок и (опционально) сохраняет идентификаторы платежа bePaid.
+   * Активировать платный тариф после успешной оплаты/продления. Ставит статус
+   * active, выставляет срок и сохраняет идентификаторы подписки bePaid.
    *
-   * Если у пользователя ещё действует оплаченный период (в т.ч. после `cancel`),
-   * новый период пристыковывается к его концу, а не к «сейчас»: покупка поверх
-   * годовой подписки 01.01.26–01.01.27 продлевает её до 01.01.28, а не сжигает
-   * остаток. Если же срок истёк (или подписки не было) — отсчёт идёт от now.
+   * Срок (`expiresAt`):
+   * - если передан `meta.expiresAt` (из bePaid `active_to`) — он источник истины:
+   *   bePaid сам ведёт расписание автопродления, мы лишь зеркалим конец периода.
+   *   На каждом notify-продлении `active_to` сдвигается вперёд — срок продлевается.
+   * - иначе (test-режим, без bePaid) считаем сами; при действующем оплаченном
+   *   периоде новый пристыковывается к его концу, а не к «сейчас».
    */
   async activatePaid(
     userId: number,
     plan: SubscriptionPlan,
-    meta?: { webpayOrderId?: string | null; paymentId?: string | null }
+    meta?: {
+      expiresAt?: Date | null;
+      bepaidSubscriptionId?: string | null;
+      bepaidPlanId?: string | null;
+      paymentId?: string | null;
+    }
   ): Promise<Subscription> {
     const now = new Date();
     let sub = await this.findCurrent(userId);
 
-    const extending = hasActivePaidPeriod(sub, now);
-    // База нового периода: конец текущего оплаченного срока либо «сейчас».
-    const periodStart = extending ? sub!.expiresAt! : now;
+    let expiresAt: Date | null;
+    // Сбрасывать ли начало периода на now (новая покупка вне действующего срока).
+    let resetStart: boolean;
+    if (meta?.expiresAt) {
+      // bePaid — источник истины по сроку (active_to); начало не сбрасываем
+      // (это продолжение той же подписки: первичная активация или продление).
+      expiresAt = meta.expiresAt;
+      resetStart = false;
+    } else {
+      const extending = hasActivePaidPeriod(sub, now);
+      const periodStart = extending ? sub!.expiresAt! : now;
+      expiresAt = computeExpiresAt(plan, periodStart);
+      resetStart = !extending;
+    }
 
     if (!sub) {
       sub = this.repo.create({ userId });
@@ -144,15 +201,28 @@ export class SubscriptionService {
 
     sub.plan = plan;
     sub.status = SubscriptionStatus.Active;
-    // При продлении сохраняем исходное начало периода, иначе — текущий момент.
-    if (!extending) sub.startsAt = now;
-    sub.expiresAt = computeExpiresAt(plan, periodStart);
+    // Новая покупка вне действующего периода — начало с now; иначе сохраняем
+    // исходное начало (а для первой активации проставляем now).
+    if (resetStart || !sub.startsAt) sub.startsAt = now;
+    sub.expiresAt = expiresAt;
     // Оплата прошла — гасим ссылку: токены с iat <= now становятся недействительны.
     sub.linkRevokedAt = now;
-    if (meta?.webpayOrderId) sub.webpayOrderId = meta.webpayOrderId;
+    if (meta?.bepaidSubscriptionId) sub.bepaidSubscriptionId = meta.bepaidSubscriptionId;
+    if (meta?.bepaidPlanId) sub.bepaidPlanId = meta.bepaidPlanId;
     if (meta?.paymentId) sub.paymentId = meta.paymentId;
 
     return this.repo.save(sub);
+  }
+
+  /**
+   * Пометить подписку отменённой по её bePaid-идентификатору (по notify об
+   * отмене/исчерпании попыток списания). Доступ сохраняется до `expiresAt`.
+   */
+  async cancelByBepaidId(bepaidSubscriptionId: string): Promise<void> {
+    const sub = await this.findByBepaidSubscriptionId(bepaidSubscriptionId);
+    if (!sub) return;
+    sub.status = SubscriptionStatus.Canceled;
+    await this.repo.save(sub);
   }
 
   /**

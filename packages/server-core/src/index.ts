@@ -18,28 +18,28 @@ export type { AnalyticsVoice } from "./analytics/types";
 export { TransactionRepository } from "./repositories/transaction-repository";
 export { InvitationRepository } from "./repositories/invitation-repository";
 export { DebtRepository } from "./repositories/debt-repository";
-export { UserService, DEFAULT_ANALYTICS_TIMEZONE } from "./services/user-service";
-export { WorkspaceService } from "./services/workspace-service";
+export { UserService, DEFAULT_ANALYTICS_TIMEZONE } from "./services/user/user-service";
+export { WorkspaceService } from "./services/workspace/workspace-service";
 export {
   SubscriptionService,
   resolveEffectivePlan,
-} from "./services/subscription-service";
-export { FeatureService } from "./services/feature-service";
+} from "./services/subscription/subscription-service";
+export { FeatureService } from "./services/feature/feature-service";
 export {
   PaymentService,
   PaymentError,
   type CheckoutResult,
   type PaymentGatewayConfig,
-} from "./services/payment-service";
+} from "./services/payment/payment-service";
 export type { BepaidConfig } from "./infrastructure/bepaid/bepaid-client";
 export { StrapiPlanConfig } from "./infrastructure/strapi/strapi-plan-config";
 export {
   BillingTokenService,
   type BillingTokenPayload,
-} from "./services/billing-token-service";
-export { CustomCategoryService } from "./services/custom-category-service";
-export { AnalyticsInsightService } from "./services/analytics-insight-service";
-export { ExpenseService } from "./services/expense-service";
+} from "./services/billing-token/billing-token-service";
+export { CustomCategoryService } from "./services/custom-category/custom-category-service";
+export { AnalyticsInsightService } from "./services/analytics-insight/analytics-insight-service";
+export { ExpenseService } from "./services/expense/expense-service";
 export { ExpenseCategory, IncomeCategory } from "./domain/models";
 export type { ParsedExpense, Expense, TransactionType } from "./domain/models";
 export type { ParsedDebt } from "./domain/models/debt";
@@ -56,13 +56,13 @@ export {
 } from "./infrastructure/deepseek/deepseek-weekly-forecast";
 export { DeepSeekInactiveUserNudge } from "./infrastructure/deepseek/deepseek-inactive-user-nudge";
 export { userQualifiesForInactiveMonthNudge } from "./services/inactive-user-nudge-qualifies";
-export { DebtService } from "./services/debt-service";
+export { DebtService } from "./services/debt/debt-service";
 export { DeepSeekDebtParser } from "./infrastructure/deepseek/deepseek-debt-parser";
-export { PurchaseAdviceService } from "./services/purchase-advice-service";
+export { PurchaseAdviceService } from "./services/purchase-advice/purchase-advice-service";
 export {
   AppStatsService,
   APP_STATS_ACTIVE_HOURS,
   type AppStats,
   type AppStatsDailyPoint,
-} from "./services/app-stats-service";
+} from "./services/app-stats/app-stats-service";
 export { DeepSeekPurchaseAdviceParser } from "./infrastructure/deepseek/deepseek-purchase-advice";

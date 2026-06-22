@@ -1,6 +1,6 @@
 import { DataSource } from "typeorm";
-import { User } from "../database/entities/user.entity";
-import { AppUserStatsSnapshot } from "../database/entities/app-user-stats-snapshot.entity";
+import { User } from "../../database/entities/user.entity";
+import { AppUserStatsSnapshot } from "../../database/entities/app-user-stats-snapshot.entity";
 
 /** Окно активности: есть операция (datetime транзакции) за последние N часов до момента снимка. */
 export const APP_STATS_ACTIVE_HOURS = 96;

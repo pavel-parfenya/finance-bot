@@ -1,11 +1,11 @@
 import { buildPeriodRange } from "@finance-bot/shared";
-import { aggregateByCategoryAndCurrency } from "../analytics/aggregate-transactions";
-import { fetchExchangeRates } from "../analytics/fetch-exchange-rates";
+import { aggregateByCategoryAndCurrency } from "../../analytics/aggregate-transactions";
+import { fetchExchangeRates } from "../../analytics/fetch-exchange-rates";
 import type {
   ParsedPurchaseQuestion,
   DeepSeekPurchaseAdviceParser,
-} from "../infrastructure/deepseek/deepseek-purchase-advice";
-import type { TransactionRepository } from "../repositories/transaction-repository";
+} from "../../infrastructure/deepseek/deepseek-purchase-advice";
+import type { TransactionRepository } from "../../repositories/transaction-repository";
 
 const RATE_LIMIT_MS = process.env.NODE_ENV === "production" ? 5 * 60 * 1000 : 0; // 5 min в prod, без лимита в dev
 const lastRequestByUser = new Map<number, number>();

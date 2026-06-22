@@ -3,8 +3,11 @@ import type {
   SubscriptionPlanCard,
   SubscriptionPlanId,
 } from "@finance-bot/shared";
-import { resolveEffectivePlan, type SubscriptionService } from "./subscription-service";
-import type { StrapiPlanConfig } from "../infrastructure/strapi/strapi-plan-config";
+import {
+  resolveEffectivePlan,
+  type SubscriptionService,
+} from "../subscription/subscription-service";
+import type { StrapiPlanConfig } from "../../infrastructure/strapi/strapi-plan-config";
 
 /**
  * Гейтинг функций по фичам тарифа. Источник истины — Strapi (через `StrapiPlanConfig`).

@@ -5,7 +5,7 @@ import {
   SubscriptionPlan,
   SubscriptionStatus,
   type Subscription,
-} from "../database/entities";
+} from "../../database/entities";
 
 describe("resolveEffectivePlan", () => {
   const future = new Date(Date.now() + 86_400_000);

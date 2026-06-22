@@ -1,5 +1,5 @@
 import type { Config } from "../config";
-import type { PaymentGatewayConfig } from "../services/payment-service";
+import type { PaymentGatewayConfig } from "../services/payment/payment-service.types";
 
 /**
  * Собирает конфигурацию платёжного шлюза из `Config`.
@@ -12,8 +12,7 @@ export function buildPaymentGatewayConfig(config: Config): PaymentGatewayConfig 
     bepaid: {
       shopId: config.bepaid.shopId,
       secretKey: config.bepaid.secretKey,
-      checkoutBaseUrl: config.bepaid.checkoutBaseUrl,
-      gatewayBaseUrl: config.bepaid.gatewayBaseUrl,
+      apiBaseUrl: config.bepaid.apiBaseUrl,
       testMode: config.bepaid.testMode,
       currency: config.bepaid.currency,
       returnUrl: `${config.landingBaseUrl}/payment-success`,

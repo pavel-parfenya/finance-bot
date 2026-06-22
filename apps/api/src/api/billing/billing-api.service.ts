@@ -74,9 +74,10 @@ export class BillingApiService {
   }
 
   /**
-   * Создать сессию оплаты.
+   * Создать сессию оплаты подписки.
    * - `test`-шлюз: подписка оформляется сразу, фронту возвращается `mode: "test"`.
-   * - `bepaid`-шлюз: возвращается токен виджета (`mode: "widget"`) для оплаты на лендинге.
+   * - `bepaid`-шлюз: возвращается `redirectUrl` (`mode: "redirect"`) — страница ввода
+   *   карты bePaid; дальше bePaid сам списывает оплату по расписанию (автопродление).
    */
   async checkout(billingUser: BillingUser, plan: unknown) {
     if (!isValidPlan(plan) || !PAID_PLANS.has(plan)) {
@@ -94,10 +95,8 @@ export class BillingApiService {
       }
       return {
         ok: true,
-        mode: "widget" as const,
-        token: result.token,
-        checkoutUrl: result.checkoutUrl,
-        test: result.test,
+        mode: "redirect" as const,
+        redirectUrl: result.redirectUrl,
       };
     } catch (e) {
       if (e instanceof PaymentError) {
@@ -119,7 +118,8 @@ export class BillingApiService {
   }
 
   async cancel(billingUser: BillingUser) {
-    const subscription = await this.subscriptionService.cancel(billingUser.userId);
+    // Останавливает автопродление в bePaid и помечает подписку отменённой.
+    const subscription = await this.paymentService.cancelSubscription(billingUser.userId);
     if (!subscription) {
       return { ok: true, subscription: null };
     }

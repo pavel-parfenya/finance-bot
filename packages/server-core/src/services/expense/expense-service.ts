@@ -1,6 +1,6 @@
-import { IMessageParser, ISpeechRecognizer } from "../domain/interfaces";
-import { InvalidExpenseError } from "../domain/errors";
-import { Expense } from "../domain/models";
+import { IMessageParser, ISpeechRecognizer } from "../../domain/interfaces";
+import { InvalidExpenseError } from "../../domain/errors";
+import { Expense } from "../../domain/models";
 
 function validateParsed(parsed: { amount: number; description: string }): void {
   if (parsed.amount <= 0) {

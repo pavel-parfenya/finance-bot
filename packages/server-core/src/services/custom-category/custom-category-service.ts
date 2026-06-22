@@ -1,4 +1,4 @@
-import { CustomCategoryRepository } from "../repositories/custom-category-repository";
+import { CustomCategoryRepository } from "../../repositories/custom-category-repository";
 
 export class CustomCategoryService {
   constructor(private readonly repo: CustomCategoryRepository) {}

@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finance Bot — бизнес-план / калькулятор выручки</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #181b24;
+    --panel-2: #1f2430;
+    --border: #2a3040;
+    --text: #e6e9ef;
+    --muted: #8b93a7;
+    --accent: #4f9cff;
+    --green: #34d399;
+    --red: #f87171;
+    --yellow: #fbbf24;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding: 32px 20px 80px;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 28px; font-size: 14px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+  }
+  .card h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 18px; }
+  .field { margin-bottom: 16px; }
+  .field:last-child { margin-bottom: 0; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .input-row { display: flex; align-items: center; gap: 8px; }
+  input[type="number"], input[type="text"], select {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    color: var(--text);
+    padding: 11px 12px;
+    font-size: 15px;
+    font-variant-numeric: tabular-nums;
+    outline: none;
+  }
+  input[type="number"] { width: 100%; }
+  input:focus, select:focus { border-color: var(--accent); }
+  .unit { color: var(--muted); font-size: 13px; white-space: nowrap; min-width: 38px; }
+
+  .range-row { display: grid; grid-template-columns: 1fr 130px; gap: 14px; align-items: center; }
+  @media (max-width: 420px) { .range-row { grid-template-columns: 1fr; } }
+  .range-row .input-row input[type="number"] { width: 90px; }
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 6px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 3px solid var(--bg);
+    cursor: pointer;
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 3px solid var(--bg);
+    cursor: pointer;
+  }
+
+  /* Dynamic deduction rows */
+  .ded-row {
+    display: grid;
+    grid-template-columns: 1.4fr 0.9fr 78px 1.1fr 32px;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .ded-row input[type="text"] { width: 100%; }
+  .ded-row select { width: 100%; padding: 11px 8px; }
+  .ded-head {
+    display: grid;
+    grid-template-columns: 1.4fr 0.9fr 78px 1.1fr 32px;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .ded-head span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+  .opex-row {
+    display: grid;
+    grid-template-columns: 1.8fr 1.1fr 32px;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .opex-row input { width: 100%; }
+  .opex-head {
+    display: grid;
+    grid-template-columns: 1.8fr 1.1fr 32px;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .opex-head span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+  .btn-del {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    width: 32px; height: 40px;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+  }
+  .btn-del:hover { border-color: var(--red); color: var(--red); }
+  .btn-add {
+    margin-top: 8px;
+    background: var(--panel-2);
+    border: 1px dashed var(--border);
+    color: var(--text);
+    border-radius: 9px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 14px;
+    width: 100%;
+  }
+  .btn-add:hover { border-color: var(--accent); color: var(--accent); }
+  .base-cell.hidden { visibility: hidden; }
+
+  .results { margin-top: 28px; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  @media (max-width: 760px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  .kpi {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .kpi .k-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .kpi .k-value { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .kpi.big .k-value { font-size: 26px; }
+  .green { color: var(--green); }
+  .red { color: var(--red); }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  th, td { text-align: left; padding: 11px 14px; font-size: 14px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.total td { font-weight: 600; border-bottom: none; border-top: 2px solid var(--border); }
+  .note { color: var(--muted); font-size: 12px; margin-top: 18px; }
+  .breakdown-card { margin-top: 28px; }
+  .breakdown-card h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 6px; }
+  code { background: var(--panel-2); padding: 1px 5px; border-radius: 5px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Finance Bot — калькулятор месячной выручки</h1>
+  <p class="sub">Меняй переменные — расчёт пересчитывается автоматически. Удержания можно добавлять/удалять, каждое — в % или фиксированной сумме.</p>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Основные параметры</h2>
+      <div class="field">
+        <label>Стоимость подписки (за пользователя в месяц)</label>
+        <div class="range-row">
+          <input type="range" id="price-range" min="0" max="100" step="0.5" value="10">
+          <div class="input-row">
+            <input type="number" id="price" value="10" step="0.5" min="0">
+            <span class="unit">BYN</span>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Количество активных (платящих) пользователей</label>
+        <div class="range-row">
+          <input type="range" id="users-range" min="0" max="2000" step="10" value="100">
+          <div class="input-row">
+            <input type="number" id="users" value="100" step="10" min="0">
+            <span class="unit">чел.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Комиссии и налоги</h2>
+      <div class="ded-head">
+        <span>Название</span>
+        <span>Тип</span>
+        <span>Значение</span>
+        <span>База (для %)</span>
+        <span></span>
+      </div>
+      <div id="ded-list"></div>
+      <button class="btn-add" id="btn-add">+ Добавить удержание</button>
+    </div>
+
+    <div class="card">
+      <h2>Операционные расходы (фикс., в месяц)</h2>
+      <div class="opex-head">
+        <span>Название</span>
+        <span>Сумма, BYN</span>
+        <span></span>
+      </div>
+      <div id="opex-list"></div>
+      <button class="btn-add" id="btn-add-opex">+ Добавить расход</button>
+    </div>
+  </div>
+
+  <div class="results">
+    <div class="kpis">
+      <div class="kpi big">
+        <div class="k-label">Валовая выручка (gross)</div>
+        <div class="k-value" id="kpi-gross">—</div>
+      </div>
+      <div class="kpi big">
+        <div class="k-label">Чистая прибыль / мес</div>
+        <div class="k-value green" id="kpi-net">—</div>
+      </div>
+      <div class="kpi">
+        <div class="k-label">Всего затрат (удерж. + расходы)</div>
+        <div class="k-value red" id="kpi-deductions">—</div>
+      </div>
+      <div class="kpi">
+        <div class="k-label">Прибыль за год</div>
+        <div class="k-value" id="kpi-year">—</div>
+      </div>
+    </div>
+
+    <div class="card breakdown-card">
+      <h2>Детализация за месяц</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Статья</th>
+            <th class="num">Параметр</th>
+            <th class="num">Сумма, BYN</th>
+          </tr>
+        </thead>
+        <tbody id="breakdown-body"></tbody>
+      </table>
+      <p class="note">
+        Удержания применяются сверху вниз. Для строки с типом «%» база — это либо вся валовая выручка,
+        либо остаток после уже вычтенных выше строк. Так, чтобы налог считался с дохода за вычетом
+        комиссий процессинга, поставь у комиссий базу «Выручка», а у налога — «Остаток».
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Стартовый набор удержаний. type: 'percent' | 'fixed'; base: 'gross' | 'running' (только для percent)
+  const defaults = [
+    { name: 'Комиссия bePaid', type: 'percent', value: 2.9, base: 'gross' },
+    { name: 'Комиссия банка',  type: 'percent', value: 1.0, base: 'gross' },
+    { name: 'Налог',           type: 'percent', value: 6.0, base: 'running' },
+  ];
+
+  // Стартовые операционные расходы (фикс., BYN/мес)
+  const opexDefaults = [
+    { name: 'Сервер (хостинг)', value: 50 },
+    { name: 'DeepSeek API',     value: 30 },
+  ];
+
+  const $ = id => document.getElementById(id);
+  const list = $('ded-list');
+  const opexList = $('opex-list');
+
+  const fmt = (n) => new Intl.NumberFormat('ru-RU', {
+    minimumFractionDigits: 2, maximumFractionDigits: 2
+  }).format(n);
+  const pct = (n) => n.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' %';
+
+  function makeRow(d) {
+    const row = document.createElement('div');
+    row.className = 'ded-row';
+    row.innerHTML = `
+      <input type="text" class="d-name" value="${d.name}" placeholder="Название">
+      <select class="d-type">
+        <option value="percent">%</option>
+        <option value="fixed">BYN</option>
+      </select>
+      <input type="number" class="d-value" value="${d.value}" step="0.1" min="0">
+      <select class="d-base">
+        <option value="gross">Выручка</option>
+        <option value="running">Остаток</option>
+      </select>
+      <button class="btn-del" title="Удалить">×</button>
+    `;
+    row.querySelector('.d-type').value = d.type;
+    row.querySelector('.d-base').value = d.base || 'gross';
+
+    const baseCell = row.querySelector('.d-base');
+    const syncBaseVisibility = () => {
+      baseCell.classList.toggle('hidden', row.querySelector('.d-type').value !== 'percent');
+    };
+    syncBaseVisibility();
+
+    row.querySelector('.d-type').addEventListener('change', () => { syncBaseVisibility(); calc(); });
+    row.querySelectorAll('input, select').forEach(el => el.addEventListener('input', calc));
+    row.querySelector('.btn-del').addEventListener('click', () => { row.remove(); calc(); });
+
+    list.appendChild(row);
+  }
+
+  function makeOpexRow(o) {
+    const row = document.createElement('div');
+    row.className = 'opex-row';
+    row.innerHTML = `
+      <input type="text" class="o-name" value="${o.name}" placeholder="Название">
+      <input type="number" class="o-value" value="${o.value}" step="1" min="0">
+      <button class="btn-del" title="Удалить">×</button>
+    `;
+    row.querySelectorAll('input').forEach(el => el.addEventListener('input', calc));
+    row.querySelector('.btn-del').addEventListener('click', () => { row.remove(); calc(); });
+    opexList.appendChild(row);
+  }
+
+  function calc() {
+    const price = parseFloat($('price').value) || 0;
+    const users = parseFloat($('users').value) || 0;
+    const gross = price * users;
+
+    const body = $('breakdown-body');
+    body.innerHTML = '';
+
+    // Валовая выручка
+    body.insertAdjacentHTML('beforeend', `
+      <tr>
+        <td>Валовая выручка (цена × пользователи)</td>
+        <td class="num">${fmt(price)} × ${users}</td>
+        <td class="num">${fmt(gross)}</td>
+      </tr>
+    `);
+
+    let running = gross;        // остаток после удержаний
+    let totalDeductions = 0;
+
+    list.querySelectorAll('.ded-row').forEach(row => {
+      const name = row.querySelector('.d-name').value || 'Удержание';
+      const type = row.querySelector('.d-type').value;
+      const value = parseFloat(row.querySelector('.d-value').value) || 0;
+      const base = row.querySelector('.d-base').value;
+
+      let amount, param;
+      if (type === 'percent') {
+        const baseAmount = base === 'running' ? running : gross;
+        amount = baseAmount * value / 100;
+        param = `${pct(value)} от ${base === 'running' ? 'остатка' : 'выручки'}`;
+      } else {
+        amount = value;
+        param = `${fmt(value)} BYN фикс.`;
+      }
+
+      running -= amount;
+      totalDeductions += amount;
+
+      body.insertAdjacentHTML('beforeend', `
+        <tr>
+          <td>− ${name}</td>
+          <td class="num">${param}</td>
+          <td class="num red">−${fmt(amount)}</td>
+        </tr>
+      `);
+    });
+
+    const afterDeductions = gross - totalDeductions;
+
+    // Подытог после комиссий и налогов
+    body.insertAdjacentHTML('beforeend', `
+      <tr class="total">
+        <td>= После комиссий и налогов</td>
+        <td class="num"></td>
+        <td class="num">${fmt(afterDeductions)}</td>
+      </tr>
+    `);
+
+    // Операционные расходы
+    let totalOpex = 0;
+    opexList.querySelectorAll('.opex-row').forEach(row => {
+      const name = row.querySelector('.o-name').value || 'Расход';
+      const value = parseFloat(row.querySelector('.o-value').value) || 0;
+      totalOpex += value;
+      body.insertAdjacentHTML('beforeend', `
+        <tr>
+          <td>− ${name}</td>
+          <td class="num">фикс.</td>
+          <td class="num red">−${fmt(value)}</td>
+        </tr>
+      `);
+    });
+
+    const net = afterDeductions - totalOpex;
+    const totalCosts = totalDeductions + totalOpex;
+
+    body.insertAdjacentHTML('beforeend', `
+      <tr class="total">
+        <td>= Чистая прибыль</td>
+        <td class="num"></td>
+        <td class="num ${net >= 0 ? 'green' : 'red'}">${fmt(net)}</td>
+      </tr>
+    `);
+
+    $('kpi-gross').textContent = fmt(gross) + ' BYN';
+    $('kpi-net').textContent = fmt(net) + ' BYN';
+    $('kpi-net').className = 'k-value ' + (net >= 0 ? 'green' : 'red');
+    $('kpi-deductions').textContent = fmt(totalCosts) + ' BYN';
+    $('kpi-year').textContent = fmt(net * 12) + ' BYN';
+  }
+
+  $('btn-add').addEventListener('click', () => {
+    makeRow({ name: '', type: 'percent', value: 0, base: 'gross' });
+    calc();
+  });
+  $('btn-add-opex').addEventListener('click', () => {
+    makeOpexRow({ name: '', value: 0 });
+    calc();
+  });
+  // Синхронизация слайдер <-> числовое поле
+  function linkRange(numId, rangeId) {
+    const num = $(numId), range = $(rangeId);
+    range.addEventListener('input', () => { num.value = range.value; calc(); });
+    num.addEventListener('input', () => {
+      // двигаем ползунок в пределах его шкалы, число при этом может быть и больше max
+      range.value = num.value;
+      calc();
+    });
+  }
+  linkRange('price', 'price-range');
+  linkRange('users', 'users-range');
+
+  defaults.forEach(makeRow);
+  opexDefaults.forEach(makeOpexRow);
+  calc();
+</script>
+</body>
+</html>

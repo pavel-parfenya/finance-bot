@@ -1,6 +1,6 @@
 import { DataSource, Repository } from "typeorm";
-import type { AnalyticsVoice } from "../analytics/types";
-import { User } from "../database/entities";
+import type { AnalyticsVoice } from "../../analytics/types";
+import { User } from "../../database/entities";
 
 export const DEFAULT_ANALYTICS_TIMEZONE = "Europe/Moscow";
 

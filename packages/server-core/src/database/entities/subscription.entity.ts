@@ -55,6 +55,18 @@ export class Subscription {
   webpayRecurringId: string | null;
 
   /**
+   * Идентификатор подписки bePaid (`sbs_…`). По нему bePaid сам списывает оплату
+   * по расписанию плана и шлёт notify-webhook при каждом продлении; используется
+   * для отмены автопродления (`POST /subscriptions/{id}/cancel`).
+   */
+  @Column({ type: "varchar", nullable: true })
+  bepaidSubscriptionId: string | null;
+
+  /** Идентификатор плана bePaid (`pln_…`), к которому привязана подписка. */
+  @Column({ type: "varchar", nullable: true })
+  bepaidPlanId: string | null;
+
+  /**
    * Момент гашения ссылки на оплату. Billing-JWT с `iat <= linkRevokedAt`
    * считается использованным (одноразовость ссылки `/subscribe`). Ставится при
    * успешной активации платного тарифа.
