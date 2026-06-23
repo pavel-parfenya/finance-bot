@@ -3,6 +3,9 @@ import type { Context } from "grammy";
 import { replyFeatureGated } from "./upgrade-prompt";
 import type { BotDeps } from "../bot";
 
+type WebAppButton = { text: string; web_app?: { url: string }; url?: string };
+type ReplyExtra = { reply_markup: { inline_keyboard: WebAppButton[][] } };
+
 function makeDeps(opts: { configured: boolean; landingBaseUrl: string }): BotDeps {
   return {
     billingTokenService: {
@@ -14,7 +17,9 @@ function makeDeps(opts: { configured: boolean; landingBaseUrl: string }): BotDep
 }
 
 function makeCtx() {
-  const reply = vi.fn(async () => undefined);
+  const reply = vi.fn<(text: string, extra?: ReplyExtra) => Promise<void>>(
+    async () => undefined
+  );
   return { ctx: { reply } as unknown as Context, reply };
 }
 
@@ -28,11 +33,11 @@ describe("replyFeatureGated — кнопка «Сменить план»", () =>
     expect(deps.billingTokenService.sign).toHaveBeenCalledWith(555);
     const [text, extra] = reply.mock.calls[0];
     expect(text).toContain("Голос");
-    const button = extra.reply_markup.inline_keyboard[0][0];
-    expect(button.text).toContain("Сменить план");
+    const button = extra?.reply_markup.inline_keyboard[0]?.[0];
+    expect(button?.text).toContain("Сменить план");
     // Открывается во WebView Telegram (web_app), а не во внешнем браузере (url).
-    expect(button.web_app.url).toBe("https://finance-bot.by/subscribe?token=jwt-token");
-    expect(button.url).toBeUndefined();
+    expect(button?.web_app?.url).toBe("https://finance-bot.by/subscribe?token=jwt-token");
+    expect(button?.url).toBeUndefined();
   });
 
   it("без настроенного billing шлёт текстовый фолбэк про Mini App без кнопки", async () => {
