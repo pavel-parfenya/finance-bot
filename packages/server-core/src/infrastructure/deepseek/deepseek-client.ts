@@ -6,6 +6,11 @@ const DEEPSEEK_BASE_URL = "https://api.deepseek.com";
  * Единая фабрика клиента DeepSeek с устойчивыми настройками сети.
  * `maxRetries` покрывает ретраи самого SDK (до чтения тела ответа),
  * `timeout` ограничивает «висящие» соединения.
+ *
+ * `Accept-Encoding: identity` отключает gzip. Обрыв соединения посреди
+ * ответа падал именно в Gunzip (ERR_STREAM_PREMATURE_CLOSE) при распаковке
+ * тела — без сжатия этот путь исключён. Ответы DeepSeek настолько малы,
+ * что gzip ничего не экономит, поэтому сжатие нам не нужно.
  */
 export function createDeepSeekClient(apiKey: string): OpenAI {
   return new OpenAI({
@@ -13,6 +18,7 @@ export function createDeepSeekClient(apiKey: string): OpenAI {
     baseURL: DEEPSEEK_BASE_URL,
     timeout: 60_000,
     maxRetries: 3,
+    defaultHeaders: { "Accept-Encoding": "identity" },
   });
 }
 
