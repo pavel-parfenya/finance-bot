@@ -24,7 +24,7 @@ function makeCtx() {
 }
 
 describe("replyFeatureGated — кнопка «Сменить план»", () => {
-  it("при настроенном billing и HTTPS-лендинге шлёт web_app-кнопку на /subscribe", async () => {
+  it("при настроенном billing и HTTPS-лендинге шлёт url-кнопку на /subscribe", async () => {
     const deps = makeDeps({ configured: true, landingBaseUrl: "https://finance-bot.by" });
     const { ctx, reply } = makeCtx();
 
@@ -35,9 +35,9 @@ describe("replyFeatureGated — кнопка «Сменить план»", () =>
     expect(text).toContain("Голос");
     const button = extra?.reply_markup.inline_keyboard[0]?.[0];
     expect(button?.text).toContain("Сменить план");
-    // Открывается во WebView Telegram (web_app), а не во внешнем браузере (url).
-    expect(button?.web_app?.url).toBe("https://finance-bot.by/subscribe?token=jwt-token");
-    expect(button?.url).toBeUndefined();
+    // Открывает страницу сайта напрямую (url), а не как mini-app/WebView (web_app).
+    expect(button?.url).toBe("https://finance-bot.by/subscribe?token=jwt-token");
+    expect(button?.web_app).toBeUndefined();
   });
 
   it("без настроенного billing шлёт текстовый фолбэк про Mini App без кнопки", async () => {
