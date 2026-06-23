@@ -33,6 +33,7 @@ async function bootstrap(): Promise<void> {
     const bot = createBot(config.telegram.botToken, {
       ...core,
       miniAppUrl,
+      landingBaseUrl: config.landingBaseUrl,
     });
     await bot.init();
     await configureBotAfterInit(bot, core);

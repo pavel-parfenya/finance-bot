@@ -3,6 +3,7 @@ import { Context } from "grammy";
 import { BotDeps } from "../bot";
 import { formatExpense } from "../format";
 import { createSaveNowKeyboard } from "./cancel-expense-handler";
+import { replyFeatureGated } from "./upgrade-prompt";
 import { scheduleSave } from "../pending-expense-store";
 import type { ParsedMessage } from "../message-router";
 
@@ -17,9 +18,11 @@ export async function handleParsedMessage(
   switch (parsed.type) {
     case "debt": {
       if (!(await deps.featureService.hasFeature(userId, "debts"))) {
-        await ctx.reply(
-          "💸 Учёт долгов доступен на платном тарифе.\n" +
-            "Оформить подписку можно в Mini App: Настройки → Подписка."
+        await replyFeatureGated(
+          ctx,
+          deps,
+          ctx.from?.id,
+          "💸 Учёт долгов доступен на платном тарифе."
         );
         return;
       }

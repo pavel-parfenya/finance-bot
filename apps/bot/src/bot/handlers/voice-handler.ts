@@ -3,6 +3,7 @@ import { BotDeps } from "../bot";
 import { resolveUser, getUserDisplayName } from "../utils";
 import { parseMessage } from "../message-router";
 import { handleParsedMessage } from "./message-handler";
+import { replyFeatureGated } from "./upgrade-prompt";
 import { checkRateLimit } from "../rate-limiter";
 
 const INVALID_REPLY =
@@ -22,9 +23,11 @@ export function createVoiceHandler(deps: BotDeps) {
     }
 
     if (!(await deps.featureService.hasFeature(user.id, "voice_input"))) {
-      await ctx.reply(
+      await replyFeatureGated(
+        ctx,
+        deps,
+        Number(user.telegramId),
         "🎙 Голосовой ввод доступен на платном тарифе.\n" +
-          "Оформить подписку можно в Mini App: Настройки → Подписка.\n" +
           "А пока отправьте трату текстом — например «кофе 8.50»."
       );
       return;
