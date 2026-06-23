@@ -1,8 +1,7 @@
 import OpenAI from "openai";
 import type { MonthlyReportData } from "./deepseek-monthly-report";
 import { analyticsVoiceHint } from "./deepseek-analytics-voice-hints";
-
-const DEEPSEEK_BASE_URL = "https://api.deepseek.com";
+import { createDeepSeekClient, withDeepSeekRetry } from "./deepseek-client";
 
 export interface WeeklyForecastMeta {
   /** Сколько календарных дней осталось до конца месяца включая сегодня (по локали пользователя). */
@@ -15,10 +14,7 @@ export class DeepSeekWeeklyForecast {
   private readonly client: OpenAI;
 
   constructor(apiKey: string) {
-    this.client = new OpenAI({
-      apiKey,
-      baseURL: DEEPSEEK_BASE_URL,
-    });
+    this.client = createDeepSeekClient(apiKey);
   }
 
   async generate(
@@ -67,18 +63,20 @@ ${currentTop || "  (нет расходов)"}
 ${voiceHint}
 Без таблиц и маркированных простыней.`;
 
-    const response = await this.client.chat.completions.create({
-      model: "deepseek-chat",
-      temperature: voice === "modern_18" ? 0.75 : 0.5,
-      messages: [
-        { role: "system", content: systemPrompt },
-        {
-          role: "user",
-          content:
-            "Дай короткий прогноз до конца текущего месяца и идеи по экономии. Не считай на год.",
-        },
-      ],
-    });
+    const response = await withDeepSeekRetry(() =>
+      this.client.chat.completions.create({
+        model: "deepseek-chat",
+        temperature: voice === "modern_18" ? 0.75 : 0.5,
+        messages: [
+          { role: "system", content: systemPrompt },
+          {
+            role: "user",
+            content:
+              "Дай короткий прогноз до конца текущего месяца и идеи по экономии. Не считай на год.",
+          },
+        ],
+      })
+    );
 
     const content = response.choices[0]?.message?.content?.trim();
     return content ?? "Не удалось сформировать прогноз.";

@@ -1,17 +1,13 @@
 import OpenAI from "openai";
 import { analyticsVoiceHint } from "./deepseek-analytics-voice-hints";
-
-const DEEPSEEK_BASE_URL = "https://api.deepseek.com";
+import { createDeepSeekClient, withDeepSeekRetry } from "./deepseek-client";
 
 /** Напоминание в последний день месяца: зарегистрирован, но почти не ведёт учёт. */
 export class DeepSeekInactiveUserNudge {
   private readonly client: OpenAI;
 
   constructor(apiKey: string) {
-    this.client = new OpenAI({
-      apiKey,
-      baseURL: DEEPSEEK_BASE_URL,
-    });
+    this.client = createDeepSeekClient(apiKey);
   }
 
   async generate(voice: string): Promise<string> {
@@ -25,17 +21,20 @@ export class DeepSeekInactiveUserNudge {
 ${voiceHint}
 Только текст сообщения, без заголовков.`;
 
-    const response = await this.client.chat.completions.create({
-      model: "deepseek-chat",
-      temperature: voice === "modern_18" ? 0.75 : 0.55,
-      messages: [
-        { role: "system", content: systemPrompt },
-        {
-          role: "user",
-          content: "Сгенерируй напоминание на конец месяца для неактивного пользователя.",
-        },
-      ],
-    });
+    const response = await withDeepSeekRetry(() =>
+      this.client.chat.completions.create({
+        model: "deepseek-chat",
+        temperature: voice === "modern_18" ? 0.75 : 0.55,
+        messages: [
+          { role: "system", content: systemPrompt },
+          {
+            role: "user",
+            content:
+              "Сгенерируй напоминание на конец месяца для неактивного пользователя.",
+          },
+        ],
+      })
+    );
 
     const content = response.choices[0]?.message?.content?.trim();
     return (

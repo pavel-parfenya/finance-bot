@@ -3,8 +3,7 @@ import { IMessageParser } from "../../domain/interfaces";
 import { ParseContext } from "../../domain/interfaces/message-parser";
 import type { ParsedExpense } from "../../domain/models";
 import { ExpenseCategory, IncomeCategory } from "../../domain/models";
-
-const DEEPSEEK_BASE_URL = "https://api.deepseek.com";
+import { createDeepSeekClient, withDeepSeekRetry } from "./deepseek-client";
 
 const EXPENSE_CATS = Object.values(ExpenseCategory).join(", ");
 const INCOME_CATS = Object.values(IncomeCategory).join(", ");
@@ -68,10 +67,7 @@ export class DeepSeekMessageParser implements IMessageParser {
   private readonly client: OpenAI;
 
   constructor(apiKey: string) {
-    this.client = new OpenAI({
-      apiKey,
-      baseURL: DEEPSEEK_BASE_URL,
-    });
+    this.client = createDeepSeekClient(apiKey);
   }
 
   async parse(text: string, context?: ParseContext): Promise<ParsedExpense> {
@@ -79,15 +75,17 @@ export class DeepSeekMessageParser implements IMessageParser {
       context?.customCategories,
       context?.defaultCurrency
     );
-    const response = await this.client.chat.completions.create({
-      model: "deepseek-chat",
-      temperature: 0,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: `{${text}}` },
-      ],
-    });
+    const response = await withDeepSeekRetry(() =>
+      this.client.chat.completions.create({
+        model: "deepseek-chat",
+        temperature: 0,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `{${text}}` },
+        ],
+      })
+    );
 
     const content = response.choices[0]?.message?.content;
     if (!content) {

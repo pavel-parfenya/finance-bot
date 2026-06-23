@@ -1,7 +1,6 @@
 import OpenAI from "openai";
 import { analyticsVoiceHint } from "./deepseek-analytics-voice-hints";
-
-const DEEPSEEK_BASE_URL = "https://api.deepseek.com";
+import { createDeepSeekClient, withDeepSeekRetry } from "./deepseek-client";
 
 const PURCHASE_QUESTION_PATTERNS = [
   /могу\s+ли\s+я\s+купить/i,
@@ -50,25 +49,24 @@ export class DeepSeekPurchaseAdviceParser {
   private readonly client: OpenAI;
 
   constructor(apiKey: string) {
-    this.client = new OpenAI({
-      apiKey,
-      baseURL: DEEPSEEK_BASE_URL,
-    });
+    this.client = createDeepSeekClient(apiKey);
   }
 
   async parse(
     text: string,
     defaultCurrency?: string | null
   ): Promise<ParsedPurchaseQuestion | null> {
-    const response = await this.client.chat.completions.create({
-      model: "deepseek-chat",
-      temperature: 0,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: PARSE_SYSTEM },
-        { role: "user", content: `{${text}}` },
-      ],
-    });
+    const response = await withDeepSeekRetry(() =>
+      this.client.chat.completions.create({
+        model: "deepseek-chat",
+        temperature: 0,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: PARSE_SYSTEM },
+          { role: "user", content: `{${text}}` },
+        ],
+      })
+    );
 
     const content = response.choices[0]?.message?.content;
     if (!content) return null;
@@ -107,17 +105,19 @@ ${categoriesText}
 ${voiceHint}
 Ответь только текстом совета, без вступления.`;
 
-    const response = await this.client.chat.completions.create({
-      model: "deepseek-chat",
-      temperature: voice === "modern_18" ? 0.75 : 0.5,
-      messages: [
-        { role: "system", content: systemPrompt },
-        {
-          role: "user",
-          content: `Вопрос: ${question.item} за ${question.amount} ${question.currency}. Стоит ли?`,
-        },
-      ],
-    });
+    const response = await withDeepSeekRetry(() =>
+      this.client.chat.completions.create({
+        model: "deepseek-chat",
+        temperature: voice === "modern_18" ? 0.75 : 0.5,
+        messages: [
+          { role: "system", content: systemPrompt },
+          {
+            role: "user",
+            content: `Вопрос: ${question.item} за ${question.amount} ${question.currency}. Стоит ли?`,
+          },
+        ],
+      })
+    );
 
     const content = response.choices[0]?.message?.content?.trim();
     return content ?? "Не удалось сформировать совет.";

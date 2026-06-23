@@ -1,16 +1,12 @@
 import OpenAI from "openai";
 import { analyticsVoiceHint } from "./deepseek-analytics-voice-hints";
-
-const DEEPSEEK_BASE_URL = "https://api.deepseek.com";
+import { createDeepSeekClient, withDeepSeekRetry } from "./deepseek-client";
 
 export class DeepSeekEndOfDayReminder {
   private readonly client: OpenAI;
 
   constructor(apiKey: string) {
-    this.client = new OpenAI({
-      apiKey,
-      baseURL: DEEPSEEK_BASE_URL,
-    });
+    this.client = createDeepSeekClient(apiKey);
   }
 
   async generate(voice: string): Promise<string> {
@@ -19,14 +15,16 @@ export class DeepSeekEndOfDayReminder {
 Напомни коротко (1–3 предложения) внести сегодняшние траты в приложение. Без нравоучений и длинных списков.
 ${voiceHint}`;
 
-    const response = await this.client.chat.completions.create({
-      model: "deepseek-chat",
-      temperature: voice === "modern_18" ? 0.75 : 0.55,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: "Сформулируй напоминание на вечер." },
-      ],
-    });
+    const response = await withDeepSeekRetry(() =>
+      this.client.chat.completions.create({
+        model: "deepseek-chat",
+        temperature: voice === "modern_18" ? 0.75 : 0.55,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: "Сформулируй напоминание на вечер." },
+        ],
+      })
+    );
 
     const content = response.choices[0]?.message?.content?.trim();
     return content ?? "Не забудь занести сегодняшние траты в приложение.";

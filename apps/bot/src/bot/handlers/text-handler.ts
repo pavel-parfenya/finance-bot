@@ -37,17 +37,26 @@ export function createTextHandler(deps: BotDeps) {
       customCategories = undefined;
     }
 
-    const parsed = await parseMessage(
-      text,
-      displayName,
-      defaultCurrency,
-      {
-        debtParser: deps.debtParser,
-        expenseService: deps.expenseService,
-        purchaseAdviceParser: deps.purchaseAdviceParser,
-      },
-      customCategories
-    );
+    let parsed;
+    try {
+      parsed = await parseMessage(
+        text,
+        displayName,
+        defaultCurrency,
+        {
+          debtParser: deps.debtParser,
+          expenseService: deps.expenseService,
+          purchaseAdviceParser: deps.purchaseAdviceParser,
+        },
+        customCategories
+      );
+    } catch (error) {
+      console.error("Ошибка распознавания сообщения:", error);
+      await ctx.reply(
+        "Сервис распознавания временно недоступен. Попробуйте ещё раз через минуту."
+      );
+      return;
+    }
 
     if (!parsed) {
       await ctx.reply(INVALID_REPLY);

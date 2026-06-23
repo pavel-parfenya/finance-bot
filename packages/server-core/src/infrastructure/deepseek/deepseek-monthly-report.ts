@@ -1,7 +1,6 @@
 import OpenAI from "openai";
 import { analyticsVoiceHint } from "./deepseek-analytics-voice-hints";
-
-const DEEPSEEK_BASE_URL = "https://api.deepseek.com";
+import { createDeepSeekClient, withDeepSeekRetry } from "./deepseek-client";
 
 export interface MonthlyReportData {
   defaultCurrency: string;
@@ -26,10 +25,7 @@ export class DeepSeekMonthlyReport {
   private readonly client: OpenAI;
 
   constructor(apiKey: string) {
-    this.client = new OpenAI({
-      apiKey,
-      baseURL: DEEPSEEK_BASE_URL,
-    });
+    this.client = createDeepSeekClient(apiKey);
   }
 
   async generateReport(data: MonthlyReportData, voice: string): Promise<string> {
@@ -78,18 +74,20 @@ ${currentTop || "  (нет расходов)"}
 ${voiceHint}
 Кратко, без воды.`;
 
-    const response = await this.client.chat.completions.create({
-      model: "deepseek-chat",
-      temperature: voice === "modern_18" ? 0.75 : 0.5,
-      messages: [
-        { role: "system", content: systemPrompt },
-        {
-          role: "user",
-          content:
-            "Сформируй месячный отчёт: только расходы в топе, горизонт — конец текущего месяца, не год.",
-        },
-      ],
-    });
+    const response = await withDeepSeekRetry(() =>
+      this.client.chat.completions.create({
+        model: "deepseek-chat",
+        temperature: voice === "modern_18" ? 0.75 : 0.5,
+        messages: [
+          { role: "system", content: systemPrompt },
+          {
+            role: "user",
+            content:
+              "Сформируй месячный отчёт: только расходы в топе, горизонт — конец текущего месяца, не год.",
+          },
+        ],
+      })
+    );
 
     const content = response.choices[0]?.message?.content?.trim();
     return content ?? "Не удалось сформировать отчёт.";
