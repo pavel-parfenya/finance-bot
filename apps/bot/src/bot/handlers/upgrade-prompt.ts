@@ -2,35 +2,33 @@ import { InlineKeyboard, type Context } from "grammy";
 import type { BotDeps } from "../bot";
 
 /**
- * Inline-кнопка «Сменить план» под сообщением-гейтом фичи. Открывает страницу
- * подписки сайта НАПРЯМУЮ (обычная URL-кнопка типа `url` — встроенный браузер
- * Telegram / внешний браузер), а не как mini-app/WebView. URL — лендинг
- * `/subscribe` с короткоживущим billing-JWT (та же авторизация, что и при
- * открытии оплаты из Mini App).
+ * Inline-кнопка «Сменить план» под сообщением-гейтом фичи. Открывает Telegram
+ * Mini App на странице настроек подписки (`web_app`/WebView внутри Telegram), а не
+ * страницу сайта напрямую. Внутри Mini App пользователь видит текущий тариф и по
+ * кнопке «Сменить план» уже уходит на лендинг `/subscribe` с оплатой. Авторизация
+ * в Mini App — через Telegram initData, billing-JWT здесь не нужен.
  *
- * Возвращает `null`, если кнопку построить нельзя (не настроен JWT-секрет, нет
- * HTTPS-URL лендинга или неизвестен telegramId) — тогда вызывающий шлёт текстовый
- * фолбэк с подсказкой про Mini App.
+ * Возвращает `null`, если кнопку построить нельзя (нет HTTPS-URL Mini App) — тогда
+ * вызывающий шлёт текстовый фолбэк с подсказкой про Mini App.
  */
-function buildUpgradeKeyboard(
-  deps: BotDeps,
-  telegramId: number | undefined
-): InlineKeyboard | null {
-  if (typeof telegramId !== "number" || !deps.billingTokenService?.isConfigured) {
-    return null;
-  }
-  const base = deps.landingBaseUrl;
-  // Telegram открывает url-кнопку только по HTTPS.
+function buildUpgradeKeyboard(deps: BotDeps): InlineKeyboard | null {
+  const base = deps.miniAppUrl;
+  // Telegram открывает web_app-кнопку только по HTTPS.
   if (!base || !base.startsWith("https://")) return null;
-  const token = deps.billingTokenService.sign(telegramId);
-  const url = `${base}/subscribe?token=${encodeURIComponent(token)}`;
-  return new InlineKeyboard().url("💳 Сменить план", url);
+  // miniAppUrl — это `${publicBaseUrl}/app`; страница подписки Mini App живёт на
+  // том же origin по маршруту `/settings/subscription` (SPA-фолбэк отдаёт shell).
+  const appBase = base.replace(/\/app\/?$/, "");
+  const url = `${appBase}/settings/subscription`;
+  return new InlineKeyboard().webApp("💳 Сменить план", url);
 }
 
 /**
  * Отправляет сообщение-апселл «фича на платном тарифе» с кнопкой «Сменить план»
- * (открывает страницу сайта напрямую). Если кнопку построить нельзя — отправляет
- * текст с подсказкой оформить подписку в Mini App.
+ * (открывает Mini App на странице подписки). Если кнопку построить нельзя —
+ * отправляет текст с подсказкой оформить подписку в Mini App.
+ *
+ * `telegramId` больше не используется для построения кнопки (Mini App авторизует
+ * через initData), но сохранён в сигнатуре для совместимости с вызывающими.
  */
 export async function replyFeatureGated(
   ctx: Context,
@@ -38,7 +36,8 @@ export async function replyFeatureGated(
   telegramId: number | undefined,
   intro: string
 ): Promise<void> {
-  const keyboard = buildUpgradeKeyboard(deps, telegramId);
+  void telegramId;
+  const keyboard = buildUpgradeKeyboard(deps);
   if (keyboard) {
     await ctx.reply(intro, { reply_markup: keyboard });
     return;
