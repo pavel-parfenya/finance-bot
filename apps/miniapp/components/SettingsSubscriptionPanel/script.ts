@@ -7,16 +7,17 @@ import type {
 } from "@finance-bot/shared";
 import { fetchSubscriptionPlans, fetchCheckoutLink } from "~/api/client";
 
-/** Открыть внешнюю ссылку из Telegram Mini App (или обычным переходом — для дев-режима). */
-function openExternal(url: string): void {
-  const tg = (
-    window as unknown as { Telegram?: { WebApp?: { openLink?: (u: string) => void } } }
-  ).Telegram?.WebApp;
-  if (tg?.openLink) {
-    tg.openLink(url);
-  } else {
-    window.open(url, "_blank");
-  }
+/**
+ * Открыть страницу подписки внутри Telegram, а не в отдельном браузере.
+ *
+ * `Telegram.WebApp.openLink` открывает ссылку во внешнем/встроенном браузере
+ * поверх Mini App (Safari View Controller на iOS, Custom Tab на Android) — это и
+ * есть «отдельное приложение браузера». Чтобы остаться внутри Telegram, переводим
+ * текущую WebView на адрес `/subscribe` (Mini App сам уже является WebView
+ * Telegram, так что навигация не выходит за его пределы).
+ */
+function openSubscribePage(url: string): void {
+  window.location.assign(url);
 }
 
 const PLAN_LABEL: Record<SubscriptionPlanId, string> = {
@@ -80,18 +81,19 @@ export default defineComponent({
       loading.value = false;
     });
 
-    /** Получить ссылку и открыть страницу подписки на сайте во внешнем браузере. */
+    /** Получить ссылку и открыть страницу подписки внутри Telegram (в текущей WebView). */
     async function changePlan(): Promise<void> {
       if (checkoutLoading.value) return;
       checkoutLoading.value = true;
       checkoutError.value = "";
       const res = await fetchCheckoutLink();
-      checkoutLoading.value = false;
       if ("error" in res) {
+        checkoutLoading.value = false;
         checkoutError.value = res.error;
         return;
       }
-      openExternal(res.url);
+      // checkoutLoading не сбрасываем: WebView уходит на страницу подписки.
+      openSubscribePage(res.url);
     }
 
     return {
