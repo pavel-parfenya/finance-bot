@@ -1,4 +1,4 @@
-import { defineComponent, ref, computed, onMounted } from "vue";
+import { defineComponent, ref, computed, onMounted, onBeforeUnmount } from "vue";
 import type {
   SubscriptionInfo,
   SubscriptionPlanCard,
@@ -79,6 +79,20 @@ export default defineComponent({
         plans.value = data.plans;
       }
       loading.value = false;
+    });
+
+    // Кнопка «Сменить план» уводит WebView на /subscribe и НЕ сбрасывает
+    // checkoutLoading (мы уходим со страницы). При возврате «Назад» WebView может
+    // восстановить страницу из bfcache с замороженным состоянием — снимаем его,
+    // чтобы кнопка снова была активной и с текстом «Сменить план».
+    function resetCheckoutOnReturn(): void {
+      checkoutLoading.value = false;
+    }
+    onMounted(() => {
+      window.addEventListener("pageshow", resetCheckoutOnReturn);
+    });
+    onBeforeUnmount(() => {
+      window.removeEventListener("pageshow", resetCheckoutOnReturn);
     });
 
     /** Получить ссылку и открыть страницу подписки внутри Telegram (в текущей WebView). */

@@ -21,10 +21,36 @@ import type {
 
 const BASE = typeof window !== "undefined" ? window.location.origin : "";
 
+/**
+ * Ключ для запоминания Telegram initData в рамках вкладки WebView.
+ *
+ * Telegram отдаёт launch-параметры (`#tgWebAppData=…`) только при первом открытии
+ * Mini App. Когда «Сменить план» уводит WebView на лендинг `/subscribe`
+ * (`window.location`), а пользователь жмёт «Назад», WebView может перезагрузить
+ * Mini App уже без этого хеша — и `Telegram.WebApp.initData` оказывается пустым,
+ * из-за чего API отвечает «Недействительная сессия». sessionStorage привязан к
+ * origin Mini App и переживает уход на другой origin и возврат в той же вкладке,
+ * поэтому используем его как запасной источник initData.
+ */
+const INIT_DATA_STORAGE_KEY = "tg-init-data";
+
 function getInitData(): string {
   const tg = (window as unknown as { Telegram?: { WebApp?: { initData?: string } } })
     .Telegram?.WebApp;
-  return tg?.initData ?? "";
+  const live = tg?.initData ?? "";
+  if (live) {
+    try {
+      sessionStorage.setItem(INIT_DATA_STORAGE_KEY, live);
+    } catch {
+      /* sessionStorage недоступен — работаем только с «живым» initData */
+    }
+    return live;
+  }
+  try {
+    return sessionStorage.getItem(INIT_DATA_STORAGE_KEY) ?? "";
+  } catch {
+    return "";
+  }
 }
 
 function headers(): Record<string, string> {

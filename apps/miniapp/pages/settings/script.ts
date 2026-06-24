@@ -13,7 +13,10 @@ export default defineComponent({
     onMounted(async () => {
       const s = await fetchUserSettings();
       showSuperAdmin.value = !!s.isSuperAdmin;
-      showSubscription.value = !!s.subscriptionEnabled;
+      // Сервер уточняет видимость, но если ответ без поля (ошибка/сорванная сессия) —
+      // оставляем значение из build-флага, чтобы пункт не пропадал после возврата
+      // со страницы /subscribe.
+      showSubscription.value = s.subscriptionEnabled ?? showSubscription.value;
     });
 
     return { showSuperAdmin, showSubscription };
