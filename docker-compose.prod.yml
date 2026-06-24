@@ -43,9 +43,16 @@ services:
   # TypeORM migration:run по СКОМПИЛИРОВАННОМУ коду). Переиспользует образ api —
   # отдельный тяжёлый migrate-образ с dev-зависимостями не нужен.
   # Запускается явно `run --rm migrate` на каждом деплое.
+  #
+  # profiles: ["migrate"] — чтобы голый `up -d` (финальная сходимость в deploy.yml)
+  # НЕ пересоздавал этот one-shot заново. Иначе он остаётся exited-контейнером
+  # finance-bot-migrate-1, который держит ссылку на старый образ api и не даёт
+  # `docker image prune -af` освободить место под новый CMS (→ ENOSPC на pull cms).
+  # `docker compose run --rm migrate` запускает сервис из профиля по имени без --profile.
   # ---------------------------------------------------------------------------
   migrate:
     image: ${REGISTRY:-ghcr.io}/${IMAGE_PREFIX:-pavel-parfenya/finance-bot}-api:${TAG:-latest}
+    profiles: ["migrate"]
     restart: "no"
     env_file:
       - .env
