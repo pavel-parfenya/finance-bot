@@ -9,6 +9,36 @@ import { checkRateLimit } from "../rate-limiter";
 const INVALID_REPLY =
   "Не удалось внести данные: информация невалидная (указана нулевая сумма или не распознано описание).";
 
+// Скачивание голосового файла с api.telegram.org периодически падает транзиентным
+// ETIMEDOUT (сервер не успевает установить TCP-соединение). Поэтому ограничиваем
+// каждую попытку таймаутом и повторяем несколько раз, прежде чем сдаться.
+const DOWNLOAD_TIMEOUT_MS = 15000;
+const DOWNLOAD_RETRIES = 2;
+
+async function downloadVoiceFile(url: string): Promise<Buffer> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= DOWNLOAD_RETRIES; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), DOWNLOAD_TIMEOUT_MS);
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      if (!response.ok) {
+        throw new Error(`Не удалось скачать голосовой файл: ${response.statusText}`);
+      }
+      const arrayBuffer = await response.arrayBuffer();
+      return Buffer.from(arrayBuffer);
+    } catch (error) {
+      lastError = error;
+    } finally {
+      clearTimeout(timeout);
+    }
+    if (attempt < DOWNLOAD_RETRIES) {
+      await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+    }
+  }
+  throw lastError;
+}
+
 export function createVoiceHandler(deps: BotDeps) {
   return async (ctx: Context): Promise<void> => {
     const voice = ctx.message?.voice;
@@ -39,13 +69,7 @@ export function createVoiceHandler(deps: BotDeps) {
       const file = await ctx.api.getFile(voice.file_id);
       const url = `https://api.telegram.org/file/bot${ctx.api.token}/${file.file_path}`;
 
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Не удалось скачать голосовой файл: ${response.statusText}`);
-      }
-
-      const arrayBuffer = await response.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
+      const buffer = await downloadVoiceFile(url);
       const mimeType = voice.mime_type ?? "audio/ogg";
 
       const displayName = getUserDisplayName(ctx);

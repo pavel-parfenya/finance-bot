@@ -297,6 +297,69 @@ describe("PaymentService.handleNotify", () => {
     );
   });
 
+  it("продлевает оплаченный период при повторном active-webhook (сдвигает expiresAt)", async () => {
+    // bePaid списал деньги за новый цикл и прислал notify с новым active_to.
+    mockFetchRoutes(() => ({
+      id: "sbs_1",
+      state: "active",
+      tracking_id: "42-m",
+      active_to: "2027-02-01T00:00:00Z",
+      plan: { id: "pln_x" },
+      last_transaction: { uid: "tx-cycle-2", status: "successful" },
+    }));
+    // current = уже активная подписка прошлого периода.
+    const { service, subscriptionService } = makeService("bepaid", 9.99, {
+      bepaidSubscriptionId: "sbs_1",
+      expiresAt: new Date("2027-01-01T00:00:00Z"),
+    });
+    const res = await service.handleNotify({ subscription: { id: "sbs_1" } });
+    expect(res.activated).toBe(true);
+    expect(subscriptionService.activatePaid).toHaveBeenCalledWith(
+      42,
+      SubscriptionPlan.ProMonth,
+      expect.objectContaining({
+        expiresAt: new Date("2027-02-01T00:00:00Z"),
+        paymentId: "tx-cycle-2",
+      })
+    );
+  });
+
+  it("активирует подписку при состоянии trial", async () => {
+    mockFetchRoutes(() => ({
+      id: "sbs_t",
+      state: "trial",
+      tracking_id: "42-m",
+      active_to: "2027-01-01T00:00:00Z",
+      plan: { id: "pln_x" },
+      last_transaction: { uid: "tx-trial" },
+    }));
+    const { service, subscriptionService } = makeService("bepaid");
+    const res = await service.handleNotify({ subscription: { id: "sbs_t" } });
+    expect(res.activated).toBe(true);
+    expect(subscriptionService.activatePaid).toHaveBeenCalledWith(
+      42,
+      SubscriptionPlan.ProMonth,
+      expect.objectContaining({ bepaidSubscriptionId: "sbs_t" })
+    );
+  });
+
+  it("активирует с expiresAt=null, если bePaid не прислал active_to", async () => {
+    mockFetchRoutes(() => ({
+      id: "sbs_1",
+      state: "active",
+      tracking_id: "42-m",
+      plan: { id: "pln_x" },
+      last_transaction: { uid: "tx-1" },
+    }));
+    const { service, subscriptionService } = makeService("bepaid");
+    await service.handleNotify({ subscription: { id: "sbs_1" } });
+    expect(subscriptionService.activatePaid).toHaveBeenCalledWith(
+      42,
+      SubscriptionPlan.ProMonth,
+      expect.objectContaining({ expiresAt: null })
+    );
+  });
+
   it("при состоянии canceled помечает подписку отменённой", async () => {
     mockFetchRoutes(() => ({
       id: "sbs_3",
@@ -307,6 +370,64 @@ describe("PaymentService.handleNotify", () => {
     const res = await service.handleNotify({ subscription: { id: "sbs_3" } });
     expect(res).toEqual({ received: true, activated: false });
     expect(subscriptionService.cancelByBepaidId).toHaveBeenCalledWith("sbs_3");
+    expect(subscriptionService.activatePaid).not.toHaveBeenCalled();
+  });
+
+  it("при состоянии failed (списание не прошло) помечает подписку отменённой", async () => {
+    mockFetchRoutes(() => ({
+      id: "sbs_f",
+      state: "failed",
+      tracking_id: "42-m",
+    }));
+    const { service, subscriptionService } = makeService("bepaid");
+    const res = await service.handleNotify({ subscription: { id: "sbs_f" } });
+    expect(res).toEqual({ received: true, activated: false });
+    expect(subscriptionService.cancelByBepaidId).toHaveBeenCalledWith("sbs_f");
+    expect(subscriptionService.activatePaid).not.toHaveBeenCalled();
+  });
+
+  it("на промежуточном состоянии (pending) не активирует и не отменяет", async () => {
+    mockFetchRoutes(() => ({
+      id: "sbs_p",
+      state: "pending",
+      tracking_id: "42-m",
+    }));
+    const { service, subscriptionService } = makeService("bepaid");
+    const res = await service.handleNotify({ subscription: { id: "sbs_p" } });
+    expect(res).toEqual({ received: true, activated: false });
+    expect(subscriptionService.activatePaid).not.toHaveBeenCalled();
+    expect(subscriptionService.cancelByBepaidId).not.toHaveBeenCalled();
+  });
+
+  it("игнорирует webhook с чужим id (не sbs_) без запроса к bePaid", async () => {
+    const { fn } = mockFetchRoutes(() => ({}));
+    const { service, subscriptionService } = makeService("bepaid");
+    const res = await service.handleNotify({ subscription: { id: "trx_777" } });
+    expect(res).toEqual({ received: true, activated: false });
+    expect(fn).not.toHaveBeenCalled();
+    expect(subscriptionService.activatePaid).not.toHaveBeenCalled();
+  });
+
+  it("не активирует, если bePaid недоступен (статус подписки не получен)", async () => {
+    // Тело webhook не доверяем; состояние перепроверяется запросом к bePaid.
+    stubFetch(() => ({ ok: false, status: 500, body: {} }));
+    const { service, subscriptionService } = makeService("bepaid");
+    const res = await service.handleNotify({ subscription: { id: "sbs_1" } });
+    expect(res).toEqual({ received: true, activated: false });
+    expect(subscriptionService.activatePaid).not.toHaveBeenCalled();
+    expect(subscriptionService.cancelByBepaidId).not.toHaveBeenCalled();
+  });
+
+  it("не активирует при невосстановимом tracking_id", async () => {
+    mockFetchRoutes(() => ({
+      id: "sbs_1",
+      state: "active",
+      tracking_id: "garbage",
+      active_to: "2027-01-01T00:00:00Z",
+    }));
+    const { service, subscriptionService } = makeService("bepaid");
+    const res = await service.handleNotify({ subscription: { id: "sbs_1" } });
+    expect(res).toEqual({ received: true, activated: false });
     expect(subscriptionService.activatePaid).not.toHaveBeenCalled();
   });
 

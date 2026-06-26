@@ -1,6 +1,7 @@
 import { defineComponent, ref, watch } from "vue";
 import type { WorkspaceMember } from "@finance-bot/shared";
 import { fetchWorkspaceInfo, inviteUser, setMemberFullAccess } from "~/api/client";
+import { useUpgradeModal } from "~/composables/useUpgradeModal";
 
 export default defineComponent({
   props: {
@@ -8,6 +9,7 @@ export default defineComponent({
   },
   emits: ["close", "members-changed"],
   setup(props, { emit }) {
+    const { notifyApiError } = useUpgradeModal();
     const isOwner = ref(false);
     const members = ref<WorkspaceMember[]>([]);
     const error = ref<string | null>(null);
@@ -37,7 +39,7 @@ export default defineComponent({
       const data = await inviteUser(username);
       inviting.value = false;
       if (data.error) {
-        alert(data.error);
+        notifyApiError(data.error);
         return;
       }
       alert("Пользователь добавлен!");

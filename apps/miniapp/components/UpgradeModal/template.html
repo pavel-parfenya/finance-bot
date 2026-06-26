@@ -1,0 +1,17 @@
+<div v-if="open" class="modal-overlay" @click.self="close">
+  <div class="upgrade-modal">
+    <p class="upgrade-text">{{ message }}</p>
+    <p v-if="error" class="upgrade-error">{{ error }}</p>
+    <div class="upgrade-actions">
+      <button type="button" class="upgrade-cancel" @click="close">Отмена</button>
+      <button
+        type="button"
+        class="upgrade-cta"
+        :disabled="loading"
+        @click="changePlan"
+      >
+        {{ loading ? 'Открываем…' : 'Сменить план' }}
+      </button>
+    </div>
+  </div>
+</div>

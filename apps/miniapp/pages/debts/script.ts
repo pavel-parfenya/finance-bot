@@ -16,11 +16,13 @@ import {
   fetchUserSettings,
 } from "~/api/client";
 import { useAppState } from "~/composables/useAppState";
+import { useUpgradeModal } from "~/composables/useUpgradeModal";
 import { CURRENCIES } from "~/utils/format";
 
 export default defineComponent({
   setup() {
     const { refreshTrigger } = useAppState();
+    const { notifyApiError } = useUpgradeModal();
 
     const debts = ref<DebtDto[]>([]);
     const loading = ref(true);
@@ -105,7 +107,7 @@ export default defineComponent({
 
       const data = await createDebt(body);
       if (data.error) {
-        alert(data.error);
+        notifyApiError(data.error);
         return;
       }
       showForm.value = false;
