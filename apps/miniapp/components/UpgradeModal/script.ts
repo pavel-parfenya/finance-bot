@@ -1,4 +1,4 @@
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, onMounted, onBeforeUnmount } from "vue";
 import { fetchCheckoutLink } from "~/api/client";
 import { useUpgradeModal } from "~/composables/useUpgradeModal";
 
@@ -7,6 +7,20 @@ export default defineComponent({
     const { open, message, close } = useUpgradeModal();
     const loading = ref(false);
     const error = ref("");
+
+    // «Сменить план» уводит WebView на /subscribe и НЕ сбрасывает loading
+    // (мы уходим со страницы). При возврате «Назад» WebView восстанавливает
+    // страницу из bfcache с замороженным loading=true — снимаем его, чтобы
+    // кнопка снова была активной и с текстом «Сменить план».
+    function resetOnReturn(): void {
+      loading.value = false;
+    }
+    onMounted(() => {
+      window.addEventListener("pageshow", resetOnReturn);
+    });
+    onBeforeUnmount(() => {
+      window.removeEventListener("pageshow", resetOnReturn);
+    });
 
     /**
      * «Сменить план» — получаем ссылку и уводим текущую WebView на `/subscribe`
