@@ -1,4 +1,4 @@
-import { computed, defineComponent, onBeforeUnmount, onMounted, ref } from "vue";
+import { defineComponent, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import type { TransactionUpdateRequest } from "@finance-bot/shared";
 import { CURRENCIES } from "~/utils/format";
@@ -29,36 +29,10 @@ export default defineComponent({
     const saving = ref(false);
     const error = ref<string | null>(null);
 
-    // Высота клавиатуры — чтобы поднять панель действий над ней.
-    const keyboardInset = ref(0);
-    const actionsStyle = computed(() => ({ bottom: `${keyboardInset.value}px` }));
-
-    function syncKeyboardInset() {
-      const vv = window.visualViewport;
-      keyboardInset.value = vv
-        ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
-        : 0;
-    }
-
     onMounted(() => {
       // Прямой заход на /table/edit без выбранной записи (например, перезагрузка) —
       // возвращаем к списку.
       if (!editingTransaction.value) router.replace("/table");
-
-      syncKeyboardInset();
-      const vv = window.visualViewport;
-      if (vv) {
-        vv.addEventListener("resize", syncKeyboardInset);
-        vv.addEventListener("scroll", syncKeyboardInset);
-      }
-    });
-
-    onBeforeUnmount(() => {
-      const vv = window.visualViewport;
-      if (vv) {
-        vv.removeEventListener("resize", syncKeyboardInset);
-        vv.removeEventListener("scroll", syncKeyboardInset);
-      }
     });
 
     function goBack() {
@@ -96,7 +70,6 @@ export default defineComponent({
       type,
       saving,
       error,
-      actionsStyle,
       save,
       goBack,
       CURRENCIES,

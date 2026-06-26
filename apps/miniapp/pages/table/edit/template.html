@@ -45,7 +45,7 @@
     <p v-if="error" class="form-error">{{ error }}</p>
   </form>
 
-  <div class="edit-actions" :style="actionsStyle">
+  <div class="edit-actions">
     <button type="button" class="btn-cancel" @click="goBack">Отмена</button>
     <button type="button" class="btn-save" :disabled="saving" @click="save">
       {{ saving ? "Сохранение…" : "Сохранить" }}
