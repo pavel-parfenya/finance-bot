@@ -1,9 +1,11 @@
 import { ref, computed } from "vue";
-import type { TransactionFilters } from "@finance-bot/shared";
+import type { TransactionDto, TransactionFilters } from "@finance-bot/shared";
 
 const filtersOpen = ref(false);
 const filters = ref<TransactionFilters>({});
 const refreshTrigger = ref(0);
+/** Транзакция, открытая на странице редактирования (/table/edit). */
+const editingTransaction = ref<TransactionDto | null>(null);
 
 export function useAppState() {
   const activeFiltersCount = computed(() => {
@@ -21,5 +23,12 @@ export function useAppState() {
     refreshTrigger.value++;
   }
 
-  return { filtersOpen, filters, refreshTrigger, activeFiltersCount, triggerRefresh };
+  return {
+    filtersOpen,
+    filters,
+    refreshTrigger,
+    editingTransaction,
+    activeFiltersCount,
+    triggerRefresh,
+  };
 }

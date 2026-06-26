@@ -1,0 +1,54 @@
+<div class="edit-page">
+  <form class="edit-form" @submit.prevent="save">
+    <label class="field">
+      <span class="field-label">Описание</span>
+      <input v-model="description" type="text" placeholder="Описание" />
+    </label>
+
+    <label class="field">
+      <span class="field-label">Тип</span>
+      <select v-model="type" class="select-styled">
+        <option value="expense">Расход</option>
+        <option value="income">Доход</option>
+      </select>
+    </label>
+
+    <label class="field">
+      <span class="field-label">Категория</span>
+      <input v-model="category" type="text" placeholder="Категория" />
+    </label>
+
+    <label class="field">
+      <span class="field-label">Сумма</span>
+      <input
+        v-model="amount"
+        type="number"
+        inputmode="decimal"
+        step="0.01"
+        min="0"
+        placeholder="0"
+      />
+    </label>
+
+    <label class="field">
+      <span class="field-label">Валюта</span>
+      <select v-model="currency" class="select-styled">
+        <option v-for="c in CURRENCIES" :key="c" :value="c">{{ c }}</option>
+      </select>
+    </label>
+
+    <label class="field">
+      <span class="field-label">Дата</span>
+      <input v-model="date" type="date" class="date-input" />
+    </label>
+
+    <p v-if="error" class="form-error">{{ error }}</p>
+  </form>
+
+  <div class="edit-actions" :style="actionsStyle">
+    <button type="button" class="btn-cancel" @click="goBack">Отмена</button>
+    <button type="button" class="btn-save" :disabled="saving" @click="save">
+      {{ saving ? "Сохранение…" : "Сохранить" }}
+    </button>
+  </div>
+</div>

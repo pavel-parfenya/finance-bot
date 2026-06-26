@@ -1,5 +1,5 @@
 import { defineComponent, ref, watch, onMounted, onUnmounted } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import type { TransactionDto, TransactionFilters } from "@finance-bot/shared";
 import type { WorkspaceMember } from "@finance-bot/shared";
 import {
@@ -15,7 +15,8 @@ const PAGE_SIZE = 20;
 export default defineComponent({
   setup() {
     const route = useRoute();
-    const { filters, filtersOpen, refreshTrigger } = useAppState();
+    const router = useRouter();
+    const { filters, filtersOpen, refreshTrigger, editingTransaction } = useAppState();
 
     const transactions = ref<TransactionDto[]>([]);
     const loading = ref(true);
@@ -24,7 +25,6 @@ export default defineComponent({
     const error = ref<string | null>(null);
     const categories = ref<string[]>([]);
     const members = ref<WorkspaceMember[]>([]);
-    const editingTx = ref<TransactionDto | null>(null);
     const loadMoreSentinel = ref<HTMLElement | null>(null);
 
     async function loadMembers() {
@@ -103,17 +103,8 @@ export default defineComponent({
     }
 
     function openEdit(tx: TransactionDto) {
-      editingTx.value = tx;
-    }
-
-    function closeEdit() {
-      editingTx.value = null;
-    }
-
-    async function onSaved(updated: TransactionDto) {
-      const idx = transactions.value.findIndex((t) => t.id === updated.id);
-      if (idx >= 0) transactions.value[idx] = updated;
-      closeEdit();
+      editingTransaction.value = tx;
+      router.push("/table/edit");
     }
 
     async function onDelete(tx: TransactionDto) {
@@ -187,12 +178,9 @@ export default defineComponent({
       error,
       categories,
       members,
-      editingTx,
       loadMoreSentinel,
       applyFilters,
       openEdit,
-      closeEdit,
-      onSaved,
       onDelete,
     };
   },

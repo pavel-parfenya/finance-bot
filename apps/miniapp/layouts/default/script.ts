@@ -22,10 +22,18 @@ export default defineComponent({
 
     const isSettingsRoute = computed(() => route.path.startsWith("/settings"));
 
-    const showSettingsBack = computed(() => /^\/settings\/.+/.test(route.path));
+    const isEditRoute = computed(() => route.path.startsWith("/table/edit"));
+
+    /** Цель кнопки «назад» в шапке (null — кнопку не показываем). */
+    const backTarget = computed(() => {
+      if (/^\/settings\/.+/.test(route.path)) return "/settings";
+      if (isEditRoute.value) return "/table";
+      return null;
+    });
 
     const pageTitle = computed(() => {
       const p = route.path;
+      if (p.startsWith("/table/edit")) return "Изменить запись";
       if (p === "/settings" || p === "/settings/") return "Настройки";
       if (p.startsWith("/settings/help")) return "Справка";
       if (p.startsWith("/settings/expenses")) return "Траты";
@@ -86,7 +94,8 @@ export default defineComponent({
     return {
       activeTab,
       isSettingsRoute,
-      showSettingsBack,
+      isEditRoute,
+      backTarget,
       pageTitle,
       membersOpen,
       infoOpen,

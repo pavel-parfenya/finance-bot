@@ -28,10 +28,4 @@
     />
     <div v-if="loadingMore" class="loading-more">Загрузка...</div>
   </div>
-  <EditModal
-    v-if="editingTx"
-    :transaction="editingTx"
-    @close="closeEdit"
-    @saved="onSaved"
-  />
 </div>

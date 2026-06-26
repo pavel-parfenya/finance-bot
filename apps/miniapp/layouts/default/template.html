@@ -2,10 +2,10 @@
   <header class="header">
     <div class="header-title-wrap">
       <NuxtLink
-        v-if="showSettingsBack"
-        to="/settings"
+        v-if="backTarget"
+        :to="backTarget"
         class="header-back"
-        aria-label="Назад к настройкам"
+        aria-label="Назад"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="15 18 9 12 15 6" />
@@ -15,7 +15,7 @@
     </div>
     <div class="header-actions">
       <button
-        v-if="activeTab === 'table' || activeTab === 'analytics'"
+        v-if="!isEditRoute && (activeTab === 'table' || activeTab === 'analytics')"
         type="button"
         class="btn-header-icon"
         title="Участники"
@@ -78,7 +78,7 @@
         </svg>
       </NuxtLink>
       <NuxtLink
-        v-else
+        v-else-if="!isEditRoute"
         to="/settings"
         class="btn-header-icon"
         title="Настройки"
@@ -100,7 +100,7 @@
     </div>
   </header>
 
-  <div v-if="!isSettingsRoute" class="nav-row">
+  <div v-if="!isSettingsRoute && !isEditRoute" class="nav-row">
     <button
       v-if="activeTab === 'table'"
       type="button"
