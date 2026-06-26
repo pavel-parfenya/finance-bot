@@ -1,4 +1,4 @@
-import { defineComponent, ref, watch } from "vue";
+import { computed, defineComponent, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type { TransactionDto, TransactionUpdateRequest } from "@finance-bot/shared";
 import { CURRENCIES } from "~/utils/format";
 import { updateTransaction } from "~/api/client";
@@ -15,6 +15,50 @@ export default defineComponent({
     const currency = ref("");
     const date = ref("");
     const type = ref<"expense" | "income">("expense");
+
+    // Привязываем оверлей к видимой области (visualViewport), чтобы при
+    // открытии клавиатуры модалка ужималась над ней, а не пряталась под неё.
+    const viewportHeight = ref(0);
+    const viewportTop = ref(0);
+
+    function syncViewport() {
+      const vv = window.visualViewport;
+      if (vv) {
+        viewportHeight.value = vv.height;
+        viewportTop.value = vv.offsetTop;
+      } else {
+        viewportHeight.value = window.innerHeight;
+        viewportTop.value = 0;
+      }
+    }
+
+    const overlayStyle = computed(() =>
+      viewportHeight.value
+        ? {
+            height: `${viewportHeight.value}px`,
+            top: `${viewportTop.value}px`,
+          }
+        : {}
+    );
+
+    onMounted(() => {
+      syncViewport();
+      const vv = window.visualViewport;
+      if (vv) {
+        vv.addEventListener("resize", syncViewport);
+        vv.addEventListener("scroll", syncViewport);
+      }
+      window.addEventListener("resize", syncViewport);
+    });
+
+    onBeforeUnmount(() => {
+      const vv = window.visualViewport;
+      if (vv) {
+        vv.removeEventListener("resize", syncViewport);
+        vv.removeEventListener("scroll", syncViewport);
+      }
+      window.removeEventListener("resize", syncViewport);
+    });
 
     watch(
       () => props.transaction,
@@ -59,6 +103,7 @@ export default defineComponent({
       type,
       save,
       emit,
+      overlayStyle,
       CURRENCIES,
     };
   },
