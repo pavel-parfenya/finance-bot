@@ -53,13 +53,40 @@ export interface CmsFaq {
 export interface CmsSiteSettings {
   companyName: string;
   unp: string;
+  /** Дата госрегистрации. */
+  registrationDate?: string;
+  /** Орган, осуществивший госрегистрацию. */
+  registrationAuthority?: string;
+  /** Номер регистрации в Торговом реестре. */
+  tradeRegisterNumber?: string;
+  /** Дата регистрации в Торговом реестре. */
+  tradeRegisterDate?: string;
   email: string;
   phone: string;
+  /** Юридический адрес. */
   address: string;
+  /** Почтовый адрес (если отличается от юридического). */
+  postalAddress?: string;
+  /** Режим работы. */
+  workingHours?: string;
+  /** Номер лицензии и срок её действия. */
+  license?: string;
   botUsername: string;
   telegramSupport: string;
   /** Абсолютный URL логотипа из media library Strapi (или null, если не задан). */
   logoUrl: string | null;
+  // Чекбоксы отображения логотипов платёжных систем (undefined у старых записей = показывать).
+  showVisa?: boolean;
+  showMastercard?: boolean;
+  showBelkart?: boolean;
+  showMir?: boolean;
+  showErip?: boolean;
+  showBepaid?: boolean;
+  showApplePay?: boolean;
+  showGooglePay?: boolean;
+  showSamsungPay?: boolean;
+  showYandexPay?: boolean;
+  showMtbank?: boolean;
 }
 
 export interface CmsPage {

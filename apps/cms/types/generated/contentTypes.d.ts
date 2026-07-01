@@ -611,6 +611,7 @@ export interface ApiSiteSettingSiteSetting extends Struct.SingleTypeSchema {
     createdBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> &
       Schema.Attribute.Private;
     email: Schema.Attribute.Email;
+    license: Schema.Attribute.Text;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       "oneToMany",
@@ -619,12 +620,29 @@ export interface ApiSiteSettingSiteSetting extends Struct.SingleTypeSchema {
       Schema.Attribute.Private;
     logo: Schema.Attribute.Media<"images">;
     phone: Schema.Attribute.String;
+    postalAddress: Schema.Attribute.Text;
     publishedAt: Schema.Attribute.DateTime;
+    registrationAuthority: Schema.Attribute.Text;
+    registrationDate: Schema.Attribute.String;
+    showApplePay: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    showBelkart: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    showBepaid: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    showErip: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    showGooglePay: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    showMastercard: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    showMir: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    showMtbank: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    showSamsungPay: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    showVisa: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    showYandexPay: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     telegramSupport: Schema.Attribute.String;
+    tradeRegisterDate: Schema.Attribute.String;
+    tradeRegisterNumber: Schema.Attribute.String;
     unp: Schema.Attribute.String;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> &
       Schema.Attribute.Private;
+    workingHours: Schema.Attribute.String;
   };
 }
 

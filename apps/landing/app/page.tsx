@@ -3,6 +3,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { getCmsHomePage, getCmsSiteSettings } from "@/lib/cms";
 import type { CmsFeature, CmsDemoMessage } from "@/lib/cms";
+import LegalRequisites from "@/components/LegalRequisites";
+import PaymentBadges from "@/components/PaymentBadges";
 
 const DEFAULT_FEATURES: CmsFeature[] = [
   {
@@ -349,6 +351,40 @@ export default async function HomePage() {
               <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z" />
             </svg>
           </a>
+        </div>
+      </section>
+
+      {/* Реквизиты продавца и оплата */}
+      <section className="border-t border-neutral-200/60 bg-white">
+        <div className="mx-auto max-w-6xl px-6 py-16">
+          <div className="grid gap-12 md:grid-cols-2">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wider text-accent-dark">
+                Сведения о продавце
+              </p>
+              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-neutral-900">
+                Реквизиты
+              </h2>
+              <div className="mt-6">
+                <LegalRequisites settings={settings} />
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wider text-accent-dark">
+                Безопасная оплата
+              </p>
+              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-neutral-900">
+                Принимаем к оплате
+              </h2>
+              <p className="mt-4 text-sm leading-relaxed text-neutral-600">
+                Оплата проходит через сертифицированный платёжный шлюз bePaid.
+                Данные карты не хранятся на наших серверах.
+              </p>
+              <div className="mt-6">
+                <PaymentBadges />
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </>

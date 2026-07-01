@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getCmsSiteSettings } from "@/lib/cms";
+import LegalRequisites from "@/components/LegalRequisites";
 
 export const metadata: Metadata = {
   title: "Контакты",
@@ -11,10 +12,6 @@ export default async function ContactsPage() {
 
   const email = settings?.email ?? "[EMAIL]";
   const telegramSupport = settings?.telegramSupport ?? "[TELEGRAM_SUPPORT]";
-  const companyName = settings?.companyName ?? "[BRAND_NAME]";
-  const unp = settings?.unp ?? "[UNP]";
-  const address = settings?.address ?? "[ADDRESS]";
-  const phone = settings?.phone ?? "[PHONE]";
 
   return (
     <section className="mx-auto max-w-2xl px-6 py-20">
@@ -39,15 +36,7 @@ export default async function ContactsPage() {
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
             Реквизиты
           </h2>
-          <table className="w-full text-sm">
-            <tbody className="divide-y divide-gray-100">
-              <RequisiteRow label="Наименование" value={companyName} />
-              <RequisiteRow label="УНП" value={unp} />
-              <RequisiteRow label="Юридический адрес" value={address} />
-              <RequisiteRow label="Email" value={email} />
-              <RequisiteRow label="Телефон" value={phone} />
-            </tbody>
-          </table>
+          <LegalRequisites settings={settings} />
         </div>
       </div>
     </section>
@@ -70,14 +59,5 @@ function ContactRow({
         {value}
       </a>
     </div>
-  );
-}
-
-function RequisiteRow({ label, value }: { label: string; value: string }) {
-  return (
-    <tr>
-      <td className="py-3 pr-4 text-gray-400 whitespace-nowrap">{label}</td>
-      <td className="py-3 text-gray-900">{value}</td>
-    </tr>
   );
 }

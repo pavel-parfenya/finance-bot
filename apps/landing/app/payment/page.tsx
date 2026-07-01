@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getCmsPage } from "@/lib/cms";
 import { renderMarkdown } from "@/lib/markdown";
+import PaymentBadges from "@/components/PaymentBadges";
 
 export const metadata: Metadata = {
   title: "Оплата",
@@ -22,6 +23,12 @@ export default async function PaymentPage() {
           className="prose prose-sm prose-gray max-w-none"
           dangerouslySetInnerHTML={{ __html: html }}
         />
+        <div className="mt-10 border-t border-gray-100 pt-8">
+          <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
+            Принимаем к оплате
+          </p>
+          <PaymentBadges />
+        </div>
       </section>
     );
   }
@@ -44,13 +51,16 @@ export default async function PaymentPage() {
             </li>
             <li className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-gray-900 flex-shrink-0"></span>
-              Интернет-банкинг белорусских банков
+              Интернет-банкинг белорусских банков и ЕРИП
             </li>
             <li className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-gray-900 flex-shrink-0"></span>
               Рекуррентные списания (автопродление)
             </li>
           </ul>
+          <div className="mt-5">
+            <PaymentBadges />
+          </div>
         </div>
 
         <div>

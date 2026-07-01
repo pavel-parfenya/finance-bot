@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getCmsSiteSettings } from "@/lib/cms";
+import PaymentBadges from "@/components/PaymentBadges";
 
 export default async function Footer() {
   const settings = await getCmsSiteSettings();
@@ -95,7 +96,10 @@ export default async function Footer() {
             </ul>
           </div>
         </div>
-        <div className="mt-12 flex flex-col justify-between gap-2 border-t border-white/10 pt-6 text-xs text-neutral-500 md:flex-row">
+        <div className="mt-12 border-t border-white/10 pt-6">
+          <PaymentBadges settings={settings} />
+        </div>
+        <div className="mt-6 flex flex-col justify-between gap-2 text-xs text-neutral-500 md:flex-row">
           <p>
             © {new Date().getFullYear()} {brandName}. Все права защищены.
           </p>
