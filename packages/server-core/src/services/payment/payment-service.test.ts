@@ -234,6 +234,31 @@ describe("PaymentService.checkout", () => {
     ).toBe(false);
   });
 
+  it("продолжает checkout, если прежней подписки уже нет в bePaid (404 на cancel)", async () => {
+    const { calls } = stubFetch((call) => {
+      // Подписка от тестового окружения — под боевыми ключами не найдена.
+      if (call.url.includes("/subscriptions/sbs_old/cancel"))
+        return { ok: false, status: 404, body: {} };
+      if (call.url.endsWith("/plans") && call.method === "GET")
+        return { ok: true, body: { plans: [] } };
+      if (call.url.endsWith("/subscriptions") && call.method === "POST")
+        return {
+          ok: true,
+          body: { id: "sbs_new", state: "redirecting", redirect_url: "https://pay" },
+        };
+      return { ok: true, body: { id: "pln_new" } };
+    });
+    const { service } = makeService("bepaid", 9.99, {
+      bepaidSubscriptionId: "sbs_old",
+    });
+    const result = await service.checkout(42, SubscriptionPlan.ProMonth);
+    if (result.mode !== "redirect") throw new Error("ожидался redirect");
+    // Новая подписка создаётся — 404 не блокирует смену тарифа.
+    expect(
+      calls.some((c) => c.url.endsWith("/subscriptions") && c.method === "POST")
+    ).toBe(true);
+  });
+
   it("бросает PaymentError, если bePaid не настроен", async () => {
     const { service } = makeService("bepaid", 9.99, null, { ...BEPAID_CFG, shopId: "" });
     await expect(service.checkout(1, SubscriptionPlan.ProMonth)).rejects.toBeInstanceOf(
