@@ -5,7 +5,11 @@ import type {
   SubscriptionPlanId,
   PlanFeatureItem,
 } from "@finance-bot/shared";
-import { fetchSubscriptionPlans, fetchCheckoutLink } from "~/api/client";
+import {
+  fetchSubscriptionPlans,
+  fetchCheckoutLink,
+  cancelSubscription,
+} from "~/api/client";
 
 /**
  * Открыть страницу подписки внутри Telegram, а не в отдельном браузере.
@@ -52,6 +56,9 @@ export default defineComponent({
     const plans = ref<SubscriptionPlanCard[]>([]);
     const checkoutLoading = ref(false);
     const checkoutError = ref("");
+    const cancelConfirm = ref(false);
+    const cancelLoading = ref(false);
+    const cancelError = ref("");
 
     const currentPlanLabel = computed(() =>
       subscription.value ? PLAN_LABEL[subscription.value.plan] : ""
@@ -61,6 +68,14 @@ export default defineComponent({
     );
     const expiresLabel = computed(() =>
       subscription.value ? formatDate(subscription.value.expiresAt) : null
+    );
+
+    /** Кнопку отмены показываем только для платного тарифа с активной подпиской. */
+    const canCancel = computed(
+      () =>
+        !!subscription.value &&
+        subscription.value.plan !== "free" &&
+        subscription.value.status === "active"
     );
 
     /** Фичи, входящие в текущий тариф пользователя (из карточки этого тарифа). */
@@ -110,6 +125,30 @@ export default defineComponent({
       openSubscribePage(res.url);
     }
 
+    /** Показать/скрыть подтверждение отмены. */
+    function askCancel(): void {
+      cancelError.value = "";
+      cancelConfirm.value = true;
+    }
+    function dismissCancel(): void {
+      cancelConfirm.value = false;
+    }
+
+    /** Отменить подписку: остановить автопродление, обновить состояние на экране. */
+    async function confirmCancel(): Promise<void> {
+      if (cancelLoading.value) return;
+      cancelLoading.value = true;
+      cancelError.value = "";
+      const res = await cancelSubscription();
+      cancelLoading.value = false;
+      if ("error" in res) {
+        cancelError.value = res.error;
+        return;
+      }
+      subscription.value = res;
+      cancelConfirm.value = false;
+    }
+
     return {
       loading,
       error,
@@ -121,6 +160,13 @@ export default defineComponent({
       checkoutLoading,
       checkoutError,
       changePlan,
+      canCancel,
+      cancelConfirm,
+      cancelLoading,
+      cancelError,
+      askCancel,
+      dismissCancel,
+      confirmCancel,
     };
   },
 });

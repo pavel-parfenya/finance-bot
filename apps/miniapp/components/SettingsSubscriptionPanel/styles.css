@@ -99,3 +99,63 @@
   cursor: default;
   opacity: 0.5;
 }
+
+.sub-cancel-link {
+  align-self: center;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 6px 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--tg-theme-hint-color);
+}
+
+.sub-cancel-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--tg-theme-secondary-bg-color, #f0f2f5);
+  border: 1px solid rgba(209, 43, 43, 0.25);
+}
+
+.sub-cancel-note {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--tg-theme-hint-color);
+}
+
+.sub-cancel-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.sub-cancel-danger,
+.sub-cancel-keep {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.sub-cancel-danger {
+  border: none;
+  color: #fff;
+  background: #d12b2b;
+}
+
+.sub-cancel-keep {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: transparent;
+  color: var(--tg-theme-text-color);
+}
+
+.sub-cancel-danger:disabled,
+.sub-cancel-keep:disabled {
+  cursor: default;
+  opacity: 0.5;
+}

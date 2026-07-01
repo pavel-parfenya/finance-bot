@@ -208,6 +208,20 @@ export async function fetchCheckoutLink(): Promise<{ url: string } | { error: st
   return res.json();
 }
 
+export async function cancelSubscription(): Promise<
+  SubscriptionInfo | { error: string }
+> {
+  const res = await fetch(`${BASE}/api/subscription/cancel`, {
+    method: "POST",
+    headers: headers(),
+  });
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    return { error: data.error ?? `Ошибка ${String(res.status)}` };
+  }
+  return res.json();
+}
+
 function adminApiErrorMessage(data: Record<string, unknown>, status: number): string {
   const message = typeof data["message"] === "string" ? data["message"] : null;
   const nested =

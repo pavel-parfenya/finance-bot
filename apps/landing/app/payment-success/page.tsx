@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getCmsSiteSettings } from "@/lib/cms";
+
+// Страница открывается редиректом из виджета bePaid. force-dynamic — чтобы
+// Header/Footer и botUsername подтягивались из Strapi на каждый запрос, а не
+// запекались на сборке (в CI Strapi недоступен → в статику попадёт [BRAND_NAME]).
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Оплата прошла успешно",
@@ -7,7 +13,12 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function PaymentSuccessPage() {
+export default async function PaymentSuccessPage() {
+  const settings = await getCmsSiteSettings();
+  const botLink = settings?.botUsername
+    ? `https://t.me/${settings.botUsername}`
+    : "https://t.me/valentinethebuhgalter_bot";
+
   return (
     <section className="mx-auto max-w-xl px-6 py-24 text-center">
       <div className="mx-auto mb-8 flex h-16 w-16 items-center justify-center rounded-full bg-green-50">
@@ -27,12 +38,20 @@ export default function PaymentSuccessPage() {
         Платёж принят. Подписка активируется в течение пары минут — вернитесь в
         бота и откройте «Настройки → Подписка».
       </p>
-      <Link
-        href="/pricing"
-        className="inline-block rounded-md bg-gray-900 text-white px-5 py-2.5 text-sm font-semibold hover:bg-gray-700 transition-colors"
-      >
-        Смотреть тарифы
-      </Link>
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        <Link
+          href={botLink}
+          className="inline-block rounded-md bg-gray-900 text-white px-5 py-2.5 text-sm font-semibold hover:bg-gray-700 transition-colors"
+        >
+          Вернуться в бота
+        </Link>
+        <Link
+          href="/pricing"
+          className="inline-block rounded-md border border-gray-300 text-gray-700 px-5 py-2.5 text-sm font-semibold hover:bg-gray-50 transition-colors"
+        >
+          Смотреть тарифы
+        </Link>
+      </div>
     </section>
   );
 }

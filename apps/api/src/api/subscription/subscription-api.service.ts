@@ -1,9 +1,15 @@
-import { Injectable, InternalServerErrorException } from "@nestjs/common";
+import {
+  Injectable,
+  InternalServerErrorException,
+  BadRequestException,
+} from "@nestjs/common";
 import {
   SubscriptionService,
   FeatureService,
   BillingTokenService,
   UserService,
+  PaymentService,
+  PaymentError,
   config,
 } from "@finance-bot/server-core";
 import type { SubscriptionInfo, SubscriptionPlansResponse } from "@finance-bot/shared";
@@ -16,7 +22,8 @@ export class SubscriptionApiService {
     private readonly subscriptionService: SubscriptionService,
     private readonly featureService: FeatureService,
     private readonly billingTokenService: BillingTokenService,
-    private readonly userService: UserService
+    private readonly userService: UserService,
+    private readonly paymentService: PaymentService
   ) {}
 
   async getCurrent(resolved: ResolvedTelegramUser): Promise<SubscriptionInfo> {
@@ -62,5 +69,22 @@ export class SubscriptionApiService {
     const token = this.billingTokenService.sign(Number(user.telegramId));
     const url = `${config.landingBaseUrl}/subscribe?token=${encodeURIComponent(token)}`;
     return { url };
+  }
+
+  /**
+   * Отмена подписки со страницы «Подписка» в Mini App. Останавливает автопродление
+   * в bePaid и помечает подписку отменённой; доступ сохраняется до конца оплаченного
+   * периода. Возвращает актуальное состояние подписки для обновления экрана.
+   */
+  async cancel(resolved: ResolvedTelegramUser): Promise<SubscriptionInfo> {
+    try {
+      await this.paymentService.cancelSubscription(resolved.userId);
+    } catch (e) {
+      if (e instanceof PaymentError) {
+        throw new BadRequestException({ error: e.message });
+      }
+      throw e;
+    }
+    return this.getCurrent(resolved);
   }
 }

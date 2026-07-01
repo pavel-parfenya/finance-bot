@@ -29,4 +29,10 @@ export class SubscriptionController {
   getCheckoutLink(@TelegramUser() user: ResolvedTelegramUser) {
     return this.subscriptionApi.getCheckoutLink(user);
   }
+
+  /** Отмена подписки (остановка автопродления); доступ сохраняется до конца периода. */
+  @Post("cancel")
+  cancel(@TelegramUser() user: ResolvedTelegramUser) {
+    return this.subscriptionApi.cancel(user);
+  }
 }

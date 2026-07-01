@@ -38,5 +38,43 @@
     </button>
 
     <p v-if="checkoutError" class="sub-error">{{ checkoutError }}</p>
+
+    <template v-if="canCancel">
+      <button
+        v-if="!cancelConfirm"
+        class="sub-cancel-link"
+        type="button"
+        @click="askCancel"
+      >
+        Отменить подписку
+      </button>
+
+      <div v-else class="sub-cancel-confirm">
+        <p class="sub-cancel-note">
+          Автопродление остановится, а доступ к платным функциям сохранится
+          до конца оплаченного периода<span v-if="expiresLabel">
+            ({{ expiresLabel }})</span>.
+        </p>
+        <div class="sub-cancel-actions">
+          <button
+            class="sub-cancel-danger"
+            type="button"
+            :disabled="cancelLoading"
+            @click="confirmCancel"
+          >
+            {{ cancelLoading ? 'Отменяем…' : 'Да, отменить' }}
+          </button>
+          <button
+            class="sub-cancel-keep"
+            type="button"
+            :disabled="cancelLoading"
+            @click="dismissCancel"
+          >
+            Оставить
+          </button>
+        </div>
+        <p v-if="cancelError" class="sub-error">{{ cancelError }}</p>
+      </div>
+    </template>
   </template>
 </div>
