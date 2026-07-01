@@ -11,7 +11,10 @@ import type { BotDeps } from "../bot";
  * Возвращает `null`, если кнопку построить нельзя (нет HTTPS-URL Mini App) — тогда
  * вызывающий шлёт текстовый фолбэк с подсказкой про Mini App.
  */
-function buildUpgradeKeyboard(deps: BotDeps): InlineKeyboard | null {
+export function buildUpgradeKeyboard(
+  deps: BotDeps,
+  label = "💳 Сменить план"
+): InlineKeyboard | null {
   const base = deps.miniAppUrl;
   // Telegram открывает web_app-кнопку только по HTTPS.
   if (!base || !base.startsWith("https://")) return null;
@@ -19,7 +22,7 @@ function buildUpgradeKeyboard(deps: BotDeps): InlineKeyboard | null {
   // том же origin по маршруту `/settings/subscription` (SPA-фолбэк отдаёт shell).
   const appBase = base.replace(/\/app\/?$/, "");
   const url = `${appBase}/settings/subscription`;
-  return new InlineKeyboard().webApp("💳 Сменить план", url);
+  return new InlineKeyboard().webApp(label, url);
 }
 
 /**

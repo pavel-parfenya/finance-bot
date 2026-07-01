@@ -16,6 +16,7 @@ import type {
   DeepSeekInactiveUserNudge,
   CustomCategoryService,
   FeatureService,
+  SubscriptionService,
   BillingTokenService,
 } from "@finance-bot/server-core";
 import { createStartHandler } from "./handlers/start-handler";
@@ -52,6 +53,7 @@ export interface BotDeps {
   inactiveUserNudgeGenerator?: DeepSeekInactiveUserNudge;
   customCategoryService: CustomCategoryService;
   featureService: FeatureService;
+  subscriptionService: SubscriptionService;
   /** Подписывает billing-JWT для ссылки «Сменить план» (страница оплаты сайта). */
   billingTokenService: BillingTokenService;
   /** URL Telegram Mini App для просмотра расходов */
