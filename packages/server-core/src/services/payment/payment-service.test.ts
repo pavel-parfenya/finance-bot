@@ -176,7 +176,7 @@ describe("PaymentService.checkout", () => {
   it("переиспользует существующий план bePaid по заголовку", async () => {
     const { calls } = mockFetchRoutes((call) => {
       if (call.url.endsWith("/plans") && call.method === "GET")
-        return { plans: [{ id: "pln_exist", title: "fb-pro_month-999-BYN" }] };
+        return { plans: [{ id: "pln_exist", title: "Pro на месяц — 9.99 BYN (тест)" }] };
       if (call.url.endsWith("/subscriptions") && call.method === "POST")
         return { id: "sbs_2", state: "redirecting", redirect_url: "https://pay" };
       return {};
@@ -194,7 +194,7 @@ describe("PaymentService.checkout", () => {
   it("отменяет прежнюю подписку bePaid перед созданием новой", async () => {
     const { calls } = mockFetchRoutes((call) => {
       if (call.url.endsWith("/plans") && call.method === "GET")
-        return { plans: [{ id: "pln_x", title: "fb-pro_month-999-BYN" }] };
+        return { plans: [{ id: "pln_x", title: "Pro на месяц — 9.99 BYN (тест)" }] };
       if (call.url.endsWith("/subscriptions") && call.method === "POST")
         return { id: "sbs_new", state: "redirecting", redirect_url: "https://pay" };
       return {};
@@ -218,7 +218,7 @@ describe("PaymentService.checkout", () => {
       if (call.url.endsWith("/plans") && call.method === "GET")
         return {
           ok: true,
-          body: { plans: [{ id: "pln_x", title: "fb-pro_month-999-BYN" }] },
+          body: { plans: [{ id: "pln_x", title: "Pro на месяц — 9.99 BYN (тест)" }] },
         };
       return { ok: true, body: {} };
     });

@@ -22,6 +22,32 @@ export const PAID_PLANS = new Set<SubscriptionPlan>([
   SubscriptionPlan.ProYear,
 ]);
 
+/** Человекочитаемое имя тарифа — показывается на форме оплаты bePaid. */
+const PLAN_TITLE: Partial<Record<SubscriptionPlan, string>> = {
+  [SubscriptionPlan.ProMonth]: "Pro на месяц",
+  [SubscriptionPlan.ProYear]: "Pro на год",
+};
+
+/**
+ * Заголовок плана bePaid: человекочитаемое имя тарифа + цена/валюта.
+ * По заголовку план ищется для идемпотентности, поэтому в него закодированы:
+ * - цена: смена цены → новый заголовок → новый план (старый не переопределяется);
+ * - тестовость (`testMode`): тестовые и боевые планы имеют разные заголовки и
+ *   никогда не переиспользуются друг вместо друга (флаг `test` у плана bePaid
+ *   ставится один раз при создании и позже не меняется — переключение
+ *   PAYMENT_MODE=paid НЕ превращает уже созданный тестовый план в боевой).
+ */
+export function bepaidPlanTitle(
+  plan: SubscriptionPlan,
+  amountMinor: number,
+  currency: string,
+  testMode: boolean
+): string {
+  const name = PLAN_TITLE[plan] ?? `fb-${plan}`;
+  const amount = (amountMinor / 100).toFixed(2).replace(/\.?0+$/, "");
+  return `${name} — ${amount} ${currency}${testMode ? " (тест)" : ""}`;
+}
+
 /** Состояния подписки bePaid, при которых оплаченный период действует. */
 export const ACTIVE_STATES = new Set(["active", "trial"]);
 /** Терминальные состояния bePaid — автопродление прекращено. */

@@ -15,6 +15,7 @@ import {
   ACTIVE_STATES,
   CANCELED_STATES,
   parseOrder,
+  bepaidPlanTitle,
 } from "./payment-service.utils";
 
 export type { CheckoutResult, PaymentGatewayConfig };
@@ -177,7 +178,12 @@ export class PaymentService {
   ): Promise<string> {
     const { interval, intervalUnit } = PLAN_INTERVAL[plan];
     // Заголовок кодирует тариф+цену+валюту: смена цены → новый план.
-    const title = `fb-${plan}-${amountMinor}-${this.cfg.bepaid.currency}`;
+    const title = bepaidPlanTitle(
+      plan,
+      amountMinor,
+      this.cfg.bepaid.currency,
+      this.cfg.bepaid.testMode
+    );
     const cached = this.planIdCache.get(title);
     if (cached) return cached;
 
