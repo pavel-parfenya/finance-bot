@@ -40,6 +40,17 @@ const schema = {
       target: "api::feature.feature" as const,
       inversedBy: "pricings",
     },
+    monthlyTransactionLimit: {
+      type: "integer" as const,
+      // Лимит транзакций в календарный месяц. Учитывается, только если снят
+      // чекбокс «unlimitedTransactions». Пусто/0 при снятом чекбоксе = без лимита.
+      min: 0,
+    },
+    unlimitedTransactions: {
+      type: "boolean" as const,
+      // Чекбокс «неограниченно»: если включён — monthlyTransactionLimit игнорируется.
+      default: false,
+    },
     isPopular: {
       type: "boolean" as const,
       default: false,

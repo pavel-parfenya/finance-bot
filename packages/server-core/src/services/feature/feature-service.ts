@@ -52,4 +52,19 @@ export class FeatureService {
     const sub = await this.subscriptionService.getCurrentOrFree(userId);
     return map.get(resolveEffectivePlan(sub) as SubscriptionPlanId) ?? null;
   }
+
+  /**
+   * Лимит транзакций в календарный месяц по действующему тарифу пользователя.
+   * `null` — без лимита: монетизация выключена, конфиг Strapi недоступен, план
+   * не сконфигурирован или в тарифе включена «неограниченность».
+   */
+  async getMonthlyTransactionLimit(userId: number): Promise<number | null> {
+    if (this.paymentMode === "free") return null;
+    const plans = await this.planConfig.getPlans();
+    if (!plans) return null;
+    const sub = await this.subscriptionService.getCurrentOrFree(userId);
+    const effective = resolveEffectivePlan(sub) as SubscriptionPlanId;
+    const card = plans.find((p) => p.planId === effective);
+    return card ? card.monthlyTransactionLimit : null;
+  }
 }

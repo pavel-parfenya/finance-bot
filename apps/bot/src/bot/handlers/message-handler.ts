@@ -4,6 +4,10 @@ import { BotDeps } from "../bot";
 import { formatExpense } from "../format";
 import { createSaveNowKeyboard } from "./cancel-expense-handler";
 import { replyFeatureGated } from "./upgrade-prompt";
+import {
+  checkMonthlyTransactionLimit,
+  replyMonthlyLimitReached,
+} from "./monthly-transaction-limit";
 import { scheduleSave } from "../pending-expense-store";
 import type { ParsedMessage } from "../message-router";
 
@@ -74,6 +78,14 @@ export async function handleParsedMessage(
 
     case "expense":
     case "income": {
+      // Квота транзакций в месяц по тарифу: за лимитом — не сохраняем, а
+      // предлагаем подписку и сообщаем дату сброса.
+      const limitReached = await checkMonthlyTransactionLimit(deps, userId);
+      if (limitReached) {
+        await replyMonthlyLimitReached(ctx, deps, limitReached);
+        return;
+      }
+
       if (ctx.message?.date) {
         parsed.data.date = new Date(ctx.message.date * 1000);
       }

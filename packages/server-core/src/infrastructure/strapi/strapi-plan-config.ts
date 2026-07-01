@@ -63,6 +63,19 @@ function extractJsonFeatures(features: unknown): PlanFeatureItem[] {
     .map((label) => ({ key: label, label }));
 }
 
+/**
+ * Лимит транзакций в месяц для тарифа. `null` — без лимита: либо в Strapi
+ * включён чекбокс «unlimitedTransactions», либо поле не задано/некорректно/0
+ * (мягкая деградация — не блокируем при недонастроенном конфиге).
+ */
+function resolveMonthlyTransactionLimit(attrs: Record<string, unknown>): number | null {
+  if (attrs["unlimitedTransactions"] === true) return null;
+  const raw = attrs["monthlyTransactionLimit"];
+  const n = typeof raw === "number" ? raw : Number(raw);
+  if (Number.isFinite(n) && Number.isInteger(n) && n > 0) return n;
+  return null;
+}
+
 /** Запасной вывод planId из цены/периода, если поле planId не заполнено. */
 function resolvePlanId(price: unknown, period: unknown): SubscriptionPlanId | null {
   const p = typeof price === "number" ? price : Number(price);
@@ -140,6 +153,7 @@ export class StrapiPlanConfig {
         ctaText: typeof attrs["ctaText"] === "string" ? (attrs["ctaText"] as string) : "",
         sortOrder:
           typeof attrs["sortOrder"] === "number" ? (attrs["sortOrder"] as number) : 0,
+        monthlyTransactionLimit: resolveMonthlyTransactionLimit(attrs),
       };
     });
   }

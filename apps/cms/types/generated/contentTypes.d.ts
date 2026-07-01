@@ -577,6 +577,13 @@ export interface ApiPricingPricing extends Struct.CollectionTypeSchema {
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<"oneToMany", "api::pricing.pricing"> &
       Schema.Attribute.Private;
+    monthlyTransactionLimit: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
     name: Schema.Attribute.String & Schema.Attribute.Required;
     period: Schema.Attribute.Enumeration<["month", "year", "once"]> &
       Schema.Attribute.DefaultTo<"month">;
@@ -585,6 +592,7 @@ export interface ApiPricingPricing extends Struct.CollectionTypeSchema {
     price: Schema.Attribute.Decimal;
     publishedAt: Schema.Attribute.DateTime;
     sortOrder: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    unlimitedTransactions: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> &
       Schema.Attribute.Private;

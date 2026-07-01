@@ -25,6 +25,11 @@ export interface SubscriptionPlanCard {
   isPopular: boolean;
   ctaText: string;
   sortOrder: number;
+  /**
+   * Лимит транзакций в календарный месяц для этого тарифа.
+   * `null` — без лимита (в Strapi отмечен чекбокс «неограниченно» либо поле не задано).
+   */
+  monthlyTransactionLimit: number | null;
 }
 
 /** Ответ `GET /api/subscription/plans`: тарифы из Strapi + текущий план и доступные фичи юзера. */

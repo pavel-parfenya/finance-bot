@@ -137,6 +137,19 @@ export class TransactionRepository {
     return n > 0;
   }
 
+  /**
+   * Сколько транзакций пользователь создал (как автор) начиная с момента `since`.
+   * Считаем по `createdAt` (когда запись реально внесена), а не `occurredAt` —
+   * это квота на действие «создать транзакцию», а не на дату самой траты.
+   */
+  async countByAuthorCreatedSince(userId: number, since: Date): Promise<number> {
+    return this.repo
+      .createQueryBuilder("t")
+      .where("t.userId = :uid", { uid: userId })
+      .andWhere("t.createdAt >= :since", { since })
+      .getCount();
+  }
+
   async userHasTransactionAsAuthorBetween(
     userId: number,
     startInclusive: Date,
