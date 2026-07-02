@@ -1,0 +1,68 @@
+<div class="bepaid-subs">
+  <div class="bepaid-subs-top">
+    <p class="bepaid-subs-hint">
+      Подписки из личного кабинета bePaid. Источник — API bePaid, обновляется при открытии страницы.
+    </p>
+    <button type="button" class="bepaid-subs-reload" aria-label="Обновить" @click="reload">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+        <path d="M21 3v7h-7" />
+      </svg>
+    </button>
+  </div>
+
+  <div v-if="error" class="bepaid-subs-error">{{ error }}</div>
+  <div v-else-if="loading" class="bepaid-subs-loading">Загрузка…</div>
+  <template v-else>
+    <div v-if="isTestGateway" class="bepaid-subs-note">
+      Платёжный шлюз в тестовом режиме (PAYMENT_GATEWAY ≠ bepaid) — подписки в bePaid не создаются.
+    </div>
+    <div v-else-if="testMode" class="bepaid-subs-note">
+      Тестовый режим bePaid: показаны подписки с флагом test.
+    </div>
+
+    <div v-if="!isTestGateway && subscriptions.length === 0" class="bepaid-subs-empty">
+      В магазине bePaid пока нет ни одной подписки.
+    </div>
+
+    <ul v-else-if="subscriptions.length > 0" class="bepaid-subs-list">
+      <li v-for="sub in subscriptions" :key="sub.id" class="bepaid-subs-item">
+        <div class="bepaid-subs-item-head">
+          <span class="bepaid-subs-user">
+            {{ sub.displayName || (sub.userId ? 'Пользователь ' + sub.userId : '—') }}
+          </span>
+          <span :class="['bepaid-subs-state', 'bepaid-subs-state--' + stateVariant(sub.state)]">
+            {{ stateLabel(sub.state) }}
+          </span>
+        </div>
+
+        <div class="bepaid-subs-row">
+          <span class="bepaid-subs-k">Тариф</span>
+          <span class="bepaid-subs-v">{{ sub.planTitle || sub.planId || '—' }}</span>
+        </div>
+        <div class="bepaid-subs-row">
+          <span class="bepaid-subs-k">Сумма</span>
+          <span class="bepaid-subs-v">{{ formatAmount(sub) }}</span>
+        </div>
+        <div class="bepaid-subs-row">
+          <span class="bepaid-subs-k">Карта</span>
+          <span class="bepaid-subs-v">{{ sub.cardLast4 ? '•••• ' + sub.cardLast4 : '—' }}</span>
+        </div>
+        <div class="bepaid-subs-row">
+          <span class="bepaid-subs-k">Создана</span>
+          <span class="bepaid-subs-v">{{ formatDateTime(sub.createdAt) }}</span>
+        </div>
+        <div class="bepaid-subs-row">
+          <span class="bepaid-subs-k">Активна до</span>
+          <span class="bepaid-subs-v">{{ formatDateTime(sub.activeTo) }}</span>
+        </div>
+        <div v-if="sub.lastTransactionStatus" class="bepaid-subs-row">
+          <span class="bepaid-subs-k">Последнее списание</span>
+          <span class="bepaid-subs-v">{{ sub.lastTransactionStatus }}</span>
+        </div>
+
+        <div class="bepaid-subs-id">{{ sub.id }}</div>
+      </li>
+    </ul>
+  </template>
+</div>

@@ -26,6 +26,11 @@ export class AdminController {
     });
   }
 
+  @Get("bepaid-subscriptions")
+  async bepaidSubscriptions(@TelegramUser() user: ResolvedTelegramUser) {
+    return this.adminApi.getBepaidSubscriptions(user);
+  }
+
   @Get("app-user-stats")
   async appUserStats(
     @TelegramUser() user: ResolvedTelegramUser,

@@ -46,6 +46,33 @@ export interface SubscriptionResponse {
   redirectUrl: string | null;
 }
 
+/** Элемент списка подписок bePaid (для админ-панели). */
+export interface BepaidSubscriptionListItem {
+  /** Идентификатор подписки (`sbs_…`). */
+  id: string;
+  /** Состояние подписки (`active` | `canceled` | `failed` | …). */
+  state: string;
+  /** Номер заказа `<userId>-<code>` — для сопоставления с пользователем. */
+  trackingId: string | null;
+  /** Дата создания (ISO-строка). */
+  createdAt: string | null;
+  /** Срок действия оплаченного периода (ISO-строка). */
+  activeTo: string | null;
+  /** Дата следующего списания (ISO-строка). */
+  renewAt: string | null;
+  /** Идентификатор плана bePaid (`pln_…`). */
+  planId: string | null;
+  /** Заголовок плана (если bePaid его вернул). */
+  planTitle: string | null;
+  /** Сумма списания в минимальных единицах валюты. */
+  amountMinor: number | null;
+  currency: string | null;
+  /** Последние 4 цифры карты. */
+  cardLast4: string | null;
+  /** Статус последней транзакции списания. */
+  lastTransactionStatus: string | null;
+}
+
 /** Нормализованный статус подписки для верификации webhook. */
 export interface VerifiedSubscription {
   id: string;

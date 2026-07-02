@@ -6,7 +6,9 @@ import {
   createSubscription,
   getSubscription,
   cancelSubscription,
+  listSubscriptions,
 } from "../../infrastructure/bepaid/bepaid-client";
+import type { BepaidSubscriptionListItem } from "../../infrastructure/bepaid/bepaid-client.types";
 import type { CheckoutResult, PaymentGatewayConfig } from "./payment-service.types";
 import {
   PLAN_CODE,
@@ -133,6 +135,19 @@ export class PaymentService {
       await this.subscriptionService.cancelByBepaidId(verified.id);
     }
     return { received: true, activated: false };
+  }
+
+  /**
+   * Список подписок магазина bePaid (для админ-панели). В тест-режиме шлюза
+   * (без обращения к bePaid) возвращает пустой список.
+   */
+  async listBepaidSubscriptions(): Promise<BepaidSubscriptionListItem[]> {
+    if (this.cfg.gateway !== "bepaid") return [];
+    const { shopId, secretKey } = this.cfg.bepaid;
+    if (!shopId || !secretKey) {
+      throw new PaymentError("bePaid не настроен (BEPAID_SHOP_ID / BEPAID_SECRET_KEY)");
+    }
+    return listSubscriptions(this.cfg.bepaid);
   }
 
   /**

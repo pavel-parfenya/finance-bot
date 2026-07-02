@@ -7,6 +7,7 @@ import type {
   WorkspaceInfo,
   UserSettings,
   AppUserStatsResponse,
+  AdminBepaidSubscriptionsResponse,
   AdminTelegramUserOption,
   AdminUndeliveredRecipient,
   DebtDto,
@@ -276,6 +277,19 @@ export async function fetchAppUserStats(
     return { error: adminApiErrorMessage(data, res.status) };
   }
   return data as AppUserStatsResponse;
+}
+
+export async function fetchAdminBepaidSubscriptions(): Promise<
+  AdminBepaidSubscriptionsResponse | { error?: string }
+> {
+  const res = await fetch(`${BASE}/api/admin/bepaid-subscriptions`, {
+    headers: headers(),
+  });
+  const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+  if (!res.ok) {
+    return { error: adminApiErrorMessage(data, res.status) };
+  }
+  return data as AdminBepaidSubscriptionsResponse;
 }
 
 export async function updateUserSettings(updates: {

@@ -31,7 +31,10 @@ export {
   type CheckoutResult,
   type PaymentGatewayConfig,
 } from "./services/payment/payment-service";
-export type { BepaidConfig } from "./infrastructure/bepaid/bepaid-client";
+export type {
+  BepaidConfig,
+  BepaidSubscriptionListItem,
+} from "./infrastructure/bepaid/bepaid-client";
 export { StrapiPlanConfig } from "./infrastructure/strapi/strapi-plan-config";
 export {
   BillingTokenService,

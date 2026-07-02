@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { AppStatsService } from "@finance-bot/server-core";
+import { AppStatsService, PaymentService } from "@finance-bot/server-core";
 import { getApiContainer } from "../../di/api-container.context";
 import { AdminController } from "./admin.controller";
 import { AdminApiService } from "./admin-api.service";
@@ -10,6 +10,10 @@ import { AdminApiService } from "./admin-api.service";
     {
       provide: AppStatsService,
       useFactory: () => getApiContainer().appStatsService,
+    },
+    {
+      provide: PaymentService,
+      useFactory: () => getApiContainer().paymentService,
     },
     AdminApiService,
   ],

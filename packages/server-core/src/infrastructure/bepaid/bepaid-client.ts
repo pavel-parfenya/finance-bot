@@ -18,6 +18,7 @@
 
 import type {
   BepaidConfig,
+  BepaidSubscriptionListItem,
   PlanInput,
   SubscriptionInput,
   SubscriptionResponse,
@@ -26,6 +27,7 @@ import type {
 
 export type {
   BepaidConfig,
+  BepaidSubscriptionListItem,
   PlanInput,
   SubscriptionInput,
   SubscriptionResponse,
@@ -193,6 +195,71 @@ export async function getSubscription(
     planId: plan && typeof plan.id === "string" ? plan.id : null,
     lastTransactionUid: lastTx && typeof lastTx.uid === "string" ? lastTx.uid : null,
   };
+}
+
+/** Извлекает массив подписок из разных форм ответа bePaid. */
+function asSubscriptionList(json: unknown): Array<Record<string, unknown>> {
+  if (Array.isArray(json)) return json as Array<Record<string, unknown>>;
+  if (json && typeof json === "object") {
+    const obj = json as Record<string, unknown>;
+    for (const key of ["subscriptions", "data"]) {
+      if (Array.isArray(obj[key])) return obj[key] as Array<Record<string, unknown>>;
+    }
+  }
+  return [];
+}
+
+function asStr(v: unknown): string | null {
+  return typeof v === "string" && v ? v : null;
+}
+
+/** Приводит одну запись подписки bePaid к BepaidSubscriptionListItem. */
+function normalizeSubscriptionListItem(
+  s: Record<string, unknown>
+): BepaidSubscriptionListItem {
+  const plan =
+    s.plan && typeof s.plan === "object" ? (s.plan as Record<string, unknown>) : null;
+  const card =
+    s.card && typeof s.card === "object" ? (s.card as Record<string, unknown>) : null;
+  const lastTx =
+    s.last_transaction && typeof s.last_transaction === "object"
+      ? (s.last_transaction as Record<string, unknown>)
+      : null;
+  return {
+    id: asStr(s.id) ?? "",
+    state: asStr(s.state) ?? "",
+    trackingId: asStr(s.tracking_id),
+    createdAt: asStr(s.created_at),
+    activeTo: asStr(s.active_to),
+    renewAt: asStr(s.renew_at),
+    planId: plan ? asStr(plan.id) : null,
+    planTitle: plan ? (asStr(plan.title) ?? asStr(plan.name)) : null,
+    amountMinor: plan && typeof plan.amount === "number" ? plan.amount : null,
+    currency: plan ? asStr(plan.currency) : null,
+    cardLast4: card ? (asStr(card.last_4) ?? asStr(card.last4)) : null,
+    lastTransactionStatus: lastTx ? asStr(lastTx.status) : null,
+  };
+}
+
+/**
+ * Возвращает список подписок магазина bePaid (для админ-панели). Бросает Error при
+ * не-2xx ответе. Тестовые и боевые подписки разделены по ключам магазина.
+ */
+export async function listSubscriptions(
+  config: BepaidConfig
+): Promise<BepaidSubscriptionListItem[]> {
+  const res = await fetch(`${config.apiBaseUrl}/subscriptions`, {
+    method: "GET",
+    headers: jsonHeaders(config),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`bePaid list subscriptions failed: ${String(res.status)} ${text}`);
+  }
+  const json = (await res.json().catch(() => null)) as unknown;
+  return asSubscriptionList(json)
+    .map(normalizeSubscriptionListItem)
+    .filter((s) => s.id);
 }
 
 /**

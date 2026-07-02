@@ -3,9 +3,12 @@ import {
   APP_STATS_ACTIVE_HOURS,
   AppStatsService,
   config,
+  PaymentService,
   UserService,
 } from "@finance-bot/server-core";
+import type { BepaidSubscriptionListItem } from "@finance-bot/server-core";
 import type {
+  AdminBepaidSubscriptionsResponse,
   AdminTelegramUserOption,
   AdminUndeliveredRecipient,
   AppUserStatsResponse,
@@ -16,11 +19,20 @@ import type { ResolvedTelegramUser } from "../telegram/telegram-auth.types";
 
 const TELEGRAM_MESSAGE_MAX = 4096;
 
+/** Восстанавливает локальный userId из tracking_id вида `<userId>-<code>`. */
+function parseTrackingUserId(trackingId: string | null): number | null {
+  if (!trackingId) return null;
+  const first = trackingId.split("-")[0];
+  const n = Number(first);
+  return Number.isInteger(n) && n > 0 ? n : null;
+}
+
 @Injectable()
 export class AdminApiService {
   constructor(
     private readonly userService: UserService,
     private readonly appStatsService: AppStatsService,
+    private readonly paymentService: PaymentService,
     @Inject(TELEGRAM_OUTBOUND) private readonly telegram: TelegramOutboundPort
   ) {}
 
@@ -47,6 +59,54 @@ export class AdminApiService {
       series,
       activeWindowHours: APP_STATS_ACTIVE_HOURS,
     };
+  }
+
+  /**
+   * Список подписок bePaid для супер-админа. Обогащает каждую подписку локальным
+   * пользователем (по tracking_id). Ошибки обращения к bePaid возвращаются в поле
+   * `error`, чтобы панель показала сообщение (доступ проверяется до запроса).
+   */
+  async getBepaidSubscriptions(
+    resolved: ResolvedTelegramUser
+  ): Promise<AdminBepaidSubscriptionsResponse> {
+    await this.requireSuperAdmin(resolved);
+    const gateway = config.paymentGateway;
+    const testMode = config.bepaid.testMode;
+    if (gateway !== "bepaid") {
+      return { gateway, testMode, subscriptions: [] };
+    }
+
+    let items: BepaidSubscriptionListItem[];
+    try {
+      items = await this.paymentService.listBepaidSubscriptions();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Не удалось загрузить подписки bePaid";
+      return { gateway, testMode, subscriptions: [], error: msg };
+    }
+
+    const users = await this.userService.findAllOrderedById();
+    const byId = new Map(users.map((u) => [u.id, u]));
+    const subscriptions = items.map((it) => {
+      const userId = parseTrackingUserId(it.trackingId);
+      const user = userId != null ? byId.get(userId) : undefined;
+      return {
+        id: it.id,
+        state: it.state,
+        userId: userId ?? null,
+        displayName: user
+          ? this.personDisplayName(user.username, Number(user.telegramId))
+          : null,
+        planId: it.planId,
+        planTitle: it.planTitle,
+        amount: it.amountMinor != null ? it.amountMinor / 100 : null,
+        currency: it.currency,
+        cardLast4: it.cardLast4,
+        lastTransactionStatus: it.lastTransactionStatus,
+        createdAt: it.createdAt,
+        activeTo: it.activeTo,
+      };
+    });
+    return { gateway, testMode, subscriptions };
   }
 
   private personDisplayName(
