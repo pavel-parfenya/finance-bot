@@ -1,7 +1,11 @@
 import OpenAI from "openai";
 import type { MonthlyReportData } from "./deepseek-monthly-report";
 import { analyticsVoiceHint } from "./deepseek-analytics-voice-hints";
-import { createDeepSeekClient, withDeepSeekRetry } from "./deepseek-client";
+import {
+  createDeepSeekClient,
+  DEEPSEEK_MODEL,
+  withDeepSeekRetry,
+} from "./deepseek-client";
 
 export interface WeeklyForecastMeta {
   /** Сколько календарных дней осталось до конца месяца включая сегодня (по локали пользователя). */
@@ -65,7 +69,7 @@ ${voiceHint}
 
     const response = await withDeepSeekRetry(() =>
       this.client.chat.completions.create({
-        model: "deepseek-chat",
+        model: DEEPSEEK_MODEL,
         temperature: voice === "modern_18" ? 0.75 : 0.5,
         max_tokens: 600,
         messages: [

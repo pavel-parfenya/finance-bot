@@ -1,6 +1,10 @@
 import OpenAI from "openai";
 import { analyticsVoiceHint } from "./deepseek-analytics-voice-hints";
-import { createDeepSeekClient, withDeepSeekRetry } from "./deepseek-client";
+import {
+  createDeepSeekClient,
+  DEEPSEEK_MODEL,
+  withDeepSeekRetry,
+} from "./deepseek-client";
 
 export class DeepSeekEndOfDayReminder {
   private readonly client: OpenAI;
@@ -33,7 +37,7 @@ ${voiceHint}`;
 
     const response = await withDeepSeekRetry(() =>
       this.client.chat.completions.create({
-        model: "deepseek-chat",
+        model: DEEPSEEK_MODEL,
         temperature: voice === "modern_18" ? 0.75 : 0.55,
         max_tokens: 200,
         messages: [

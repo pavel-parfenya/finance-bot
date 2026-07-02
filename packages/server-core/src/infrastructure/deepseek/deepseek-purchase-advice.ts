@@ -1,6 +1,10 @@
 import OpenAI from "openai";
 import { analyticsVoiceHint } from "./deepseek-analytics-voice-hints";
-import { createDeepSeekClient, withDeepSeekRetry } from "./deepseek-client";
+import {
+  createDeepSeekClient,
+  DEEPSEEK_MODEL,
+  withDeepSeekRetry,
+} from "./deepseek-client";
 
 const PURCHASE_QUESTION_PATTERNS = [
   /могу\s+ли\s+я\s+купить/i,
@@ -58,7 +62,7 @@ export class DeepSeekPurchaseAdviceParser {
   ): Promise<ParsedPurchaseQuestion | null> {
     const response = await withDeepSeekRetry(() =>
       this.client.chat.completions.create({
-        model: "deepseek-chat",
+        model: DEEPSEEK_MODEL,
         temperature: 0,
         max_tokens: 150,
         response_format: { type: "json_object" },
@@ -108,7 +112,7 @@ ${voiceHint}
 
     const response = await withDeepSeekRetry(() =>
       this.client.chat.completions.create({
-        model: "deepseek-chat",
+        model: DEEPSEEK_MODEL,
         temperature: voice === "modern_18" ? 0.75 : 0.5,
         max_tokens: 400,
         messages: [

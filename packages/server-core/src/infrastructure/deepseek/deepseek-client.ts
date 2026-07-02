@@ -3,6 +3,13 @@ import OpenAI from "openai";
 const DEEPSEEK_BASE_URL = "https://api.deepseek.com";
 
 /**
+ * Самая дешёвая модель DeepSeek (V4): по умолчанию non-thinking — то же
+ * поведение, что у прежнего алиаса `deepseek-chat`, который DeepSeek
+ * отключает 2026-07-24. Дороже только v4-pro — он здесь нигде не нужен.
+ */
+export const DEEPSEEK_MODEL = "deepseek-v4-flash";
+
+/**
  * Единая фабрика клиента DeepSeek с устойчивыми настройками сети.
  * `maxRetries` покрывает ретраи самого SDK (до чтения тела ответа),
  * `timeout` ограничивает «висящие» соединения.

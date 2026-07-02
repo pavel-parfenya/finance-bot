@@ -3,7 +3,11 @@ import { IMessageParser } from "../../domain/interfaces";
 import { ParseContext } from "../../domain/interfaces/message-parser";
 import type { ParsedExpense } from "../../domain/models";
 import { ExpenseCategory, IncomeCategory } from "../../domain/models";
-import { createDeepSeekClient, withDeepSeekRetry } from "./deepseek-client";
+import {
+  createDeepSeekClient,
+  DEEPSEEK_MODEL,
+  withDeepSeekRetry,
+} from "./deepseek-client";
 
 const EXPENSE_CATS = Object.values(ExpenseCategory).join(", ");
 const INCOME_CATS = Object.values(IncomeCategory).join(", ");
@@ -84,7 +88,7 @@ export class DeepSeekMessageParser implements IMessageParser {
     );
     const response = await withDeepSeekRetry(() =>
       this.client.chat.completions.create({
-        model: "deepseek-chat",
+        model: DEEPSEEK_MODEL,
         temperature: 0,
         max_tokens: 300,
         response_format: { type: "json_object" },
