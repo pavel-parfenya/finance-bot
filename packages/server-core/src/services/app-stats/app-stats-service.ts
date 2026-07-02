@@ -11,6 +11,7 @@ export interface AppStats {
   activeUsers: number;
   inactiveUsers: number;
   archivedUsers: number;
+  activeSubscriptions: number;
 }
 
 export interface AppStatsDailyPoint {
@@ -20,6 +21,7 @@ export interface AppStatsDailyPoint {
   activeUsers: number;
   inactiveUsers: number;
   archivedUsers: number;
+  activeSubscriptions: number;
 }
 
 function formatUtcYmd(y: number, month: number, day: number): string {
@@ -71,15 +73,29 @@ export class AppStatsService {
 
   async getStats(): Promise<AppStats> {
     const ref = new Date();
-    const [totalUsers, emptyUsers, activeUsers, inactiveUsers, archivedUsers] =
-      await Promise.all([
-        this.countTotalUsersAtRef(ref),
-        this.countEmptyUsersAtRef(ref),
-        this.countActiveUsersTxAtRef(ref),
-        this.countInactiveUsersAtRef(ref),
-        this.countArchivedUsersAtRef(ref),
-      ]);
-    return { totalUsers, emptyUsers, activeUsers, inactiveUsers, archivedUsers };
+    const [
+      totalUsers,
+      emptyUsers,
+      activeUsers,
+      inactiveUsers,
+      archivedUsers,
+      activeSubscriptions,
+    ] = await Promise.all([
+      this.countTotalUsersAtRef(ref),
+      this.countEmptyUsersAtRef(ref),
+      this.countActiveUsersTxAtRef(ref),
+      this.countInactiveUsersAtRef(ref),
+      this.countArchivedUsersAtRef(ref),
+      this.countActiveSubscriptionsAtRef(ref),
+    ]);
+    return {
+      totalUsers,
+      emptyUsers,
+      activeUsers,
+      inactiveUsers,
+      archivedUsers,
+      activeSubscriptions,
+    };
   }
 
   /**
@@ -175,6 +191,7 @@ export class AppStatsService {
       activeUsers: r.activeUsers,
       inactiveUsers: r.inactiveUsers,
       archivedUsers: r.archivedUsers ?? 0,
+      activeSubscriptions: r.activeSubscriptions ?? 0,
     }));
   }
 
@@ -182,15 +199,17 @@ export class AppStatsService {
     await this.dataSource.query(
       `
       INSERT INTO app_user_stats_snapshots (
-        snapshot_date, total_users, empty_users, active_users, inactive_users, archived_users
+        snapshot_date, total_users, empty_users, active_users, inactive_users,
+        archived_users, active_subscriptions
       )
-      VALUES ($1::date, $2, $3, $4, $5, $6)
+      VALUES ($1::date, $2, $3, $4, $5, $6, $7)
       ON CONFLICT (snapshot_date) DO UPDATE SET
         total_users = EXCLUDED.total_users,
         empty_users = EXCLUDED.empty_users,
         active_users = EXCLUDED.active_users,
         inactive_users = EXCLUDED.inactive_users,
         archived_users = EXCLUDED.archived_users,
+        active_subscriptions = EXCLUDED.active_subscriptions,
         computed_at = now()
       `,
       [
@@ -200,6 +219,7 @@ export class AppStatsService {
         p.activeUsers,
         p.inactiveUsers,
         p.archivedUsers,
+        p.activeSubscriptions,
       ]
     );
   }
@@ -210,14 +230,21 @@ export class AppStatsService {
     d: number;
   }): Promise<AppStatsDailyPoint> {
     const ref = utcDayEndRef(cur.y, cur.m, cur.d);
-    const [totalUsers, emptyUsers, activeUsers, inactiveUsers, archivedUsers] =
-      await Promise.all([
-        this.countTotalUsersAtRef(ref),
-        this.countEmptyUsersAtRef(ref),
-        this.countActiveUsersTxAtRef(ref),
-        this.countInactiveUsersAtRef(ref),
-        this.countArchivedUsersAtRef(ref),
-      ]);
+    const [
+      totalUsers,
+      emptyUsers,
+      activeUsers,
+      inactiveUsers,
+      archivedUsers,
+      activeSubscriptions,
+    ] = await Promise.all([
+      this.countTotalUsersAtRef(ref),
+      this.countEmptyUsersAtRef(ref),
+      this.countActiveUsersTxAtRef(ref),
+      this.countInactiveUsersAtRef(ref),
+      this.countArchivedUsersAtRef(ref),
+      this.countActiveSubscriptionsAtRef(ref),
+    ]);
     return {
       date: formatUtcYmd(cur.y, cur.m, cur.d),
       totalUsers,
@@ -225,7 +252,30 @@ export class AppStatsService {
       activeUsers,
       inactiveUsers,
       archivedUsers,
+      activeSubscriptions,
     };
+  }
+
+  /**
+   * Число активных платных подписок на момент `ref`: платный план
+   * (pro_month/pro_year), период начался (`startsAt <= ref`) и ещё не истёк
+   * (`expiresAt > ref`). Статус не учитываем — отменённая подписка действует до
+   * конца оплаченного срока (как в resolveEffectivePlan). Одна строка на
+   * пользователя, поэтому для прошлых дней это реконструкция по текущему периоду.
+   */
+  private async countActiveSubscriptionsAtRef(ref: Date): Promise<number> {
+    const rows = await this.dataSource.query<{ count: string }[]>(
+      `
+      SELECT COUNT(*)::text AS count
+      FROM subscriptions s
+      WHERE s.plan IN ('pro_month', 'pro_year')
+        AND s."expiresAt" IS NOT NULL
+        AND s."expiresAt" > $1
+        AND (s."startsAt" IS NULL OR s."startsAt" <= $1)
+      `,
+      [ref]
+    );
+    return parseInt(rows[0]?.count ?? "0", 10);
   }
 
   private async countArchivedUsersAtRef(ref: Date): Promise<number> {

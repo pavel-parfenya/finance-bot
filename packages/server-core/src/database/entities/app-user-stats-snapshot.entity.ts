@@ -20,6 +20,9 @@ export class AppUserStatsSnapshot {
   @Column({ name: "archived_users", type: "int", default: 0 })
   archivedUsers: number;
 
+  @Column({ name: "active_subscriptions", type: "int", default: 0 })
+  activeSubscriptions: number;
+
   @CreateDateColumn({ name: "computed_at", type: "timestamptz" })
   computedAt: Date;
 }

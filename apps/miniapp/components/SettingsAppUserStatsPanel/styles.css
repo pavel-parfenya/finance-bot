@@ -88,7 +88,7 @@
 
 @media (min-width: 420px) {
   .app-user-stats-cards {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }
 
@@ -120,6 +120,10 @@
 
 .app-user-stats-card--archived {
   background: #475569;
+}
+
+.app-user-stats-card--subs {
+  background: #9333ea;
 }
 
 .app-user-stats-card-value {

@@ -66,6 +66,7 @@ const COLOR_EMPTY = "#64748b";
 const COLOR_ACTIVE = "#16a34a";
 const COLOR_INACTIVE = "#d97706";
 const COLOR_ARCHIVED = "#94a3b8";
+const COLOR_SUBS = "#9333ea";
 
 export default defineComponent({
   setup() {
@@ -80,6 +81,7 @@ export default defineComponent({
       activeUsers: 0,
       inactiveUsers: 0,
       archivedUsers: 0,
+      activeSubscriptions: 0,
     });
     const series = ref<
       Array<{
@@ -89,6 +91,7 @@ export default defineComponent({
         activeUsers: number;
         inactiveUsers: number;
         archivedUsers: number;
+        activeSubscriptions: number;
       }>
     >([]);
 
@@ -148,6 +151,7 @@ export default defineComponent({
           | "activeUsers"
           | "inactiveUsers"
           | "archivedUsers"
+          | "activeSubscriptions"
       ) => series.value.map((p) => p[key] ?? 0);
 
       chartInst = new Chart(ctx, {
@@ -192,6 +196,14 @@ export default defineComponent({
               data: mk("archivedUsers"),
               borderColor: COLOR_ARCHIVED,
               backgroundColor: `${COLOR_ARCHIVED}33`,
+              tension: 0.2,
+              pointRadius: 2,
+            },
+            {
+              label: "Подписки",
+              data: mk("activeSubscriptions"),
+              borderColor: COLOR_SUBS,
+              backgroundColor: `${COLOR_SUBS}33`,
               tension: 0.2,
               pointRadius: 2,
             },
