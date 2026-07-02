@@ -5,9 +5,11 @@
     <button
       type="button"
       class="btn-add-debt"
-      @click="showForm = !showForm"
+      :class="{ 'is-locked': debtsLocked }"
+      @click="onAddClick"
     >
-      {{ showForm ? 'Отмена' : '+ Добавить долг' }}
+      <template v-if="debtsLocked">🔒 Добавить долг</template>
+      <template v-else>{{ showForm ? 'Отмена' : '+ Добавить долг' }}</template>
     </button>
 
     <div v-if="showForm" class="debt-form">

@@ -53,12 +53,13 @@
       Включи нужные типы сообщений — они независимы друг от друга.
     </p>
     <ul class="analytics-dispatch-list" role="list">
-      <li class="analytics-dispatch-item">
+      <li class="analytics-dispatch-item" :class="{ 'is-locked': advancedLocked }">
         <label class="analytics-dispatch-row">
           <input
             type="checkbox"
             class="analytics-dispatch-checkbox"
             v-model="analyticsReminderEod"
+            :disabled="advancedLocked"
             @change="onReminderChange"
           />
           <span class="analytics-dispatch-body">
@@ -69,13 +70,22 @@
             </span>
           </span>
         </label>
+        <button
+          v-if="advancedLocked"
+          type="button"
+          class="analytics-dispatch-lock"
+          @click="showUpgrade"
+        >
+          🔒 Доступно на платном тарифе
+        </button>
       </li>
-      <li class="analytics-dispatch-item">
+      <li class="analytics-dispatch-item" :class="{ 'is-locked': advancedLocked }">
         <label class="analytics-dispatch-row">
           <input
             type="checkbox"
             class="analytics-dispatch-checkbox"
             v-model="analyticsMonthReport"
+            :disabled="advancedLocked"
             @change="onMonthReportChange"
           />
           <span class="analytics-dispatch-body">
@@ -85,13 +95,22 @@
             </span>
           </span>
         </label>
+        <button
+          v-if="advancedLocked"
+          type="button"
+          class="analytics-dispatch-lock"
+          @click="showUpgrade"
+        >
+          🔒 Доступно на платном тарифе
+        </button>
       </li>
-      <li class="analytics-dispatch-item">
+      <li class="analytics-dispatch-item" :class="{ 'is-locked': forecastLocked }">
         <label class="analytics-dispatch-row">
           <input
             type="checkbox"
             class="analytics-dispatch-checkbox"
             v-model="analyticsForecastWeekly"
+            :disabled="forecastLocked"
             @change="onForecastChange"
           />
           <span class="analytics-dispatch-body">
@@ -101,6 +120,14 @@
             </span>
           </span>
         </label>
+        <button
+          v-if="forecastLocked"
+          type="button"
+          class="analytics-dispatch-lock"
+          @click="showUpgrade"
+        >
+          🔒 Доступно на платном тарифе
+        </button>
       </li>
     </ul>
   </section>

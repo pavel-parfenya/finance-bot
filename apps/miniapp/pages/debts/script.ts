@@ -17,12 +17,26 @@ import {
 } from "~/api/client";
 import { useAppState } from "~/composables/useAppState";
 import { useUpgradeModal } from "~/composables/useUpgradeModal";
+import { useFeatures } from "~/composables/useFeatures";
 import { CURRENCIES } from "~/utils/format";
 
 export default defineComponent({
   setup() {
     const { refreshTrigger } = useAppState();
-    const { notifyApiError } = useUpgradeModal();
+    const { notifyApiError, openUpgrade } = useUpgradeModal();
+    const { ensureLoaded, hasFeature } = useFeatures();
+
+    // Создание новых долгов — платная фича. Старые остаются полностью рабочими
+    // (просмотр/редактирование/закрытие).
+    const debtsLocked = computed(() => !hasFeature("debts"));
+
+    function onAddClick() {
+      if (debtsLocked.value) {
+        openUpgrade("Добавление долгов доступно на платном тарифе.");
+        return;
+      }
+      showForm.value = !showForm.value;
+    }
 
     const debts = ref<DebtDto[]>([]);
     const loading = ref(true);
@@ -189,6 +203,7 @@ export default defineComponent({
     onMounted(() => {
       load();
       loadDefaultCurrency();
+      ensureLoaded();
     });
     watch(refreshTrigger, load);
     watch(showForm, (open) => {
@@ -205,6 +220,8 @@ export default defineComponent({
       loading,
       error,
       showForm,
+      debtsLocked,
+      onAddClick,
       formIAmCreditor,
       formName,
       formAmount,

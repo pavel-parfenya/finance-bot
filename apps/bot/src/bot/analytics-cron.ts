@@ -59,7 +59,8 @@ export function startAnalyticsCron(deps: AnalyticsCronDeps): void {
 
         if (
           user.analyticsReminderEod &&
-          user.lastAnalyticsReminderLocalDate !== localYmd
+          user.lastAnalyticsReminderLocalDate !== localYmd &&
+          (await deps.featureService.hasFeature(user.id, "advanced_analytics"))
         ) {
           await sendEndOfDayReminderForUserId(user.id, deps, {
             localYmd,

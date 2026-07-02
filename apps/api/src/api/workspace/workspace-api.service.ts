@@ -46,10 +46,16 @@ export class WorkspaceApiService {
       workspace.id
     );
     const members = await this.workspaceService.getWorkspaceMembers(workspace.id);
+    // Совместный учёт «заморожен», если участников больше одного, а у владельца
+    // пространства нет фичи collaborative — тогда каждый видит лишь свои записи.
+    const collaborativeLocked =
+      members.length > 1 &&
+      !(await this.featureService.hasFeature(workspace.ownerId, "collaborative"));
     return {
       userId: resolved.userId,
       isOwner,
       members,
+      collaborativeLocked,
       infoChangelogVersion: INFO_CHANGELOG_VERSION,
       infoChangelogSeenVersion: seenVersion,
     };

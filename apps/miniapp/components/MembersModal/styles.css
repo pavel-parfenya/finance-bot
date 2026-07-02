@@ -191,3 +191,20 @@
   text-align: center;
   padding: 20px 0;
 }
+
+.collab-locked-banner {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius, 10px);
+  background-color: rgba(255, 176, 32, 0.12);
+  border: 1px solid rgba(255, 176, 32, 0.35);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--tg-theme-text-color);
+}
+
+.member-frozen {
+  font-size: 12px;
+  color: var(--tg-theme-hint-color);
+  white-space: nowrap;
+}

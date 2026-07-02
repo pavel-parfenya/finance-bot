@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { validate, parse, deepSnakeToCamelObjKeys } from "@tma.js/init-data-node";
-import { UserService, WorkspaceService } from "@finance-bot/server-core";
+import { UserService, WorkspaceService, FeatureService } from "@finance-bot/server-core";
 import { AppConfigService } from "../app-config/app-config.service";
 import { BOT_TOKEN } from "../tokens";
 import type { ResolvedTelegramUser, ResolveUserError } from "./telegram-auth.types";
@@ -10,6 +10,7 @@ export class TelegramAuthService {
   constructor(
     private readonly userService: UserService,
     private readonly workspaceService: WorkspaceService,
+    private readonly featureService: FeatureService,
     private readonly appConfig: AppConfigService,
     @Inject(BOT_TOKEN) private readonly botToken: string
   ) {}
@@ -66,10 +67,23 @@ export class TelegramAuthService {
     creatorDisplayName: string
   ): Promise<ResolvedTelegramUser> {
     const workspaceIds = await this.workspaceService.getWorkspaceIdsForUser(userId);
+    const collabMeta = await this.workspaceService.getCollaborationMeta(workspaceIds);
     const fullAccessWorkspaceIds: number[] = [];
     for (const wid of workspaceIds) {
       const hasAccess = await this.workspaceService.getMemberFullAccess(wid, userId);
-      if (hasAccess) fullAccessWorkspaceIds.push(wid);
+      if (!hasAccess) continue;
+      // Совместный учёт «заморожен», если у владельца пространства нет фичи
+      // collaborative — тогда даже владелец видит только свои записи. Solo-
+      // пространства (один участник) не ограничиваем.
+      const meta = collabMeta.get(wid);
+      if (meta && meta.memberCount > 1) {
+        const ownerHasCollab = await this.featureService.hasFeature(
+          meta.ownerId,
+          "collaborative"
+        );
+        if (!ownerHasCollab) continue;
+      }
+      fullAccessWorkspaceIds.push(wid);
     }
     return {
       userId,

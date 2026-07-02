@@ -50,3 +50,64 @@ describe("WorkspaceApiService — гейтинг фичи collaborative", () => 
     expect(userService.findByUsername).toHaveBeenCalledWith("friend");
   });
 });
+
+/** info(): флаг collaborativeLocked = участников >1 И у владельца нет фичи collaborative. */
+function makeInfoService(opts: { memberCount: number; ownerHasCollab: boolean }) {
+  const members = Array.from({ length: opts.memberCount }, (_, i) => ({
+    userId: i + 1,
+    username: `u${i + 1}`,
+    role: i === 0 ? "owner" : "member",
+    fullAccess: true,
+  }));
+  const userService = { getInfoChangelogSeenVersion: vi.fn(async () => 0) };
+  const workspaceService = {
+    getWorkspaceForUser: vi.fn(async () => ({ id: 7, ownerId: 1 })),
+    isWorkspaceOwner: vi.fn(async () => true),
+    getWorkspaceMembers: vi.fn(async () => members),
+  };
+  const featureService = { hasFeature: vi.fn(async () => opts.ownerHasCollab) };
+  const svc = new WorkspaceApiService(
+    userService as never,
+    workspaceService as never,
+    {} as never,
+    {} as never,
+    featureService as never,
+    {} as never
+  );
+  return { svc, featureService };
+}
+
+describe("WorkspaceApiService.info — collaborativeLocked", () => {
+  it("locked=true: участников больше одного и у владельца нет collaborative", async () => {
+    const { svc, featureService } = makeInfoService({
+      memberCount: 2,
+      ownerHasCollab: false,
+    });
+
+    const res = await svc.info(resolved);
+
+    expect(res.collaborativeLocked).toBe(true);
+    expect(featureService.hasFeature).toHaveBeenCalledWith(1, "collaborative");
+  });
+
+  it("locked=false: у владельца есть collaborative", async () => {
+    const { svc } = makeInfoService({ memberCount: 2, ownerHasCollab: true });
+
+    const res = await svc.info(resolved);
+
+    expect(res.collaborativeLocked).toBe(false);
+  });
+
+  it("locked=false: solo-пространство (один участник) не ограничиваем", async () => {
+    const { svc, featureService } = makeInfoService({
+      memberCount: 1,
+      ownerHasCollab: false,
+    });
+
+    const res = await svc.info(resolved);
+
+    expect(res.collaborativeLocked).toBe(false);
+    // При одном участнике фичу вообще не спрашиваем (short-circuit).
+    expect(featureService.hasFeature).not.toHaveBeenCalled();
+  });
+});

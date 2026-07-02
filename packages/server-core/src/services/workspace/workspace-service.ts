@@ -156,4 +156,29 @@ export class WorkspaceService {
     if (m.role === WorkspaceRole.Owner) return true;
     return m.fullAccess ?? true;
   }
+
+  /**
+   * Владелец и число участников по каждому из workspace. Нужно для гейтинга
+   * совместного учёта: пространство расшаривается, только если у владельца есть
+   * фича `collaborative`; иначе каждый видит лишь свои записи. Пространства с
+   * одним участником (solo) в этой логике не ограничиваются.
+   */
+  async getCollaborationMeta(
+    workspaceIds: number[]
+  ): Promise<Map<number, { ownerId: number; memberCount: number }>> {
+    const result = new Map<number, { ownerId: number; memberCount: number }>();
+    if (workspaceIds.length === 0) return result;
+
+    const workspaces = await this.workspaceRepo.find({
+      where: workspaceIds.map((id) => ({ id })),
+      select: ["id", "ownerId"],
+    });
+    for (const ws of workspaces) {
+      const memberCount = await this.memberRepo.count({
+        where: { workspaceId: ws.id },
+      });
+      result.set(ws.id, { ownerId: ws.ownerId, memberCount });
+    }
+    return result;
+  }
 }

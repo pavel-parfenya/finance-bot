@@ -31,6 +31,12 @@
       </p>
     </div>
 
+    <div v-if="collaborativeLocked" class="collab-locked-banner">
+      🔒 Совместный учёт временно недоступен. Сейчас каждый видит только свои
+      записи. Всё вернётся, когда владелец оформит подписку — остальным участникам
+      подписка не нужна.
+    </div>
+
     <div v-if="isOwner" class="invite-section">
       <div class="invite-form">
         <input
@@ -38,8 +44,13 @@
           type="text"
           placeholder="@username"
           autocomplete="off"
+          :disabled="collaborativeLocked"
         />
-        <button type="button" :disabled="inviting" @click="doInvite">
+        <button
+          type="button"
+          :disabled="inviting || collaborativeLocked"
+          @click="doInvite"
+        >
           Пригласить
         </button>
       </div>
@@ -58,6 +69,7 @@
           {{ m.username ? `@${m.username}` : 'Пользователь' }}
         </span>
         <span v-if="m.role === 'owner'" class="role-badge">владелец</span>
+        <span v-else-if="collaborativeLocked" class="member-frozen">на паузе</span>
         <label v-else-if="isOwner" class="full-access-toggle">
           <input
             type="checkbox"

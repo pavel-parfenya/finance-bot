@@ -12,6 +12,7 @@ export default defineComponent({
     const { notifyApiError } = useUpgradeModal();
     const isOwner = ref(false);
     const members = ref<WorkspaceMember[]>([]);
+    const collaborativeLocked = ref(false);
     const error = ref<string | null>(null);
     const inviteUsername = ref("");
     const inviting = ref(false);
@@ -22,10 +23,12 @@ export default defineComponent({
         error.value = data.error;
         isOwner.value = false;
         members.value = [];
+        collaborativeLocked.value = false;
         return;
       }
       isOwner.value = data.isOwner ?? false;
       members.value = data.members ?? [];
+      collaborativeLocked.value = data.collaborativeLocked ?? false;
       error.value = null;
     }
 
@@ -69,6 +72,7 @@ export default defineComponent({
     return {
       isOwner,
       members,
+      collaborativeLocked,
       error,
       inviteUsername,
       inviting,

@@ -1,6 +1,8 @@
-import { defineComponent, ref, onMounted } from "vue";
+import { defineComponent, ref, computed, onMounted } from "vue";
 import { fetchUserSettings, updateUserSettings } from "~/api/client";
 import { useAppState } from "~/composables/useAppState";
+import { useFeatures } from "~/composables/useFeatures";
+import { useUpgradeModal } from "~/composables/useUpgradeModal";
 
 const VOICE_OPTIONS = [
   { value: "official", label: "Официальный" },
@@ -34,12 +36,22 @@ const TIMEZONE_OPTIONS = [
 export default defineComponent({
   setup() {
     const { triggerRefresh } = useAppState();
+    const { ensureLoaded, hasFeature } = useFeatures();
+    const { openUpgrade } = useUpgradeModal();
 
     const analyticsReminderEod = ref(false);
     const analyticsMonthReport = ref(false);
     const analyticsForecastWeekly = ref(false);
     const analyticsTimezone = ref("Europe/Moscow");
     const analyticsVoice = ref("official");
+
+    // EOD-напоминание и месячный отчёт — фича advanced_analytics, прогноз — forecasts.
+    const advancedLocked = computed(() => !hasFeature("advanced_analytics"));
+    const forecastLocked = computed(() => !hasFeature("forecasts"));
+
+    function showUpgrade() {
+      openUpgrade("Уведомления аналитики доступны на платном тарифе.");
+    }
 
     async function load() {
       const data = await fetchUserSettings();
@@ -54,6 +66,7 @@ export default defineComponent({
 
     onMounted(() => {
       load();
+      ensureLoaded();
     });
 
     async function patchPartial(updates: Parameters<typeof updateUserSettings>[0]) {
@@ -88,6 +101,9 @@ export default defineComponent({
       analyticsForecastWeekly,
       analyticsTimezone,
       analyticsVoice,
+      advancedLocked,
+      forecastLocked,
+      showUpgrade,
       onReminderChange,
       onMonthReportChange,
       onForecastChange,
