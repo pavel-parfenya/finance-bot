@@ -5,8 +5,8 @@ name: Build & Deploy
 # (migrate-образа нет — миграции гоняет образ api.)
 on:
   push:
-    # development — текущая рабочая/деплой-ветка. main добавлять, когда появится разделение сред.
-    branches: [development]
+    # main — прод-ветка (единственная среда — VPS hoster.by). development только собирается локально.
+    branches: [main]
   workflow_dispatch:
 
 env:

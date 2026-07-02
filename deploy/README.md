@@ -5,7 +5,7 @@
 проксирование сабдоменов выполняет **host-nginx** сервера (Cloudflare Origin Certificate).
 
 ```
-push в development ──▶ GitHub Actions ──▶ ghcr.io/pavel-parfenya/finance-bot-<svc> ──▶ SSH: pull + migrate + up
+push в main ──▶ GitHub Actions ──▶ ghcr.io/pavel-parfenya/finance-bot-<svc> ──▶ SSH: pull + migrate + up
 ```
 
 | URL | сервис | контейнер → loopback |
@@ -29,7 +29,7 @@ push в development ──▶ GitHub Actions ──▶ ghcr.io/pavel-parfenya/fi
 
 ### 1.1 Docker / код / nginx — уже на месте
 - Docker 29.x + compose v5 установлены.
-- Репозиторий в `/opt/finance-bot`, ветка `development`.
+- Репозиторий в `/opt/finance-bot`, ветка `main`.
 - host-nginx активен, серт в `/etc/nginx/ssl/finance-bot.by/{cert.pem,key.pem}`.
 
 ### 1.2 Логин в GHCR (нужно, чтобы тянуть образы)
@@ -131,7 +131,7 @@ INTERNAL_BOT_SECRET=<random>
 
 ## 4. Дальнейшие деплои
 
-Полностью автоматически: **push в `development`** → CI собирает образы → пушит в GHCR →
+Полностью автоматически: **push в `main`** → CI собирает образы → пушит в GHCR →
 по SSH на сервере `pull → up --wait postgres → run --rm migrate → up -d`.
 Ручной перезапуск пайплайна: вкладка **Actions → Build & Deploy → Run workflow**.
 
