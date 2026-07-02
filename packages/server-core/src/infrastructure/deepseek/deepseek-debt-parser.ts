@@ -35,6 +35,20 @@ interface RawParsed {
   deadlineHint?: string | null;
 }
 
+/**
+ * Дешёвый префильтр перед LLM: долги — редкий тип сообщений (~2%), а парсер
+ * дёргается на КАЖДОЕ сообщение первым в цепочке parseMessage. Без долговой
+ * лексики в тексте вызывать LLM бессмысленно — сразу отвечаем «не долг».
+ * Ложное срабатывание не страшно (просто один лишний вызов, как раньше);
+ * список корней сознательно широкий, чтобы не терять настоящие долги.
+ */
+const DEBT_LEXEMES =
+  /долг|долж|одолж|взаймы|за[её]м|займ|заня(?:л|ла|ли|ть)|верн(?:у|и|ул|ула|[её]т|ешь)|кредитор/i;
+
+export function mentionsDebt(text: string): boolean {
+  return DEBT_LEXEMES.test(text);
+}
+
 export class DeepSeekDebtParser {
   private readonly client: OpenAI;
 
@@ -43,10 +57,13 @@ export class DeepSeekDebtParser {
   }
 
   async parse(text: string, defaultCurrency?: string | null): Promise<ParsedDebt | null> {
+    if (!mentionsDebt(text)) return null;
+
     const response = await withDeepSeekRetry(() =>
       this.client.chat.completions.create({
         model: "deepseek-chat",
         temperature: 0,
+        max_tokens: 200,
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: SYSTEM_PROMPT },

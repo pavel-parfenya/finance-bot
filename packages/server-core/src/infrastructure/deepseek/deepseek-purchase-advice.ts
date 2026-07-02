@@ -60,6 +60,7 @@ export class DeepSeekPurchaseAdviceParser {
       this.client.chat.completions.create({
         model: "deepseek-chat",
         temperature: 0,
+        max_tokens: 150,
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: PARSE_SYSTEM },
@@ -109,6 +110,7 @@ ${voiceHint}
       this.client.chat.completions.create({
         model: "deepseek-chat",
         temperature: voice === "modern_18" ? 0.75 : 0.5,
+        max_tokens: 400,
         messages: [
           { role: "system", content: systemPrompt },
           {

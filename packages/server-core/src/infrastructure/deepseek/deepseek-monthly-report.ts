@@ -78,6 +78,7 @@ ${voiceHint}
       this.client.chat.completions.create({
         model: "deepseek-chat",
         temperature: voice === "modern_18" ? 0.75 : 0.5,
+        max_tokens: 600,
         messages: [
           { role: "system", content: systemPrompt },
           {
