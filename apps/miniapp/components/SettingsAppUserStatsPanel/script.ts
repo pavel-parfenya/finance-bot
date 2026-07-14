@@ -11,7 +11,11 @@ import {
   type ChartConfiguration,
 } from "chart.js";
 import type { AppUserStatsResponse } from "@finance-bot/shared";
-import { fetchAppUserStats } from "~/api/client";
+import {
+  fetchAppUserStats,
+  fetchAdminSubscriptionNotifications,
+  updateAdminSubscriptionNotifications,
+} from "~/api/client";
 
 Chart.register(
   LineController,
@@ -97,6 +101,32 @@ export default defineComponent({
 
     const fromDate = ref(defaultRange().from);
     const toDate = ref(defaultRange().to);
+
+    // Тумблер уведомлений об оплаченных/отменённых подписках (шлёт бот).
+    const subscriptionNotifications = ref(true);
+    const notifyLoading = ref(true);
+
+    async function loadSubscriptionNotifications() {
+      const data = await fetchAdminSubscriptionNotifications();
+      if (!("error" in data && data.error)) {
+        subscriptionNotifications.value =
+          (data as { enabled?: boolean }).enabled !== false;
+      }
+      notifyLoading.value = false;
+    }
+
+    async function onSubscriptionNotificationsChange() {
+      notifyLoading.value = true;
+      const data = await updateAdminSubscriptionNotifications(
+        subscriptionNotifications.value
+      );
+      if (data.error) {
+        alert(data.error);
+        // Откат чекбокса — сохранение не прошло.
+        subscriptionNotifications.value = !subscriptionNotifications.value;
+      }
+      notifyLoading.value = false;
+    }
 
     async function load() {
       loading.value = true;
@@ -245,6 +275,7 @@ export default defineComponent({
 
     onMounted(() => {
       void load().then(() => initChart());
+      void loadSubscriptionNotifications();
     });
 
     onUnmounted(destroyChart);
@@ -273,6 +304,9 @@ export default defineComponent({
       fromDate,
       toDate,
       applyRange,
+      subscriptionNotifications,
+      notifyLoading,
+      onSubscriptionNotificationsChange,
     };
   },
 });

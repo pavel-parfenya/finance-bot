@@ -28,6 +28,11 @@ const PLAN_TITLE: Partial<Record<SubscriptionPlan, string>> = {
   [SubscriptionPlan.ProYear]: "Pro на год",
 };
 
+/** Человекочитаемое имя тарифа (уведомления, сообщения). */
+export function planTitle(plan: SubscriptionPlan): string {
+  return PLAN_TITLE[plan] ?? String(plan);
+}
+
 /**
  * Заголовок плана bePaid: человекочитаемое имя тарифа + цена/валюта.
  * По заголовку план ищется для идемпотентности, поэтому в него закодированы:

@@ -36,6 +36,7 @@ export type {
   BepaidSubscriptionListItem,
 } from "./infrastructure/bepaid/bepaid-client";
 export { StrapiPlanConfig } from "./infrastructure/strapi/strapi-plan-config";
+export { StrapiSiteSettings } from "./infrastructure/strapi/strapi-site-settings";
 export {
   BillingTokenService,
   type BillingTokenPayload,

@@ -48,6 +48,24 @@ export class AdminApiService {
     }
   }
 
+  /** Текущее значение тумблера уведомлений об оплатах/отменах подписок. */
+  async getSubscriptionNotifications(
+    resolved: ResolvedTelegramUser
+  ): Promise<{ enabled: boolean }> {
+    await this.requireSuperAdmin(resolved);
+    const user = await this.userService.findById(resolved.userId);
+    return { enabled: user?.adminSubscriptionNotifications !== false };
+  }
+
+  async setSubscriptionNotifications(
+    resolved: ResolvedTelegramUser,
+    enabled: boolean
+  ): Promise<{ ok: true; enabled: boolean }> {
+    await this.requireSuperAdmin(resolved);
+    await this.userService.setAdminSubscriptionNotifications(resolved.userId, enabled);
+    return { ok: true, enabled };
+  }
+
   async getAppUserStats(fromDate: string, toDate: string): Promise<AppUserStatsResponse> {
     await this.appStatsService.ensureSnapshotsForRange(fromDate, toDate);
     const [current, series] = await Promise.all([

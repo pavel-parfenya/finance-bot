@@ -4,7 +4,7 @@ import {
   PaymentError,
   type PaymentGatewayConfig,
 } from "./payment-service";
-import { SubscriptionPlan } from "../../database/entities";
+import { SubscriptionPlan, SubscriptionStatus } from "../../database/entities";
 
 function makeSubscriptionService(current: unknown = null) {
   return {
@@ -13,9 +13,17 @@ function makeSubscriptionService(current: unknown = null) {
       plan,
     })),
     findCurrent: vi.fn(async () => current),
+    findByBepaidSubscriptionId: vi.fn(async () => current),
     setPendingBepaidSubscription: vi.fn(async () => undefined),
     cancel: vi.fn(async () => ({ userId: 1, plan: SubscriptionPlan.Free })),
     cancelByBepaidId: vi.fn(async () => undefined),
+  };
+}
+
+function makeAdminNotify() {
+  return {
+    subscriptionPaid: vi.fn(async () => undefined),
+    subscriptionCanceled: vi.fn(async () => undefined),
   };
 }
 
@@ -47,14 +55,17 @@ function makeService(
 ) {
   const subscriptionService = makeSubscriptionService(current);
   const planConfig = makePlanConfig(price);
+  const adminNotify = makeAdminNotify();
   const service = new PaymentService(
     { gateway, bepaid },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subscriptionService as any,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    planConfig as any
+    planConfig as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    adminNotify as any
   );
-  return { service, subscriptionService, planConfig };
+  return { service, subscriptionService, planConfig, adminNotify };
 }
 
 /** Запись одного вызова fetch (url + распарсенное тело). */
@@ -516,5 +527,165 @@ describe("PaymentService.cancelSubscription", () => {
     });
     await service.cancelSubscription(42);
     expect(subscriptionService.cancel).toHaveBeenCalledWith(42);
+  });
+});
+
+describe("уведомления супер-админу", () => {
+  it("test-шлюз: уведомляет об оплате с пометкой test", async () => {
+    const { service, adminNotify } = makeService("test");
+    await service.checkout(42, SubscriptionPlan.ProMonth);
+    expect(adminNotify.subscriptionPaid).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 42,
+        plan: SubscriptionPlan.ProMonth,
+        test: true,
+      })
+    );
+  });
+
+  it("webhook active: уведомляет о новой оплате (renewal=false)", async () => {
+    mockFetchRoutes(() => ({
+      id: "sbs_1",
+      state: "active",
+      tracking_id: "42-m",
+      active_to: "2027-01-01T00:00:00Z",
+      plan: { id: "pln_x" },
+      last_transaction: { uid: "tx-1" },
+    }));
+    const { service, adminNotify } = makeService("bepaid");
+    await service.handleNotify({ subscription: { id: "sbs_1" } });
+    expect(adminNotify.subscriptionPaid).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 42,
+        plan: SubscriptionPlan.ProMonth,
+        expiresAt: new Date("2027-01-01T00:00:00Z"),
+        renewal: false,
+      })
+    );
+  });
+
+  it("webhook active при продлении: уведомляет с renewal=true", async () => {
+    mockFetchRoutes(() => ({
+      id: "sbs_1",
+      state: "active",
+      tracking_id: "42-m",
+      active_to: "2027-02-01T00:00:00Z",
+      plan: { id: "pln_x" },
+      last_transaction: { uid: "tx-2" },
+    }));
+    const { service, adminNotify } = makeService("bepaid", 9.99, {
+      plan: SubscriptionPlan.ProMonth,
+      status: SubscriptionStatus.Active,
+      bepaidSubscriptionId: "sbs_1",
+      expiresAt: new Date("2027-01-01T00:00:00Z"),
+    });
+    await service.handleNotify({ subscription: { id: "sbs_1" } });
+    expect(adminNotify.subscriptionPaid).toHaveBeenCalledWith(
+      expect.objectContaining({ renewal: true })
+    );
+  });
+
+  it("повторная доставка того же active-webhook не дублирует уведомление", async () => {
+    mockFetchRoutes(() => ({
+      id: "sbs_1",
+      state: "active",
+      tracking_id: "42-m",
+      active_to: "2027-01-01T00:00:00Z",
+      plan: { id: "pln_x" },
+      last_transaction: { uid: "tx-1" },
+    }));
+    // Локальная подписка уже активна с тем же сроком — состояние не меняется.
+    const { service, adminNotify } = makeService("bepaid", 9.99, {
+      plan: SubscriptionPlan.ProMonth,
+      status: SubscriptionStatus.Active,
+      bepaidSubscriptionId: "sbs_1",
+      expiresAt: new Date("2027-01-01T00:00:00Z"),
+    });
+    await service.handleNotify({ subscription: { id: "sbs_1" } });
+    expect(adminNotify.subscriptionPaid).not.toHaveBeenCalled();
+  });
+
+  it("webhook canceled по купленной подписке: уведомляет об отмене", async () => {
+    mockFetchRoutes(() => ({
+      id: "sbs_3",
+      state: "canceled",
+      tracking_id: "42-m",
+    }));
+    const { service, adminNotify } = makeService("bepaid", 9.99, {
+      userId: 42,
+      plan: SubscriptionPlan.ProMonth,
+      status: SubscriptionStatus.Active,
+      bepaidSubscriptionId: "sbs_3",
+      expiresAt: new Date("2027-01-01T00:00:00Z"),
+    });
+    await service.handleNotify({ subscription: { id: "sbs_3" } });
+    expect(adminNotify.subscriptionCanceled).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 42,
+        plan: SubscriptionPlan.ProMonth,
+        reason: "bepaid",
+      })
+    );
+  });
+
+  it("webhook failed: уведомляет с причиной payment_failed", async () => {
+    mockFetchRoutes(() => ({
+      id: "sbs_f",
+      state: "failed",
+      tracking_id: "42-m",
+    }));
+    const { service, adminNotify } = makeService("bepaid", 9.99, {
+      userId: 42,
+      plan: SubscriptionPlan.ProYear,
+      status: SubscriptionStatus.Active,
+      bepaidSubscriptionId: "sbs_f",
+    });
+    await service.handleNotify({ subscription: { id: "sbs_f" } });
+    expect(adminNotify.subscriptionCanceled).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: "payment_failed" })
+    );
+  });
+
+  it("webhook canceled по уже отменённой подписке не дублирует уведомление", async () => {
+    mockFetchRoutes(() => ({
+      id: "sbs_3",
+      state: "canceled",
+      tracking_id: "42-m",
+    }));
+    const { service, adminNotify } = makeService("bepaid", 9.99, {
+      userId: 42,
+      plan: SubscriptionPlan.ProMonth,
+      status: SubscriptionStatus.Canceled,
+      bepaidSubscriptionId: "sbs_3",
+    });
+    await service.handleNotify({ subscription: { id: "sbs_3" } });
+    expect(adminNotify.subscriptionCanceled).not.toHaveBeenCalled();
+  });
+
+  it("cancelSubscription по платной подписке: уведомляет с причиной user", async () => {
+    mockFetchRoutes(() => ({ ok: true }));
+    const { service, adminNotify } = makeService("bepaid", 9.99, {
+      plan: SubscriptionPlan.ProMonth,
+      status: SubscriptionStatus.Active,
+      bepaidSubscriptionId: "sbs_99",
+      expiresAt: new Date("2027-01-01T00:00:00Z"),
+    });
+    await service.cancelSubscription(42);
+    expect(adminNotify.subscriptionCanceled).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 42,
+        plan: SubscriptionPlan.ProMonth,
+        reason: "user",
+      })
+    );
+  });
+
+  it("cancelSubscription по Free-подписке не уведомляет (не была куплена)", async () => {
+    const { service, adminNotify } = makeService("bepaid", 9.99, {
+      plan: SubscriptionPlan.Free,
+      status: SubscriptionStatus.Active,
+    });
+    await service.cancelSubscription(42);
+    expect(adminNotify.subscriptionCanceled).not.toHaveBeenCalled();
   });
 });

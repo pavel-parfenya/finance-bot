@@ -86,6 +86,13 @@ export class User {
   })
   lastInactiveUserNudgeYm: string | null;
 
+  /**
+   * Уведомления об оплаченных/отменённых подписках. Читается только у
+   * супер-админа (SUPER_ADMIN_USERNAME) — см. AdminNotifyService.
+   */
+  @Column({ type: "boolean", default: true })
+  adminSubscriptionNotifications: boolean;
+
   @CreateDateColumn()
   createdAt: Date;
 

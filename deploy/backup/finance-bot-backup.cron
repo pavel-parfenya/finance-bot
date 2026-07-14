@@ -1,0 +1,6 @@
+# Ежесуточный бэкап БД finance-bot. Устанавливается в /etc/cron.d/finance-bot-backup
+# (см. deploy/README.md, раздел «Бэкапы БД»). Скрипт: deploy/backup/pg-backup.sh.
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+BACKUP_TTL_DAYS=7
+30 3 * * * root /usr/local/bin/finance-bot-pg-backup >> /var/log/finance-bot-backup.log 2>&1

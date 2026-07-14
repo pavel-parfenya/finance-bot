@@ -36,6 +36,7 @@ export default defineComponent({
       if (p.startsWith("/table/edit")) return "Изменить запись";
       if (p === "/settings" || p === "/settings/") return "Настройки";
       if (p.startsWith("/settings/help")) return "Справка";
+      if (p.startsWith("/settings/contacts")) return "Контакты";
       if (p.startsWith("/settings/expenses")) return "Траты";
       if (p.startsWith("/settings/analytics")) return "Аналитика";
       if (p.startsWith("/settings/subscription")) return "Подписка";

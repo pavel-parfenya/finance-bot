@@ -1,5 +1,10 @@
-import { Subscription, SubscriptionPlan } from "../../database/entities";
+import {
+  Subscription,
+  SubscriptionPlan,
+  SubscriptionStatus,
+} from "../../database/entities";
 import type { SubscriptionService } from "../subscription/subscription-service";
+import type { AdminNotifyService } from "../admin-notify/admin-notify-service";
 import type { StrapiPlanConfig } from "../../infrastructure/strapi/strapi-plan-config";
 import {
   ensurePlan,
@@ -41,7 +46,9 @@ export class PaymentService {
   constructor(
     private readonly cfg: PaymentGatewayConfig,
     private readonly subscriptionService: SubscriptionService,
-    private readonly planConfig: StrapiPlanConfig
+    private readonly planConfig: StrapiPlanConfig,
+    /** Уведомления супер-админу об оплатах/отменах (best-effort, опционально). */
+    private readonly adminNotify?: AdminNotifyService
   ) {}
 
   async checkout(userId: number, plan: SubscriptionPlan): Promise<CheckoutResult> {
@@ -52,6 +59,12 @@ export class PaymentService {
     if (this.cfg.gateway === "test") {
       // activatePaid гасит ссылку (ставит linkRevokedAt) — одноразовость.
       const subscription = await this.subscriptionService.activatePaid(userId, plan);
+      await this.adminNotify?.subscriptionPaid({
+        userId,
+        plan,
+        expiresAt: subscription.expiresAt ?? null,
+        test: true,
+      });
       return { mode: "test", subscription };
     }
 
@@ -121,6 +134,12 @@ export class PaymentService {
     if (!parsed) return { received: true, activated: false };
 
     if (ACTIVE_STATES.has(verified.state)) {
+      // Снимок до активации — чтобы отличить новую оплату/продление от
+      // повторной доставки того же webhook (bePaid ретраит notify) и не
+      // дублировать уведомление админу.
+      const before = this.adminNotify
+        ? await this.subscriptionService.findCurrent(parsed.userId)
+        : null;
       // activatePaid гасит ссылку (ставит linkRevokedAt) — одноразовость.
       await this.subscriptionService.activatePaid(parsed.userId, parsed.plan, {
         expiresAt: verified.activeTo,
@@ -128,11 +147,45 @@ export class PaymentService {
         bepaidPlanId: verified.planId,
         paymentId: verified.lastTransactionUid,
       });
+      if (this.adminNotify) {
+        const wasActiveSamePlan =
+          before?.status === SubscriptionStatus.Active && before.plan === parsed.plan;
+        const sameExpiry =
+          (before?.expiresAt?.getTime() ?? null) ===
+          (verified.activeTo?.getTime() ?? null);
+        if (!(wasActiveSamePlan && sameExpiry)) {
+          await this.adminNotify.subscriptionPaid({
+            userId: parsed.userId,
+            plan: parsed.plan,
+            expiresAt: verified.activeTo ?? null,
+            renewal: wasActiveSamePlan,
+            test: this.cfg.bepaid.testMode,
+          });
+        }
+      }
       return { received: true, activated: true };
     }
 
     if (CANCELED_STATES.has(verified.state)) {
+      // Снимок до отмены: уведомляем админа только при реальном переходе
+      // купленной (платной) подписки в canceled — не на ретраях webhook и не
+      // после отмены, уже сделанной пользователем через cancelSubscription.
+      const before = this.adminNotify
+        ? await this.subscriptionService.findByBepaidSubscriptionId(verified.id)
+        : null;
       await this.subscriptionService.cancelByBepaidId(verified.id);
+      if (
+        before &&
+        before.status !== SubscriptionStatus.Canceled &&
+        PAID_PLANS.has(before.plan)
+      ) {
+        await this.adminNotify?.subscriptionCanceled({
+          userId: before.userId,
+          plan: before.plan,
+          expiresAt: before.expiresAt ?? null,
+          reason: verified.state === "failed" ? "payment_failed" : "bepaid",
+        });
+      }
     }
     return { received: true, activated: false };
   }
@@ -161,7 +214,23 @@ export class PaymentService {
     if (this.cfg.gateway === "bepaid" && sub?.bepaidSubscriptionId) {
       await this.ensureBepaidCanceled(sub.bepaidSubscriptionId);
     }
-    return this.subscriptionService.cancel(userId);
+    const canceled = await this.subscriptionService.cancel(userId);
+    // Уведомляем админа только об отмене реально купленной (платной) подписки
+    // и только при первом переходе в canceled (повторная отмена — тишина).
+    if (
+      canceled &&
+      sub &&
+      sub.status !== SubscriptionStatus.Canceled &&
+      PAID_PLANS.has(sub.plan)
+    ) {
+      await this.adminNotify?.subscriptionCanceled({
+        userId,
+        plan: sub.plan,
+        expiresAt: sub.expiresAt ?? null,
+        reason: "user",
+      });
+    }
+    return canceled;
   }
 
   /**

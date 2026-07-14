@@ -12,7 +12,10 @@ import { SubscriptionService } from "../services/subscription/subscription-servi
 import { BillingTokenService } from "../services/billing-token/billing-token-service";
 import { FeatureService } from "../services/feature/feature-service";
 import { PaymentService } from "../services/payment/payment-service";
+import { AdminNotifyService } from "../services/admin-notify/admin-notify-service";
+import { sendTelegramViaInternalBot } from "../infrastructure/telegram/internal-telegram-send";
 import { StrapiPlanConfig } from "../infrastructure/strapi/strapi-plan-config";
+import { StrapiSiteSettings } from "../infrastructure/strapi/strapi-site-settings";
 import { buildPaymentGatewayConfig } from "./payment-gateway-config";
 
 export interface ApiServices {
@@ -27,6 +30,7 @@ export interface ApiServices {
   billingTokenService: BillingTokenService;
   featureService: FeatureService;
   paymentService: PaymentService;
+  strapiSiteSettings: StrapiSiteSettings;
 }
 
 /** Минимальный набор для Nest Mini App API (без LLM/STT и т.д.). */
@@ -42,15 +46,23 @@ export function createApiServices(config: Config, dataSource: DataSource): ApiSe
   const subscriptionService = new SubscriptionService(dataSource);
   const billingTokenService = new BillingTokenService(config.billing.jwtSecret);
   const strapiPlanConfig = new StrapiPlanConfig(config.strapiApiUrl);
+  const strapiSiteSettings = new StrapiSiteSettings(config.strapiApiUrl);
   const featureService = new FeatureService(
     config.paymentMode,
     subscriptionService,
     strapiPlanConfig
   );
+  // Уведомления супер-админу (SUPER_ADMIN_USERNAME) об оплатах/отменах подписок.
+  const adminNotifyService = new AdminNotifyService(
+    config.superAdminUsername,
+    userService,
+    sendTelegramViaInternalBot
+  );
   const paymentService = new PaymentService(
     buildPaymentGatewayConfig(config),
     subscriptionService,
-    strapiPlanConfig
+    strapiPlanConfig,
+    adminNotifyService
   );
 
   return {
@@ -65,5 +77,6 @@ export function createApiServices(config: Config, dataSource: DataSource): ApiSe
     billingTokenService,
     featureService,
     paymentService,
+    strapiSiteSettings,
   };
 }

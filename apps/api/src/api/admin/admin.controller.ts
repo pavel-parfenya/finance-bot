@@ -31,6 +31,19 @@ export class AdminController {
     return this.adminApi.getBepaidSubscriptions(user);
   }
 
+  @Get("subscription-notifications")
+  async subscriptionNotifications(@TelegramUser() user: ResolvedTelegramUser) {
+    return this.adminApi.getSubscriptionNotifications(user);
+  }
+
+  @Post("subscription-notifications")
+  async setSubscriptionNotifications(
+    @TelegramUser() user: ResolvedTelegramUser,
+    @Body() body: { enabled?: boolean }
+  ) {
+    return this.adminApi.setSubscriptionNotifications(user, body.enabled === true);
+  }
+
   @Get("app-user-stats")
   async appUserStats(
     @TelegramUser() user: ResolvedTelegramUser,

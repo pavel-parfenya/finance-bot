@@ -8,6 +8,7 @@ import type {
   UserSettings,
   AppUserStatsResponse,
   AdminBepaidSubscriptionsResponse,
+  AdminSubscriptionNotificationsResponse,
   AdminTelegramUserOption,
   AdminUndeliveredRecipient,
   DebtDto,
@@ -18,6 +19,7 @@ import type {
   CustomCategoryUpdateRequest,
   SubscriptionInfo,
   SubscriptionPlansResponse,
+  ContactsResponse,
 } from "@finance-bot/shared";
 
 const BASE = typeof window !== "undefined" ? window.location.origin : "";
@@ -177,6 +179,16 @@ export async function fetchUserSettings(): Promise<UserSettings> {
   return res.json();
 }
 
+export async function fetchContacts(): Promise<ContactsResponse> {
+  try {
+    const res = await fetch(`${BASE}/api/contacts`);
+    if (!res.ok) throw new Error(String(res.status));
+    return (await res.json()) as ContactsResponse;
+  } catch {
+    return { email: null, telegramSupport: null, error: "Контакты недоступны" };
+  }
+}
+
 export async function fetchSubscription(): Promise<SubscriptionInfo | { error: string }> {
   const res = await fetch(`${BASE}/api/subscription`, { headers: headers() });
   if (!res.ok) {
@@ -277,6 +289,36 @@ export async function fetchAppUserStats(
     return { error: adminApiErrorMessage(data, res.status) };
   }
   return data as AppUserStatsResponse;
+}
+
+export async function fetchAdminSubscriptionNotifications(): Promise<
+  AdminSubscriptionNotificationsResponse | { error?: string }
+> {
+  const res = await fetch(`${BASE}/api/admin/subscription-notifications`, {
+    headers: headers(),
+  });
+  const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+  if (!res.ok) {
+    return { error: adminApiErrorMessage(data, res.status) };
+  }
+  return data as AdminSubscriptionNotificationsResponse;
+}
+
+export async function updateAdminSubscriptionNotifications(enabled: boolean): Promise<{
+  ok?: boolean;
+  enabled?: boolean;
+  error?: string;
+}> {
+  const res = await fetch(`${BASE}/api/admin/subscription-notifications`, {
+    method: "POST",
+    headers: { ...headers(), "Content-Type": "application/json" },
+    body: JSON.stringify({ enabled }),
+  });
+  const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+  if (!res.ok) {
+    return { error: adminApiErrorMessage(data, res.status) };
+  }
+  return data as { ok?: boolean; enabled?: boolean };
 }
 
 export async function fetchAdminBepaidSubscriptions(): Promise<

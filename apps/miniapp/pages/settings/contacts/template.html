@@ -1,0 +1,23 @@
+<div class="page-contacts">
+  <p v-if="loading" class="contacts-status">Загрузка…</p>
+  <p v-else-if="error" class="contacts-status">{{ error }}</p>
+  <section v-else class="contacts-section" aria-labelledby="contacts-heading">
+    <h2 id="contacts-heading" class="contacts-section-title">Связаться с нами</h2>
+    <div class="contacts-list">
+      <a v-if="email" class="contacts-row" :href="emailHref">
+        <span class="contacts-row-label">Email</span>
+        <span class="contacts-row-value">{{ email }}</span>
+      </a>
+      <a
+        v-if="telegramLabel"
+        class="contacts-row"
+        :href="telegramHref"
+        target="_blank"
+        rel="noopener"
+      >
+        <span class="contacts-row-label">Telegram</span>
+        <span class="contacts-row-value">{{ telegramLabel }}</span>
+      </a>
+    </div>
+  </section>
+</div>

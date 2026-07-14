@@ -13,6 +13,7 @@ import {
   BillingTokenService,
   FeatureService,
   PaymentService,
+  StrapiSiteSettings,
 } from "@finance-bot/server-core";
 import { getApiContainer } from "../di/api-container.context";
 import { HttpTelegramOutboundAdapter } from "../di/http-telegram-outbound.adapter";
@@ -25,6 +26,7 @@ import { WorkspaceModule } from "./workspace/workspace.module";
 import { UserModule } from "./user/user.module";
 import { DebtsModule } from "./debts/debts.module";
 import { AdminModule } from "./admin/admin.module";
+import { ContactsModule } from "./contacts/contacts.module";
 import { BillingModule } from "./billing/billing.module";
 import { SubscriptionModule } from "./subscription/subscription.module";
 import { AppStatsSnapshotScheduler } from "./app-stats-snapshot.scheduler";
@@ -38,6 +40,7 @@ import { AppStatsSnapshotScheduler } from "./app-stats-snapshot.scheduler";
     UserModule,
     DebtsModule,
     AdminModule,
+    ContactsModule,
     // Billing/подписка (/api/billing/*, /api/subscription) — в paid и test режимах (не в free).
     ...(config.paymentMode !== "free" ? [BillingModule, SubscriptionModule] : []),
   ],
@@ -77,6 +80,10 @@ import { AppStatsSnapshotScheduler } from "./app-stats-snapshot.scheduler";
       provide: PaymentService,
       useFactory: () => getApiContainer().paymentService,
     },
+    {
+      provide: StrapiSiteSettings,
+      useFactory: () => getApiContainer().strapiSiteSettings,
+    },
     { provide: BOT_TOKEN, useFactory: () => requireEnv("TELEGRAM_BOT_TOKEN") },
     { provide: TELEGRAM_OUTBOUND, useClass: HttpTelegramOutboundAdapter },
     TelegramAuthService,
@@ -95,6 +102,7 @@ import { AppStatsSnapshotScheduler } from "./app-stats-snapshot.scheduler";
     BillingTokenService,
     FeatureService,
     PaymentService,
+    StrapiSiteSettings,
     BOT_TOKEN,
     TELEGRAM_OUTBOUND,
     TelegramAuthService,

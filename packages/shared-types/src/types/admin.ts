@@ -11,3 +11,9 @@ export interface AdminUndeliveredRecipient {
   userId: number;
   displayName: string;
 }
+
+/** Тумблер уведомлений супер-админу об оплаченных/отменённых подписках. */
+export interface AdminSubscriptionNotificationsResponse {
+  enabled: boolean;
+  error?: string;
+}

@@ -97,6 +97,14 @@ export class UserService {
     return user;
   }
 
+  /** Тумблер уведомлений супер-админу об оплатах/отменах подписок. */
+  async setAdminSubscriptionNotifications(
+    userId: number,
+    enabled: boolean
+  ): Promise<void> {
+    await this.repo.update(userId, { adminSubscriptionNotifications: enabled });
+  }
+
   async findByUsername(username: string): Promise<User | null> {
     const normalized = username.replace(/^@/, "").toLowerCase();
     return this.repo

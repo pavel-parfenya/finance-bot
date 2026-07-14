@@ -142,7 +142,37 @@ INTERNAL_BOT_SECRET=<random>
 
 ---
 
-## 5. Диагностика
+## 5. Бэкапы БД
+
+Ежесуточный `pg_dump --format=custom` всей БД `finance_bot` (обе схемы: `public` + `strapi`)
+в `/var/backups/finance-bot/`, с TTL — дампы старше `BACKUP_TTL_DAYS` (по умолчанию 7 суток)
+удаляются после каждого успешного бэкапа. Скрипт и cron-файл версионируются в `deploy/backup/`
+и копируются на сервер (по образцу nginx-конфигов):
+
+```bash
+cd /opt/finance-bot && git pull --ff-only
+install -m 755 deploy/backup/pg-backup.sh /usr/local/bin/finance-bot-pg-backup
+install -m 644 deploy/backup/finance-bot-backup.cron /etc/cron.d/finance-bot-backup
+/usr/local/bin/finance-bot-pg-backup   # пробный прогон
+```
+
+Расписание — `30 3 * * *` (03:30 по времени сервера); TTL меняется правкой
+`BACKUP_TTL_DAYS` в `/etc/cron.d/finance-bot-backup`. Лог: `/var/log/finance-bot-backup.log`.
+
+> Дампы лежат на том же диске (9.8 ГБ), это защита от «уронили данные», а не от потери
+> сервера. custom-формат уже сжат; при росте БД уменьшить TTL или выгружать наружу.
+
+**Восстановление** (перезапишет текущие данные):
+```bash
+cd /opt/finance-bot
+docker compose -f docker-compose.prod.yml exec -T postgres \
+  pg_restore -U finance -d finance_bot --clean --if-exists \
+  < /var/backups/finance-bot/finance_bot-<дата>.dump
+```
+
+---
+
+## 6. Диагностика
 
 ```bash
 cd /opt/finance-bot

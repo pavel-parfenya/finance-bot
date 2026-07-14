@@ -8,4 +8,5 @@ export * from "./custom-category";
 export * from "./admin";
 export * from "./admin-bepaid";
 export * from "./subscription";
+export * from "./contacts";
 export * from "./plan-features";

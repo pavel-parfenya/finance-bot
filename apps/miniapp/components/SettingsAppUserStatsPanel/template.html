@@ -53,4 +53,20 @@
       <canvas ref="canvasRef" class="app-user-stats-chart" />
     </div>
   </template>
+
+  <label class="app-user-stats-notify">
+    <input
+      type="checkbox"
+      class="app-user-stats-notify-checkbox"
+      v-model="subscriptionNotifications"
+      :disabled="notifyLoading"
+      @change="onSubscriptionNotificationsChange"
+    />
+    <span class="app-user-stats-notify-body">
+      <span class="app-user-stats-notify-title">Уведомления о подписках</span>
+      <span class="app-user-stats-notify-hint">
+        Сообщения от бота об оплаченных и отменённых подписках.
+      </span>
+    </span>
+  </label>
 </div>
