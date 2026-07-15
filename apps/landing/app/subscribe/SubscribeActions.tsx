@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CmsPricingPlan } from "@/lib/cms";
 import type { SubscriptionPlan } from "@/lib/billing";
+import { fbq } from "@/components/MetaPixel";
 
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:10000"
@@ -38,6 +39,13 @@ export default function SubscribeActions({
   const [error, setError] = useState<string | null>(null);
 
   async function checkout(planId: SubscriptionPlan) {
+    // Meta Pixel: клик по кнопке выбора платного тарифа — до редиректа на оплату.
+    const plan = plans.find((p) => resolvePlanId(p) === planId);
+    fbq("track", "InitiateCheckout", {
+      content_name: planId,
+      ...(plan?.price != null ? { value: plan.price, currency: "BYN" } : {}),
+    });
+
     setLoadingPlan(planId);
     setMessage(null);
     setError(null);

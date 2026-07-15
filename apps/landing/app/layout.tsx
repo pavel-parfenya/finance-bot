@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import MetaPixel from "@/components/MetaPixel";
 import { getCmsSiteSettings } from "@/lib/cms";
 import "./globals.css";
 
@@ -32,6 +33,7 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body className="flex flex-col min-h-screen bg-cream text-neutral-900 font-sans antialiased">
+        <MetaPixel />
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
