@@ -35,16 +35,14 @@ export default function MetaPixel() {
     fbq("track", "PageView");
   }, [pathname]);
 
+  // noscript через innerHTML: если рендерить <img> как JSX-ребёнка, гидрация
+  // React создаёт его реальным DOM-элементом внутри <noscript>, и картинка
+  // грузится даже при включённом JS → дубль PageView на каждый визит.
   return (
-    <noscript>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        height="1"
-        width="1"
-        style={{ display: "none" }}
-        alt=""
-        src={`https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1`}
-      />
-    </noscript>
+    <noscript
+      dangerouslySetInnerHTML={{
+        __html: `<img height="1" width="1" style="display:none" alt="" src="https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1" />`,
+      }}
+    />
   );
 }
