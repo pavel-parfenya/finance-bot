@@ -1,4 +1,5 @@
-import { Body, Controller, Get, HttpCode, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Post, Req, UseGuards } from "@nestjs/common";
+import type { Request } from "express";
 import { BillingJwtGuard } from "./billing-jwt.guard";
 import { BepaidWebhookGuard } from "./bepaid-webhook.guard";
 import { BillingUserParam } from "./billing-user.decorator";
@@ -25,8 +26,24 @@ export class BillingController {
 
   @Post("checkout")
   @UseGuards(BillingJwtGuard)
-  checkout(@BillingUserParam() user: BillingUser, @Body() dto: CheckoutDto) {
-    return this.billingApi.checkout(user, dto?.plan);
+  checkout(
+    @BillingUserParam() user: BillingUser,
+    @Body() dto: CheckoutDto,
+    @Req() req: Request
+  ) {
+    // IP/UA реального браузера — для матчинга серверных событий Meta CAPI.
+    // За Cloudflare/nginx адрес клиента в X-Forwarded-For (первый в списке).
+    const forwarded = req.headers["x-forwarded-for"];
+    const clientIp =
+      (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(",")[0]?.trim() ||
+      req.ip;
+    return this.billingApi.checkout(user, dto?.plan, {
+      eventId: dto?.metaEventId,
+      fbp: dto?.fbp,
+      fbc: dto?.fbc,
+      clientIpAddress: clientIp,
+      clientUserAgent: req.headers["user-agent"],
+    });
   }
 
   @Post("cancel")

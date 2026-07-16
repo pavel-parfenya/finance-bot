@@ -13,6 +13,7 @@ import { BillingTokenService } from "../services/billing-token/billing-token-ser
 import { FeatureService } from "../services/feature/feature-service";
 import { PaymentService } from "../services/payment/payment-service";
 import { AdminNotifyService } from "../services/admin-notify/admin-notify-service";
+import { MetaCapiService } from "../services/meta-capi/meta-capi-service";
 import { sendTelegramViaInternalBot } from "../infrastructure/telegram/internal-telegram-send";
 import { StrapiPlanConfig } from "../infrastructure/strapi/strapi-plan-config";
 import { StrapiSiteSettings } from "../infrastructure/strapi/strapi-site-settings";
@@ -58,11 +59,19 @@ export function createApiServices(config: Config, dataSource: DataSource): ApiSe
     userService,
     sendTelegramViaInternalBot
   );
+  // Server-side события Meta (InitiateCheckout/Purchase) — выключены без токена.
+  const metaCapiService = new MetaCapiService({
+    pixelId: config.metaCapi.pixelId,
+    accessToken: config.metaCapi.accessToken,
+    eventSourceUrl: `${config.landingBaseUrl}/subscribe`,
+    testEventCode: config.metaCapi.testEventCode,
+  });
   const paymentService = new PaymentService(
     buildPaymentGatewayConfig(config),
     subscriptionService,
     strapiPlanConfig,
-    adminNotifyService
+    adminNotifyService,
+    metaCapiService
   );
 
   return {

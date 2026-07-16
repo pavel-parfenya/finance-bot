@@ -8,6 +8,7 @@ import {
   PaymentService,
   PaymentError,
   resolveEffectivePlan,
+  type MetaCapiClientContext,
 } from "@finance-bot/server-core";
 import type { BillingUser } from "./billing-user.types";
 
@@ -22,6 +23,25 @@ function isValidPlan(plan: unknown): plan is SubscriptionPlan {
     plan === SubscriptionPlan.ProMonth ||
     plan === SubscriptionPlan.ProYear
   );
+}
+
+/**
+ * Поля из тела запроса уходят в Meta CAPI — пропускаем только строки разумной
+ * длины, чтобы произвольный JSON клиента не улетал во внешний API как есть.
+ */
+function sanitizeMetaClient(
+  client?: MetaCapiClientContext
+): MetaCapiClientContext | undefined {
+  if (!client) return undefined;
+  const str = (v: unknown): string | undefined =>
+    typeof v === "string" && v.length > 0 && v.length <= 512 ? v : undefined;
+  return {
+    eventId: str(client.eventId),
+    fbp: str(client.fbp),
+    fbc: str(client.fbc),
+    clientIpAddress: str(client.clientIpAddress),
+    clientUserAgent: str(client.clientUserAgent),
+  };
 }
 
 /** Публичная форма подписки для лендинга/Mini App. */
@@ -79,12 +99,20 @@ export class BillingApiService {
    * - `bepaid`-шлюз: возвращается `redirectUrl` (`mode: "redirect"`) — страница ввода
    *   карты bePaid; дальше bePaid сам списывает оплату по расписанию (автопродление).
    */
-  async checkout(billingUser: BillingUser, plan: unknown) {
+  async checkout(
+    billingUser: BillingUser,
+    plan: unknown,
+    metaClient?: MetaCapiClientContext
+  ) {
     if (!isValidPlan(plan) || !PAID_PLANS.has(plan)) {
       throw new BadRequestException({ error: "Недопустимый тариф для оплаты" });
     }
     try {
-      const result = await this.paymentService.checkout(billingUser.userId, plan);
+      const result = await this.paymentService.checkout(
+        billingUser.userId,
+        plan,
+        sanitizeMetaClient(metaClient)
+      );
       if (result.mode === "test") {
         return {
           ok: true,

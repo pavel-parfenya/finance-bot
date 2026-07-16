@@ -31,6 +31,10 @@ export {
   type CheckoutResult,
   type PaymentGatewayConfig,
 } from "./services/payment/payment-service";
+export {
+  MetaCapiService,
+  type MetaCapiClientContext,
+} from "./services/meta-capi/meta-capi-service";
 export type {
   BepaidConfig,
   BepaidSubscriptionListItem,

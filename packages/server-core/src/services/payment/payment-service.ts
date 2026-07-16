@@ -5,6 +5,10 @@ import {
 } from "../../database/entities";
 import type { SubscriptionService } from "../subscription/subscription-service";
 import type { AdminNotifyService } from "../admin-notify/admin-notify-service";
+import type {
+  MetaCapiService,
+  MetaCapiClientContext,
+} from "../meta-capi/meta-capi-service";
 import type { StrapiPlanConfig } from "../../infrastructure/strapi/strapi-plan-config";
 import {
   ensurePlan,
@@ -48,10 +52,17 @@ export class PaymentService {
     private readonly subscriptionService: SubscriptionService,
     private readonly planConfig: StrapiPlanConfig,
     /** Уведомления супер-админу об оплатах/отменах (best-effort, опционально). */
-    private readonly adminNotify?: AdminNotifyService
+    private readonly adminNotify?: AdminNotifyService,
+    /** Meta Conversions API: server-side InitiateCheckout/Purchase (best-effort, опционально). */
+    private readonly metaCapi?: MetaCapiService
   ) {}
 
-  async checkout(userId: number, plan: SubscriptionPlan): Promise<CheckoutResult> {
+  async checkout(
+    userId: number,
+    plan: SubscriptionPlan,
+    /** Данные браузера с лендинга — для матчинга/дедупа событий Meta CAPI. */
+    metaClient?: MetaCapiClientContext
+  ): Promise<CheckoutResult> {
     if (!PAID_PLANS.has(plan)) {
       throw new PaymentError("Недопустимый тариф для оплаты");
     }
@@ -103,6 +114,19 @@ export class PaymentService {
       bepaidPlanId: planId,
     });
 
+    // Meta CAPI: серверный InitiateCheckout (дедуп с браузерным по event_id;
+    // send() ловит ошибки сам и оплату не прерывает). Тестовые оплаты
+    // (PAYMENT_MODE=test) в рекламную статистику не отправляем.
+    if (!this.cfg.bepaid.testMode) {
+      await this.metaCapi?.initiateCheckout({
+        userId,
+        plan,
+        value: amount,
+        currency: this.cfg.bepaid.currency,
+        client: metaClient,
+      });
+    }
+
     return { mode: "redirect", redirectUrl: subscription.redirectUrl };
   }
 
@@ -136,10 +160,11 @@ export class PaymentService {
     if (ACTIVE_STATES.has(verified.state)) {
       // Снимок до активации — чтобы отличить новую оплату/продление от
       // повторной доставки того же webhook (bePaid ретраит notify) и не
-      // дублировать уведомление админу.
-      const before = this.adminNotify
-        ? await this.subscriptionService.findCurrent(parsed.userId)
-        : null;
+      // дублировать уведомление админу / событие Purchase.
+      const before =
+        this.adminNotify || this.metaCapi?.enabled
+          ? await this.subscriptionService.findCurrent(parsed.userId)
+          : null;
       // activatePaid гасит ссылку (ставит linkRevokedAt) — одноразовость.
       await this.subscriptionService.activatePaid(parsed.userId, parsed.plan, {
         expiresAt: verified.activeTo,
@@ -147,21 +172,33 @@ export class PaymentService {
         bepaidPlanId: verified.planId,
         paymentId: verified.lastTransactionUid,
       });
-      if (this.adminNotify) {
-        const wasActiveSamePlan =
-          before?.status === SubscriptionStatus.Active && before.plan === parsed.plan;
-        const sameExpiry =
-          (before?.expiresAt?.getTime() ?? null) ===
-          (verified.activeTo?.getTime() ?? null);
-        if (!(wasActiveSamePlan && sameExpiry)) {
-          await this.adminNotify.subscriptionPaid({
-            userId: parsed.userId,
-            plan: parsed.plan,
-            expiresAt: verified.activeTo ?? null,
-            renewal: wasActiveSamePlan,
-            test: this.cfg.bepaid.testMode,
-          });
-        }
+      const wasActiveSamePlan =
+        before?.status === SubscriptionStatus.Active && before.plan === parsed.plan;
+      const sameExpiry =
+        (before?.expiresAt?.getTime() ?? null) === (verified.activeTo?.getTime() ?? null);
+      const duplicateDelivery = wasActiveSamePlan && sameExpiry;
+      if (this.adminNotify && !duplicateDelivery) {
+        await this.adminNotify.subscriptionPaid({
+          userId: parsed.userId,
+          plan: parsed.plan,
+          expiresAt: verified.activeTo ?? null,
+          renewal: wasActiveSamePlan,
+          test: this.cfg.bepaid.testMode,
+        });
+      }
+      // Meta CAPI: Purchase на первую оплату и каждое продление. event_id = uid
+      // транзакции — вторая линия защиты от ретраев webhook (Meta дедуплицирует).
+      if (this.metaCapi?.enabled && !duplicateDelivery && !this.cfg.bepaid.testMode) {
+        const value = await this.resolveAmount(parsed.plan).catch(() => 0);
+        await this.metaCapi.purchase({
+          userId: parsed.userId,
+          plan: parsed.plan,
+          value,
+          currency: this.cfg.bepaid.currency,
+          eventId:
+            verified.lastTransactionUid ??
+            `${verified.id}:${verified.activeTo?.getTime() ?? 0}`,
+        });
       }
       return { received: true, activated: true };
     }

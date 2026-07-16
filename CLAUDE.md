@@ -104,6 +104,8 @@ A single `.env` file at the repo root is loaded by both apps. Per-app overrides 
 | `PUBLIC_BASE_URL` / `RENDER_EXTERNAL_URL` | Mini App base URL |
 | `MODE` | `polling` (default) or `webhook` |
 | `EMBED_TELEGRAM_BOT` | `true` to run bot inside API process |
+| `META_CAPI_ACCESS_TOKEN` | Meta Conversions API token; empty = server-side events disabled |
+| `META_PIXEL_ID` | Meta dataset id (defaults to the landing's pixel id) |
 
 ### Database
 
