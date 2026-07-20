@@ -11,7 +11,7 @@ describe("sha256", () => {
 
 describe("buildEvent", () => {
   const base = {
-    eventName: "InitiateCheckout" as const,
+    eventName: "Subscribe" as const,
     userId: 42,
     eventSourceUrl: "https://l/subscribe",
     value: 9.9,
@@ -22,9 +22,8 @@ describe("buildEvent", () => {
   it("с данными браузера — website-событие с полным user_data", () => {
     const event = buildEvent({
       ...base,
-      eventId: "evt-1",
+      eventId: "trx-1",
       client: {
-        eventId: "evt-1",
         fbp: "fb.1.1.2",
         fbc: "fb.1.1.click",
         clientIpAddress: "1.2.3.4",
@@ -33,7 +32,7 @@ describe("buildEvent", () => {
     });
     expect(event.action_source).toBe("website");
     expect(event.event_source_url).toBe("https://l/subscribe");
-    expect(event.event_id).toBe("evt-1");
+    expect(event.event_id).toBe("trx-1");
     expect(event.user_data).toEqual({
       external_id: [sha256("42")],
       client_ip_address: "1.2.3.4",
@@ -49,25 +48,9 @@ describe("buildEvent", () => {
   });
 
   it("без user-agent — system_generated (website без UA отклоняется Graph API)", () => {
-    const event = buildEvent({ ...base, eventName: "Purchase", eventId: "trx-1" });
+    const event = buildEvent({ ...base, eventId: "trx-1" });
     expect(event.action_source).toBe("system_generated");
     expect(event.event_source_url).toBeUndefined();
     expect(event.user_data).toEqual({ external_id: [sha256("42")] });
-  });
-
-  it("PageView — без userId и value: нет external_id и custom_data", () => {
-    const event = buildEvent({
-      eventName: "PageView",
-      eventSourceUrl: "https://l/pricing",
-      eventId: "pv-1",
-      client: { clientUserAgent: "Mozilla/5.0", fbp: "fb.1.1.2" },
-    });
-    expect(event.action_source).toBe("website");
-    expect(event.event_source_url).toBe("https://l/pricing");
-    expect(event.user_data).toEqual({
-      client_user_agent: "Mozilla/5.0",
-      fbp: "fb.1.1.2",
-    });
-    expect(event.custom_data).toBeUndefined();
   });
 });

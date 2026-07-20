@@ -4,8 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CmsPricingPlan } from "@/lib/cms";
 import type { SubscriptionPlan } from "@/lib/billing";
-import { fbq } from "@/components/MetaPixel";
-import { newMetaEventId } from "@/lib/meta-pixel";
 
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:10000"
@@ -46,21 +44,6 @@ export default function SubscribeActions({
   const [error, setError] = useState<string | null>(null);
 
   async function checkout(planId: SubscriptionPlan) {
-    // Meta Pixel: клик по кнопке выбора платного тарифа — до редиректа на оплату.
-    // Тот же eventID уходит на сервер: бэкенд шлёт InitiateCheckout через
-    // Conversions API, Meta дедуплицирует пару по event_id.
-    const plan = plans.find((p) => resolvePlanId(p) === planId);
-    const eventId = newMetaEventId();
-    fbq(
-      "track",
-      "InitiateCheckout",
-      {
-        content_name: planId,
-        ...(plan?.price != null ? { value: plan.price, currency: "BYN" } : {}),
-      },
-      { eventID: eventId }
-    );
-
     setLoadingPlan(planId);
     setMessage(null);
     setError(null);
@@ -73,7 +56,7 @@ export default function SubscribeActions({
         },
         body: JSON.stringify({
           plan: planId,
-          metaEventId: eventId,
+          // fbp/fbc браузера — переиспользуются событием Subscribe (Meta CAPI) из webhook оплаты.
           fbp: readCookie("_fbp"),
           fbc: readCookie("_fbc"),
         }),

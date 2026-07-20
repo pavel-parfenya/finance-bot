@@ -53,7 +53,7 @@ export class PaymentService {
     private readonly planConfig: StrapiPlanConfig,
     /** Уведомления супер-админу об оплатах/отменах (best-effort, опционально). */
     private readonly adminNotify?: AdminNotifyService,
-    /** Meta Conversions API: server-side InitiateCheckout/Purchase (best-effort, опционально). */
+    /** Meta Conversions API: server-side событие Subscribe (best-effort, опционально). */
     private readonly metaCapi?: MetaCapiService
   ) {}
 
@@ -114,18 +114,9 @@ export class PaymentService {
       bepaidPlanId: planId,
     });
 
-    // Meta CAPI: серверный InitiateCheckout (дедуп с браузерным по event_id;
-    // send() ловит ошибки сам и оплату не прерывает). Тестовые оплаты
-    // (PAYMENT_MODE=test) в рекламную статистику не отправляем.
-    if (!this.cfg.bepaid.testMode) {
-      await this.metaCapi?.initiateCheckout({
-        userId,
-        plan,
-        value: amount,
-        currency: this.cfg.bepaid.currency,
-        client: metaClient,
-      });
-    }
+    // Meta CAPI: запоминаем fbp/fbc/IP/UA браузера — переиспользуются событием
+    // Subscribe из webhook (checkout не шлёт собственного события).
+    this.metaCapi?.rememberCheckoutContext(userId, metaClient);
 
     return { mode: "redirect", redirectUrl: subscription.redirectUrl };
   }
@@ -160,7 +151,7 @@ export class PaymentService {
     if (ACTIVE_STATES.has(verified.state)) {
       // Снимок до активации — чтобы отличить новую оплату/продление от
       // повторной доставки того же webhook (bePaid ретраит notify) и не
-      // дублировать уведомление админу / событие Purchase.
+      // дублировать уведомление админу / событие Subscribe.
       const before =
         this.adminNotify || this.metaCapi?.enabled
           ? await this.subscriptionService.findCurrent(parsed.userId)
@@ -186,11 +177,12 @@ export class PaymentService {
           test: this.cfg.bepaid.testMode,
         });
       }
-      // Meta CAPI: Purchase на первую оплату и каждое продление. event_id = uid
-      // транзакции — вторая линия защиты от ретраев webhook (Meta дедуплицирует).
+      // Meta CAPI: Subscribe на первую оплату и каждое продление любого тарифа.
+      // event_id = uid транзакции — вторая линия защиты от ретраев webhook
+      // (Meta дедуплицирует).
       if (this.metaCapi?.enabled && !duplicateDelivery && !this.cfg.bepaid.testMode) {
         const value = await this.resolveAmount(parsed.plan).catch(() => 0);
-        await this.metaCapi.purchase({
+        await this.metaCapi.subscribe({
           userId: parsed.userId,
           plan: parsed.plan,
           value,

@@ -2,9 +2,7 @@ import type {
   MetaCapiClientContext,
   MetaCapiConfig,
   MetaCapiEvent,
-  MetaCapiInitiateCheckoutInput,
-  MetaCapiPageViewInput,
-  MetaCapiPurchaseInput,
+  MetaCapiSubscribeInput,
 } from "./meta-capi-service.types";
 import { buildEvent } from "./meta-capi-service.utils";
 
@@ -14,15 +12,16 @@ const GRAPH_API_URL = "https://graph.facebook.com/v22.0";
 
 /**
  * Контекст браузера (fbp/fbc/ip/UA), запомненный на checkout, переиспользуется
- * для Purchase из webhook — первая оплата приходит через минуты после checkout,
+ * для Subscribe из webhook — первая оплата приходит через минуты после checkout,
  * и событие уходит с полным матчингом. Продления спустя месяцы контекста не
  * имеют и уходят как system_generated.
  */
 const CLIENT_CONTEXT_TTL_MS = 48 * 60 * 60 * 1000;
 
 /**
- * Meta Conversions API: server-side события для рекламной атрибуции.
- * Все отправки best-effort — ошибка логируется и никогда не прерывает оплату.
+ * Meta Conversions API: единственное отправляемое событие — `Subscribe` на
+ * подтверждённую оплату подписки (bePaid webhook), любой тариф, включая продления.
+ * Отправка best-effort — ошибка логируется и никогда не прерывает оплату.
  * Без токена (`META_CAPI_ACCESS_TOKEN`) сервис молча выключен.
  */
 export class MetaCapiService {
@@ -37,54 +36,25 @@ export class MetaCapiService {
     return Boolean(this.cfg.pixelId && this.cfg.accessToken);
   }
 
-  /**
-   * Просмотр страницы лендинга. Анонимен (нет userId) — матчинг только по
-   * fbp/fbc/ip/UA. Дедуп с браузерным `fbq('track','PageView')` по event_id.
-   */
-  async pageView(input: MetaCapiPageViewInput): Promise<void> {
-    await this.send(
-      buildEvent({
-        eventName: "PageView",
-        eventId: input.client.eventId,
-        eventSourceUrl: input.url,
-        client: input.client,
-      })
-    );
-  }
-
-  /** Клик «выбрать тариф» → создание checkout-сессии. Дедуп с браузерным событием по event_id. */
-  async initiateCheckout(input: MetaCapiInitiateCheckoutInput): Promise<void> {
-    if (input.client) {
-      this.clientContexts.set(input.userId, { ctx: input.client, at: Date.now() });
+  /** Запоминает fbp/fbc/IP/UA браузера на момент checkout — для матчинга Subscribe из webhook. */
+  rememberCheckoutContext(userId: number, client?: MetaCapiClientContext): void {
+    if (client) {
+      this.clientContexts.set(userId, { ctx: client, at: Date.now() });
     }
-    await this.send(
-      buildEvent({
-        eventName: "InitiateCheckout",
-        userId: input.userId,
-        eventId: input.client?.eventId,
-        eventSourceUrl: this.cfg.eventSourceUrl,
-        client: input.client,
-        value: input.value,
-        currency: input.currency,
-        contentName: input.plan,
-      })
-    );
   }
 
-  /** Подтверждённая оплата (bePaid webhook): первая покупка или продление. */
-  async purchase(input: MetaCapiPurchaseInput): Promise<void> {
+  /** Подтверждённая оплата (bePaid webhook): первая покупка или продление любого тарифа. */
+  async subscribe(input: MetaCapiSubscribeInput): Promise<void> {
     const stored = this.clientContexts.get(input.userId);
     const client =
       stored && Date.now() - stored.at < CLIENT_CONTEXT_TTL_MS ? stored.ctx : undefined;
     await this.send(
       buildEvent({
-        eventName: "Purchase",
+        eventName: "Subscribe",
         userId: input.userId,
         eventId: input.eventId,
         eventSourceUrl: this.cfg.eventSourceUrl,
-        // eventId у браузерного InitiateCheckout свой — на Purchase переносим
-        // только идентификаторы матчинга (fbp/fbc/ip/UA), не event_id клика.
-        client: client ? { ...client, eventId: undefined } : undefined,
+        client,
         value: input.value,
         currency: input.currency,
         contentName: input.plan,

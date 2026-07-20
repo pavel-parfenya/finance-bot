@@ -14,7 +14,6 @@ import {
   FeatureService,
   PaymentService,
   StrapiSiteSettings,
-  MetaCapiService,
 } from "@finance-bot/server-core";
 import { getApiContainer } from "../di/api-container.context";
 import { HttpTelegramOutboundAdapter } from "../di/http-telegram-outbound.adapter";
@@ -30,7 +29,6 @@ import { AdminModule } from "./admin/admin.module";
 import { ContactsModule } from "./contacts/contacts.module";
 import { BillingModule } from "./billing/billing.module";
 import { SubscriptionModule } from "./subscription/subscription.module";
-import { TrackingModule } from "./tracking/tracking.module";
 import { AppStatsSnapshotScheduler } from "./app-stats-snapshot.scheduler";
 
 @Global()
@@ -43,8 +41,6 @@ import { AppStatsSnapshotScheduler } from "./app-stats-snapshot.scheduler";
     DebtsModule,
     AdminModule,
     ContactsModule,
-    // Meta CAPI PageView — работает независимо от гейтинга подписки (гейтинг про биллинг).
-    TrackingModule,
     // Billing/подписка (/api/billing/*, /api/subscription) — в paid и test режимах (не в free).
     ...(config.paymentMode !== "free" ? [BillingModule, SubscriptionModule] : []),
   ],
@@ -88,10 +84,6 @@ import { AppStatsSnapshotScheduler } from "./app-stats-snapshot.scheduler";
       provide: StrapiSiteSettings,
       useFactory: () => getApiContainer().strapiSiteSettings,
     },
-    {
-      provide: MetaCapiService,
-      useFactory: () => getApiContainer().metaCapiService,
-    },
     { provide: BOT_TOKEN, useFactory: () => requireEnv("TELEGRAM_BOT_TOKEN") },
     { provide: TELEGRAM_OUTBOUND, useClass: HttpTelegramOutboundAdapter },
     TelegramAuthService,
@@ -111,7 +103,6 @@ import { AppStatsSnapshotScheduler } from "./app-stats-snapshot.scheduler";
     FeatureService,
     PaymentService,
     StrapiSiteSettings,
-    MetaCapiService,
     BOT_TOKEN,
     TELEGRAM_OUTBOUND,
     TelegramAuthService,
