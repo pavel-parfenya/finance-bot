@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { CmsPricingPlan } from "@/lib/cms";
 import type { SubscriptionPlan } from "@/lib/billing";
 import { fbq } from "@/components/MetaPixel";
+import { newMetaEventId } from "@/lib/meta-pixel";
 
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:10000"
@@ -22,13 +23,6 @@ function resolvePlanId(plan: CmsPricingPlan): SubscriptionPlan | null {
 function readCookie(name: string): string | undefined {
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
   return match ? decodeURIComponent(match[1]) : undefined;
-}
-
-/** id события для дедупликации браузерного Pixel и серверного Conversions API. */
-function newEventId(): string {
-  return typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 interface Props {
@@ -56,7 +50,7 @@ export default function SubscribeActions({
     // Тот же eventID уходит на сервер: бэкенд шлёт InitiateCheckout через
     // Conversions API, Meta дедуплицирует пару по event_id.
     const plan = plans.find((p) => resolvePlanId(p) === planId);
-    const eventId = newEventId();
+    const eventId = newMetaEventId();
     fbq(
       "track",
       "InitiateCheckout",

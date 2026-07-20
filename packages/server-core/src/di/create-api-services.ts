@@ -32,6 +32,8 @@ export interface ApiServices {
   featureService: FeatureService;
   paymentService: PaymentService;
   strapiSiteSettings: StrapiSiteSettings;
+  /** Server-side события Meta CAPI — используется и PaymentService, и публичный /api/tracking. */
+  metaCapiService: MetaCapiService;
 }
 
 /** Минимальный набор для Nest Mini App API (без LLM/STT и т.д.). */
@@ -87,5 +89,6 @@ export function createApiServices(config: Config, dataSource: DataSource): ApiSe
     featureService,
     paymentService,
     strapiSiteSettings,
+    metaCapiService,
   };
 }

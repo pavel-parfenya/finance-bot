@@ -3,6 +3,7 @@ import type {
   MetaCapiConfig,
   MetaCapiEvent,
   MetaCapiInitiateCheckoutInput,
+  MetaCapiPageViewInput,
   MetaCapiPurchaseInput,
 } from "./meta-capi-service.types";
 import { buildEvent } from "./meta-capi-service.utils";
@@ -34,6 +35,21 @@ export class MetaCapiService {
 
   get enabled(): boolean {
     return Boolean(this.cfg.pixelId && this.cfg.accessToken);
+  }
+
+  /**
+   * Просмотр страницы лендинга. Анонимен (нет userId) — матчинг только по
+   * fbp/fbc/ip/UA. Дедуп с браузерным `fbq('track','PageView')` по event_id.
+   */
+  async pageView(input: MetaCapiPageViewInput): Promise<void> {
+    await this.send(
+      buildEvent({
+        eventName: "PageView",
+        eventId: input.client.eventId,
+        eventSourceUrl: input.url,
+        client: input.client,
+      })
+    );
   }
 
   /** Клик «выбрать тариф» → создание checkout-сессии. Дедуп с браузерным событием по event_id. */

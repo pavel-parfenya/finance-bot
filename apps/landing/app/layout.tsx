@@ -35,6 +35,9 @@ export default function RootLayout({
     <html lang="ru">
       <head>
         {/* Meta Pixel: официальный сниппет — init + PageView первой загрузки.
+            eventID первого PageView кладём в window.__fbInitialPvId — <MetaPixel />
+            подхватывает его при монтировании и досылает тот же id на сервер
+            (Conversions API), чтобы Meta задедуплицировал пару Pixel+CAPI.
             PageView при SPA-навигациях досылает <MetaPixel /> в body. */}
         <script
           dangerouslySetInnerHTML={{
@@ -47,7 +50,9 @@ t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
 fbq('init', '${META_PIXEL_ID}');
-fbq('track', 'PageView');`,
+var pvId = (crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now()+'-'+Math.random().toString(36).slice(2));
+window.__fbInitialPvId = pvId;
+fbq('track', 'PageView', {}, {eventID: pvId});`,
           }}
         />
       </head>

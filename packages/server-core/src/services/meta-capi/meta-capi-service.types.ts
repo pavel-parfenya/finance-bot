@@ -39,21 +39,33 @@ export interface MetaCapiPurchaseInput {
   eventId: string;
 }
 
+/**
+ * Просмотр страницы лендинга. Без `userId` — на этом этапе посетитель обычно
+ * анонимен (заходит до логина/оплаты), матчинг только по fbp/fbc/ip/UA.
+ */
+export interface MetaCapiPageViewInput {
+  /** URL просмотренной страницы (`event_source_url`). */
+  url: string;
+  client: MetaCapiClientContext;
+}
+
 /** Событие Graph API `POST /{pixel_id}/events` (поля по спецификации CAPI). */
 export interface MetaCapiEvent {
-  event_name: "InitiateCheckout" | "Purchase";
+  event_name: "PageView" | "InitiateCheckout" | "Purchase";
   event_time: number;
   event_id?: string;
   action_source: "website" | "system_generated";
   event_source_url?: string;
   user_data: {
-    external_id: string[];
+    /** Есть только у авторизованных событий (InitiateCheckout/Purchase) — PageView анонимен. */
+    external_id?: string[];
     client_ip_address?: string;
     client_user_agent?: string;
     fbp?: string;
     fbc?: string;
   };
-  custom_data: {
+  /** Отсутствует у PageView — value/currency есть только у событий с суммой оплаты. */
+  custom_data?: {
     value: number;
     currency: string;
     content_name?: string;

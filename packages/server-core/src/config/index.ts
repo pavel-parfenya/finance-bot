@@ -167,13 +167,14 @@ export const config = {
   /** Базовый URL Strapi CMS — источник конфигурации тарифов/фич (только чтение). */
   strapiApiUrl: resolveStrapiApiUrl(),
   /**
-   * Meta Conversions API — server-side события InitiateCheckout/Purchase.
+   * Meta Conversions API — server-side события PageView/InitiateCheckout/Purchase.
    * Без META_CAPI_ACCESS_TOKEN (Events Manager → Настройки → Conversions API →
-   * «Создать токен доступа») отправка выключена. ID пикселя должен совпадать
-   * с META_PIXEL_ID лендинга (apps/landing/lib/meta-pixel.ts).
+   * «Создать токен доступа») отправка выключена. ID датасета должен совпадать
+   * с META_PIXEL_ID лендинга (apps/landing/lib/meta-pixel.ts) — иначе дедуп
+   * браузерных и серверных событий по event_id не сработает.
    */
   metaCapi: {
-    pixelId: process.env["META_PIXEL_ID"] ?? "874752041946459",
+    pixelId: process.env["META_PIXEL_ID"] ?? "2222890605164366",
     accessToken: process.env["META_CAPI_ACCESS_TOKEN"] ?? "",
     /** Код с вкладки «Тестирование событий» — только для проверки интеграции. */
     testEventCode: process.env["META_CAPI_TEST_EVENT_CODE"] ?? null,

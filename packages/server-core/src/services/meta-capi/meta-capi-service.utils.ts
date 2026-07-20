@@ -8,12 +8,14 @@ export function sha256(value: string): string {
 
 export interface BuildEventInput {
   eventName: MetaCapiEvent["event_name"];
-  userId: number;
+  /** Нет у PageView — посетитель на этом этапе обычно анонимен. */
+  userId?: number;
   eventId?: string;
   eventSourceUrl: string;
   client?: MetaCapiClientContext;
-  value: number;
-  currency: string;
+  /** Нет у PageView — событие без суммы оплаты. */
+  value?: number;
+  currency?: string;
   contentName?: string;
 }
 
@@ -33,16 +35,22 @@ export function buildEvent(input: BuildEventInput): MetaCapiEvent {
     ...(website ? { event_source_url: input.eventSourceUrl } : {}),
     user_data: {
       // Внутренний id пользователя: Meta матчит его с external_id других событий.
-      external_id: [sha256(String(input.userId))],
+      ...(input.userId !== undefined
+        ? { external_id: [sha256(String(input.userId))] }
+        : {}),
       ...(client?.clientIpAddress ? { client_ip_address: client.clientIpAddress } : {}),
       ...(client?.clientUserAgent ? { client_user_agent: client.clientUserAgent } : {}),
       ...(client?.fbp ? { fbp: client.fbp } : {}),
       ...(client?.fbc ? { fbc: client.fbc } : {}),
     },
-    custom_data: {
-      value: input.value,
-      currency: input.currency,
-      ...(input.contentName ? { content_name: input.contentName } : {}),
-    },
+    ...(input.value !== undefined
+      ? {
+          custom_data: {
+            value: input.value,
+            currency: input.currency ?? "",
+            ...(input.contentName ? { content_name: input.contentName } : {}),
+          },
+        }
+      : {}),
   };
 }

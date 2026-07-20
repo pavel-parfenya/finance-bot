@@ -54,4 +54,20 @@ describe("buildEvent", () => {
     expect(event.event_source_url).toBeUndefined();
     expect(event.user_data).toEqual({ external_id: [sha256("42")] });
   });
+
+  it("PageView — без userId и value: нет external_id и custom_data", () => {
+    const event = buildEvent({
+      eventName: "PageView",
+      eventSourceUrl: "https://l/pricing",
+      eventId: "pv-1",
+      client: { clientUserAgent: "Mozilla/5.0", fbp: "fb.1.1.2" },
+    });
+    expect(event.action_source).toBe("website");
+    expect(event.event_source_url).toBe("https://l/pricing");
+    expect(event.user_data).toEqual({
+      client_user_agent: "Mozilla/5.0",
+      fbp: "fb.1.1.2",
+    });
+    expect(event.custom_data).toBeUndefined();
+  });
 });
