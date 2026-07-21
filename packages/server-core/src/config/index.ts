@@ -167,11 +167,11 @@ export const config = {
   /** Базовый URL Strapi CMS — источник конфигурации тарифов/фич (только чтение). */
   strapiApiUrl: resolveStrapiApiUrl(),
   /**
-   * Meta Conversions API — единственное server-side событие Subscribe (оплата
-   * подписки, bePaid webhook). Без META_CAPI_ACCESS_TOKEN (Events Manager →
-   * Настройки → Conversions API → «Создать токен доступа») отправка выключена.
-   * ID датасета должен совпадать с META_PIXEL_ID лендинга
-   * (apps/landing/lib/meta-pixel.ts) — иначе событие уйдёт в другой пиксель.
+   * Meta Conversions API — server-side события InitiateCheckout/Purchase/Subscribe.
+   * Без META_CAPI_ACCESS_TOKEN (Events Manager → Настройки → Conversions API →
+   * «Создать токен доступа») отправка выключена. ID датасета должен совпадать
+   * с META_PIXEL_ID лендинга (apps/landing/lib/meta-pixel.ts) — иначе дедуп
+   * браузерных и серверных событий по event_id не сработает.
    */
   metaCapi: {
     pixelId: process.env["META_PIXEL_ID"] ?? "2222890605164366",

@@ -59,7 +59,7 @@ export function createApiServices(config: Config, dataSource: DataSource): ApiSe
     userService,
     sendTelegramViaInternalBot
   );
-  // Server-side событие Meta Subscribe (на оплату подписки) — выключено без токена.
+  // Server-side события Meta (InitiateCheckout/Purchase/Subscribe) — выключены без токена.
   const metaCapiService = new MetaCapiService({
     pixelId: config.metaCapi.pixelId,
     accessToken: config.metaCapi.accessToken,

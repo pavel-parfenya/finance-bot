@@ -31,13 +31,14 @@ export class BillingController {
     @Body() dto: CheckoutDto,
     @Req() req: Request
   ) {
-    // IP/UA реального браузера — для матчинга события Subscribe (Meta CAPI).
+    // IP/UA реального браузера — для матчинга серверных событий Meta CAPI.
     // За Cloudflare/nginx адрес клиента в X-Forwarded-For (первый в списке).
     const forwarded = req.headers["x-forwarded-for"];
     const clientIp =
       (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(",")[0]?.trim() ||
       req.ip;
     return this.billingApi.checkout(user, dto?.plan, {
+      eventId: dto?.metaEventId,
       fbp: dto?.fbp,
       fbc: dto?.fbc,
       clientIpAddress: clientIp,

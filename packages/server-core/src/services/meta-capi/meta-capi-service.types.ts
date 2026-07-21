@@ -11,6 +11,8 @@ export interface MetaCapiConfig {
 
 /** Данные браузера покупателя, прокинутые с лендинга через POST /api/billing/checkout. */
 export interface MetaCapiClientContext {
+  /** event_id браузерного InitiateCheckout — Meta дедуплицирует пары Pixel+CAPI по нему. */
+  eventId?: string;
   /** Cookie `_fbp` (browser id Meta). */
   fbp?: string;
   /** Cookie `_fbc` (click id рекламной кампании). */
@@ -19,10 +21,17 @@ export interface MetaCapiClientContext {
   clientUserAgent?: string;
 }
 
-/** Подтверждённая оплата подписки (bePaid webhook) — единственное отправляемое событие. */
-export interface MetaCapiSubscribeInput {
+export interface MetaCapiInitiateCheckoutInput {
   userId: number;
   /** Тариф (`pro_month`/`pro_year`) — уходит в content_name. */
+  plan: string;
+  value: number;
+  currency: string;
+  client?: MetaCapiClientContext;
+}
+
+export interface MetaCapiPurchaseInput {
+  userId: number;
   plan: string;
   value: number;
   currency: string;
@@ -30,9 +39,12 @@ export interface MetaCapiSubscribeInput {
   eventId: string;
 }
 
+/** Подтверждённая оплата подписки (bePaid webhook) — тот же набор данных, что и Purchase. */
+export type MetaCapiSubscribeInput = MetaCapiPurchaseInput;
+
 /** Событие Graph API `POST /{pixel_id}/events` (поля по спецификации CAPI). */
 export interface MetaCapiEvent {
-  event_name: "Subscribe";
+  event_name: "InitiateCheckout" | "Purchase" | "Subscribe";
   event_time: number;
   event_id?: string;
   action_source: "website" | "system_generated";

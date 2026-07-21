@@ -36,6 +36,7 @@ function sanitizeMetaClient(
   const str = (v: unknown): string | undefined =>
     typeof v === "string" && v.length > 0 && v.length <= 512 ? v : undefined;
   return {
+    eventId: str(client.eventId),
     fbp: str(client.fbp),
     fbc: str(client.fbc),
     clientIpAddress: str(client.clientIpAddress),
