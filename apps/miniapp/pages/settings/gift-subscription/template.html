@@ -1,0 +1,43 @@
+<div v-if="allowed" class="admin-gift-page">
+  <p class="admin-gift-hint">
+    Подписка выдаётся сразу, в обход платёжного шлюза. Пользователь получит от бота сообщение о подарке.
+  </p>
+  <div v-if="loadError" class="admin-gift-error">{{ loadError }}</div>
+  <template v-else-if="loaded">
+    <label class="admin-gift-label" for="admin-gift-search">Поиск пользователя</label>
+    <input
+      id="admin-gift-search"
+      v-model="search"
+      class="admin-gift-input"
+      type="text"
+      placeholder="Username или имя"
+    />
+
+    <label class="admin-gift-label" for="admin-gift-user">Пользователь</label>
+    <select id="admin-gift-user" v-model="selectedUserId" class="admin-gift-select">
+      <option value="">— Выберите —</option>
+      <option v-for="u in filteredUsers" :key="u.userId" :value="String(u.userId)">
+        {{ u.displayName }}
+      </option>
+    </select>
+
+    <label class="admin-gift-label" for="admin-gift-period">Период</label>
+    <select id="admin-gift-period" v-model="period" class="admin-gift-select">
+      <option v-for="p in periodOptions" :key="p.value" :value="p.value">
+        {{ p.label }}
+      </option>
+    </select>
+
+    <div v-if="submitError" class="admin-gift-error">{{ submitError }}</div>
+    <div v-if="sentOk" class="admin-gift-success">Подписка подарена.</div>
+
+    <button
+      type="button"
+      class="admin-gift-submit"
+      :disabled="sending"
+      @click="submit"
+    >
+      {{ sending ? "Оформляем…" : "Подарить" }}
+    </button>
+  </template>
+</div>

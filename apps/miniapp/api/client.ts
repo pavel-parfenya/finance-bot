@@ -8,6 +8,7 @@ import type {
   UserSettings,
   AppUserStatsResponse,
   AdminBepaidSubscriptionsResponse,
+  AdminGiftSubscriptionPeriod,
   AdminSubscriptionNotificationsResponse,
   AdminTelegramUserOption,
   AdminUndeliveredRecipient,
@@ -274,6 +275,22 @@ export async function sendAdminTelegramMessage(body: {
     body: JSON.stringify(body),
   });
   return res.json();
+}
+
+export async function grantAdminSubscription(body: {
+  userId: number;
+  period: AdminGiftSubscriptionPeriod;
+}): Promise<{ ok?: boolean; error?: string }> {
+  const res = await fetch(`${BASE}/api/admin/grant-subscription`, {
+    method: "POST",
+    headers: { ...headers(), "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+  if (!res.ok) {
+    return { error: adminApiErrorMessage(data, res.status) };
+  }
+  return data as { ok?: boolean; error?: string };
 }
 
 export async function fetchAppUserStats(

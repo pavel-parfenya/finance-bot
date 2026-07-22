@@ -4,11 +4,14 @@ import {
   AppStatsService,
   config,
   PaymentService,
+  SubscriptionPlan,
+  SubscriptionService,
   UserService,
 } from "@finance-bot/server-core";
 import type { BepaidSubscriptionListItem } from "@finance-bot/server-core";
 import type {
   AdminBepaidSubscriptionsResponse,
+  AdminGiftSubscriptionPeriod,
   AdminTelegramUserOption,
   AdminUndeliveredRecipient,
   AppUserStatsResponse,
@@ -18,6 +21,20 @@ import type { TelegramOutboundPort } from "../../di/telegram-outbound.port";
 import type { ResolvedTelegramUser } from "../telegram/telegram-auth.types";
 
 const TELEGRAM_MESSAGE_MAX = 4096;
+
+/** Текст сообщения от бота после подарочной активации — по периоду. */
+const GIFT_MESSAGE: Record<AdminGiftSubscriptionPeriod, string> = {
+  month: "Дарю тебе Pro на месяц — пользуйся и экономь!",
+  year: "Дарю тебе Pro на целый год — пользуйся и экономь!",
+  lifetime: "Дарю тебе Pro навсегда — пользуйся и экономь всю жизнь!",
+};
+
+/** «Пожизненно» технически — очень далёкий срок действия платного тарифа. */
+function lifetimeExpiresAt(from: Date): Date {
+  const d = new Date(from);
+  d.setFullYear(d.getFullYear() + 100);
+  return d;
+}
 
 /** Восстанавливает локальный userId из tracking_id вида `<userId>-<code>`. */
 function parseTrackingUserId(trackingId: string | null): number | null {
@@ -33,6 +50,7 @@ export class AdminApiService {
     private readonly userService: UserService,
     private readonly appStatsService: AppStatsService,
     private readonly paymentService: PaymentService,
+    private readonly subscriptionService: SubscriptionService,
     @Inject(TELEGRAM_OUTBOUND) private readonly telegram: TelegramOutboundPort
   ) {}
 
@@ -233,5 +251,39 @@ export class AdminApiService {
         ],
       };
     }
+  }
+
+  /**
+   * Подарить подписку пользователю в обход платёжного шлюза (супер-админ).
+   * Активация идёт напрямую через `SubscriptionService.activatePaid` — тем же
+   * методом, что и обычная оплата/продление, — поэтому месяц/год стыкуются к
+   * действующему платному периоду как обычное продление. «Пожизненно» технически
+   * хранится как ProYear с `expiresAt` на 100 лет вперёд (нет отдельного тарифа).
+   */
+  async grantSubscription(
+    resolved: ResolvedTelegramUser,
+    params: { targetUserId: number; period: AdminGiftSubscriptionPeriod }
+  ): Promise<{ ok: true } | { error: string }> {
+    await this.requireSuperAdmin(resolved);
+    const target = await this.userService.findById(params.targetUserId);
+    if (!target) return { error: "Пользователь не найден" };
+
+    const plan =
+      params.period === "month" ? SubscriptionPlan.ProMonth : SubscriptionPlan.ProYear;
+    await this.subscriptionService.activatePaid(
+      params.targetUserId,
+      plan,
+      params.period === "lifetime"
+        ? { expiresAt: lifetimeExpiresAt(new Date()) }
+        : undefined
+    );
+
+    const chatId = Number(target.telegramId);
+    try {
+      await this.telegram.sendMessage(chatId, GIFT_MESSAGE[params.period]);
+    } catch {
+      /* подписка уже выдана — недоставленное уведомление не откатываем */
+    }
+    return { ok: true };
   }
 }

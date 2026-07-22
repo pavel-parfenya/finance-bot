@@ -17,3 +17,6 @@ export interface AdminSubscriptionNotificationsResponse {
   enabled: boolean;
   error?: string;
 }
+
+/** Период подарочной подписки, оформляемой супер-админом в обход платёжного шлюза. */
+export type AdminGiftSubscriptionPeriod = "month" | "year" | "lifetime";
