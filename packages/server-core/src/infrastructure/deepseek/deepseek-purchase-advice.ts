@@ -34,12 +34,15 @@ const PARSE_SYSTEM = `Ты — парсер вопросов о покупках
 Только JSON, без markdown.`;
 
 function resolveCurrency(raw: string, defaultCurrency?: string | null): string {
+  const trimmedDefault = defaultCurrency?.trim();
+  if (trimmedDefault) return trimmedDefault;
+
   const u = raw.toUpperCase();
   if (u === "BYN" || u === "БР" || u === "БЕЛ") return "BYN";
   if (u === "RUB" || u === "RUBLES" || u === "Р" || u === "РУБ") return "RUB";
   if (u === "USD" || u === "ДОЛЛ") return "USD";
   if (u === "EUR" || u === "ЕВРО") return "EUR";
-  return defaultCurrency?.trim() || "USD";
+  return "USD";
 }
 
 export interface SpendingContext {
@@ -114,7 +117,7 @@ ${voiceHint}
       this.client.chat.completions.create({
         model: DEEPSEEK_MODEL,
         temperature: voice === "modern_18" ? 0.75 : 0.5,
-        max_tokens: 400,
+        max_tokens: 600,
         messages: [
           { role: "system", content: systemPrompt },
           {
