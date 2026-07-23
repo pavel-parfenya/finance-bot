@@ -122,7 +122,11 @@ export class DeepSeekMessageParser implements IMessageParser {
       this.client.chat.completions.create({
         model: DEEPSEEK_MODEL,
         temperature: 0,
-        max_tokens: 300,
+        // DEEPSEEK_MODEL — reasoning-модель: completion = reasoning_tokens + JSON.
+        // При 300 бюджета почти нет запаса, и на сложных фразах (привязка к
+        // событию, длинные голосовые) reasoning съедал весь лимит, content
+        // возвращался пустым → «Пустой ответ» → расход не распознавался.
+        max_tokens: 1000,
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: systemPrompt },

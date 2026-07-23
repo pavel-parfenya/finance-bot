@@ -67,7 +67,10 @@ export class DeepSeekDebtParser {
       this.client.chat.completions.create({
         model: DEEPSEEK_MODEL,
         temperature: 0,
-        max_tokens: 200,
+        // Reasoning-модель: reasoning_tokens входят в completion. При 200 бюджет
+        // мог целиком уйти на reasoning, content — пустым, и долг молча падал в
+        // парсинг траты. Даём запас, чтобы JSON гарантированно поместился.
+        max_tokens: 1000,
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
