@@ -7,14 +7,9 @@ import {
   watch,
   nextTick,
 } from "vue";
-import type { DebtDto, DebtCreateRequest, DebtUpdateRequest } from "@finance-bot/shared";
-import {
-  fetchDebts,
-  createDebt,
-  updateDebt,
-  deleteDebt,
-  fetchUserSettings,
-} from "~/api/client";
+import type { DebtDto, DebtCreateRequest } from "@finance-bot/shared";
+import { useRouter } from "vue-router";
+import { fetchDebts, createDebt, deleteDebt, fetchUserSettings } from "~/api/client";
 import { useAppState } from "~/composables/useAppState";
 import { useUpgradeModal } from "~/composables/useUpgradeModal";
 import { useFeatures } from "~/composables/useFeatures";
@@ -22,7 +17,8 @@ import { CURRENCIES } from "~/utils/format";
 
 export default defineComponent({
   setup() {
-    const { refreshTrigger } = useAppState();
+    const router = useRouter();
+    const { refreshTrigger, editingDebt } = useAppState();
     const { notifyApiError, openUpgrade } = useUpgradeModal();
     const { ensureLoaded, hasFeature } = useFeatures();
 
@@ -50,14 +46,6 @@ export default defineComponent({
     const formCurrency = ref("BYN");
     const formDeadline = ref("");
     const formLinkedUsername = ref("");
-
-    const editingDebt = ref<DebtDto | null>(null);
-    const editName = ref("");
-    const editAmount = ref("");
-    const editCurrency = ref("BYN");
-    const editDeadline = ref("");
-    const editRepaid = ref("");
-    const editLinkedUsername = ref("");
 
     const tooltipOpen = ref<"create" | "edit" | null>(null);
     let unbindClick: (() => void) | null = null;
@@ -136,51 +124,7 @@ export default defineComponent({
     function openEdit(d: DebtDto) {
       if (!d.isMain) return;
       editingDebt.value = d;
-      editName.value = d.isCreditor ? d.debtorName : d.creditorName;
-      editAmount.value = String(d.amount);
-      editCurrency.value = d.currency || defaultCurrency.value || "BYN";
-      editDeadline.value = d.deadline ?? "";
-      editRepaid.value = String(d.repaidAmount ?? 0);
-      editLinkedUsername.value = d.isCreditor
-        ? d.debtorUsername
-          ? `@${d.debtorUsername}`
-          : ""
-        : d.creditorUsername
-          ? `@${d.creditorUsername}`
-          : "";
-    }
-
-    function closeEdit() {
-      editingDebt.value = null;
-    }
-
-    async function saveEdit() {
-      const d = editingDebt.value;
-      if (!d) return;
-
-      const updates: DebtUpdateRequest = {
-        amount: parseFloat(editAmount.value) || d.amount,
-        currency: editCurrency.value,
-        deadline: editDeadline.value || null,
-        repaidAmount: parseFloat(editRepaid.value) || 0,
-      };
-
-      const username = editLinkedUsername.value.trim();
-      if (d.isCreditor) {
-        updates.debtorName = editName.value.trim() || d.debtorName;
-        updates.debtorUsername = username || null;
-      } else {
-        updates.creditorName = editName.value.trim() || d.creditorName;
-        updates.creditorUsername = username || null;
-      }
-
-      const data = await updateDebt(d.id, updates);
-      if (data.error) {
-        alert(data.error);
-        return;
-      }
-      closeEdit();
-      await load();
+      router.push("/debts/edit");
     }
 
     async function removeDebt(id: number) {
@@ -230,17 +174,8 @@ export default defineComponent({
       formLinkedUsername,
       creditorDebts,
       debtorDebts,
-      editingDebt,
-      editName,
-      editAmount,
-      editCurrency,
-      editDeadline,
-      editRepaid,
-      editLinkedUsername,
       submitDebt,
       openEdit,
-      closeEdit,
-      saveEdit,
       removeDebt,
       tooltipOpen,
       toggleTooltip,

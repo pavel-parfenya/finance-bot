@@ -90,7 +90,27 @@ export async function handleParsedMessage(
         parsed.data.date = new Date(ctx.message.date * 1000);
       }
       const workspace = await deps.workspaceService.getOrCreateWorkspaceForUser(userId);
-      const msg = await ctx.reply(formatExpense(parsed.data), {
+
+      // Привязка к событию: если LLM распознал активное событие пользователя.
+      let eventId: number | null = null;
+      let eventName: string | null = null;
+      if (parsed.data.eventName) {
+        try {
+          const ev = await deps.eventService.findActiveEventByName(
+            userId,
+            parsed.data.eventName
+          );
+          if (ev) {
+            eventId = ev.id;
+            eventName = ev.name;
+          }
+        } catch {
+          eventId = null;
+        }
+      }
+
+      const eventNote = eventName ? `\n\n📅 Событие: ${eventName}` : "";
+      const msg = await ctx.reply(formatExpense(parsed.data) + eventNote, {
         reply_markup: createSaveNowKeyboard(),
       });
 
@@ -106,13 +126,14 @@ export async function handleParsedMessage(
             await ctx.api.editMessageText(
               chatId,
               messageId,
-              formatExpense(expense, false),
+              formatExpense(expense, false) + eventNote,
               { reply_markup: { inline_keyboard: [] } }
             );
           } catch {
             /* ignore */
           }
-        }
+        },
+        eventId
       );
       break;
     }

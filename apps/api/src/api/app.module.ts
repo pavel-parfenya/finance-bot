@@ -14,6 +14,7 @@ import {
   FeatureService,
   PaymentService,
   StrapiSiteSettings,
+  EventService,
 } from "@finance-bot/server-core";
 import { getApiContainer } from "../di/api-container.context";
 import { HttpTelegramOutboundAdapter } from "../di/http-telegram-outbound.adapter";
@@ -25,6 +26,7 @@ import { TransactionsModule } from "./transactions/transactions.module";
 import { WorkspaceModule } from "./workspace/workspace.module";
 import { UserModule } from "./user/user.module";
 import { DebtsModule } from "./debts/debts.module";
+import { EventsModule } from "./events/events.module";
 import { AdminModule } from "./admin/admin.module";
 import { ContactsModule } from "./contacts/contacts.module";
 import { BillingModule } from "./billing/billing.module";
@@ -39,6 +41,7 @@ import { AppStatsSnapshotScheduler } from "./app-stats-snapshot.scheduler";
     WorkspaceModule,
     UserModule,
     DebtsModule,
+    EventsModule,
     AdminModule,
     ContactsModule,
     // Billing/подписка (/api/billing/*, /api/subscription) — в paid и test режимах (не в free).
@@ -56,6 +59,7 @@ import { AppStatsSnapshotScheduler } from "./app-stats-snapshot.scheduler";
       useFactory: () => getApiContainer().invitationRepo,
     },
     { provide: DebtRepository, useFactory: () => getApiContainer().debtRepo },
+    { provide: EventService, useFactory: () => getApiContainer().eventService },
     {
       provide: CustomCategoryService,
       useFactory: () => getApiContainer().customCategoryService,
@@ -96,6 +100,7 @@ import { AppStatsSnapshotScheduler } from "./app-stats-snapshot.scheduler";
     TransactionRepository,
     InvitationRepository,
     DebtRepository,
+    EventService,
     CustomCategoryService,
     AppStatsService,
     SubscriptionService,

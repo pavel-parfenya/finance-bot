@@ -4,6 +4,7 @@ export * from "./workspace";
 export * from "./user";
 export * from "./app-user-stats";
 export * from "./debt";
+export * from "./event";
 export * from "./custom-category";
 export * from "./admin";
 export * from "./admin-bepaid";

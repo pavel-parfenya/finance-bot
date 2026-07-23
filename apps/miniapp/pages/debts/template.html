@@ -92,6 +92,7 @@
         <div class="debt-info">
           <div class="debt-name">{{ d.debtorName }}</div>
           <div class="debt-amount">{{ d.amount }} {{ d.currency }}</div>
+          <div v-if="d.comment" class="debt-comment">{{ d.comment }}</div>
           <div v-if="d.repaidAmount > 0" class="debt-repaid">
             возвращено {{ d.repaidAmount }} {{ d.currency }}
           </div>
@@ -120,6 +121,7 @@
         <div class="debt-info">
           <div class="debt-name">{{ d.creditorName }}</div>
           <div class="debt-amount">{{ d.amount }} {{ d.currency }}</div>
+          <div v-if="d.comment" class="debt-comment">{{ d.comment }}</div>
           <div v-if="d.repaidAmount > 0" class="debt-repaid">
             возвращено {{ d.repaidAmount }} {{ d.currency }}
           </div>
@@ -137,81 +139,5 @@
     </div>
 
     <div v-if="debts.length === 0" class="empty">Нет долгов</div>
-
-    <div v-if="editingDebt" class="modal-overlay" @click.self="closeEdit">
-      <div class="modal">
-        <div class="modal-header">
-          <h3>Изменить долг</h3>
-          <button type="button" class="btn-close" @click="closeEdit">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        </div>
-        <div class="edit-form">
-          <label class="form-label">Имя</label>
-          <input v-model="editName" type="text" class="form-input" />
-
-          <div class="form-field">
-            <label class="form-label">
-              {{ editingDebt?.isCreditor ? 'Привязать должника (@username)' : 'Привязать кредитора (@username)' }}
-              <span
-                class="label-info-wrap"
-                @click.stop="toggleTooltip('edit')"
-              >
-                <span class="label-info">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="16" x2="12" y2="12" />
-                    <line x1="12" y1="8" x2="12.01" y2="8" />
-                  </svg>
-                </span>
-                <div v-if="tooltipOpen === 'edit'" class="tooltip-popover">
-                  Любой пользователь Telegram. Оставьте пустым, чтобы отвязать.
-                </div>
-              </span>
-            </label>
-            <input
-              v-model="editLinkedUsername"
-              type="text"
-              placeholder="@username"
-              class="form-input"
-              autocomplete="off"
-            />
-          </div>
-
-          <label class="form-label">Сумма</label>
-          <div class="form-row-inline">
-            <input
-              v-model="editAmount"
-              type="number"
-              step="0.01"
-              min="0"
-              class="form-input"
-            />
-            <select v-model="editCurrency" class="form-select form-select-currency">
-              <option v-for="c in CURRENCIES" :key="c" :value="c">{{ c }}</option>
-            </select>
-          </div>
-
-          <label class="form-label">Возвращено</label>
-          <input
-            v-model="editRepaid"
-            type="number"
-            step="0.01"
-            min="0"
-            class="form-input"
-          />
-
-          <label class="form-label">Дедлайн</label>
-          <input v-model="editDeadline" type="date" class="form-input" />
-
-          <button type="button" class="btn-submit" @click="saveEdit">
-            Сохранить
-          </button>
-        </div>
-      </div>
-    </div>
   </template>
 </div>

@@ -87,6 +87,15 @@ export function createVoiceHandler(deps: BotDeps) {
         customCategories = undefined;
       }
 
+      let events:
+        | Array<{ name: string; description: string; keywords: string }>
+        | undefined;
+      try {
+        events = await deps.eventService.getActiveEventsContext(user.id);
+      } catch {
+        events = undefined;
+      }
+
       const text = await deps.expenseService.recognizeVoice(buffer, mimeType);
 
       const parsed = await parseMessage(
@@ -98,7 +107,8 @@ export function createVoiceHandler(deps: BotDeps) {
           expenseService: deps.expenseService,
           purchaseAdviceParser: deps.purchaseAdviceParser,
         },
-        customCategories
+        customCategories,
+        events
       );
 
       if (!parsed) {

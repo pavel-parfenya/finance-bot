@@ -17,23 +17,29 @@ export default defineComponent({
       if (path.startsWith("/settings")) return "settings";
       if (path.startsWith("/analytics")) return "analytics";
       if (path.startsWith("/debts")) return "debts";
+      if (path.startsWith("/events")) return "events";
       return "table";
     });
 
     const isSettingsRoute = computed(() => route.path.startsWith("/settings"));
 
-    const isEditRoute = computed(() => route.path.startsWith("/table/edit"));
+    const isEditRoute = computed(
+      () => route.path.startsWith("/table/edit") || route.path.startsWith("/debts/edit")
+    );
 
     /** Цель кнопки «назад» в шапке (null — кнопку не показываем). */
     const backTarget = computed(() => {
       if (/^\/settings\/.+/.test(route.path)) return "/settings";
-      if (isEditRoute.value) return "/table";
+      if (route.path.startsWith("/debts/edit")) return "/debts";
+      if (route.path.startsWith("/table/edit")) return "/table";
+      if (/^\/events\/.+/.test(route.path)) return "/events";
       return null;
     });
 
     const pageTitle = computed(() => {
       const p = route.path;
       if (p.startsWith("/table/edit")) return "Изменить запись";
+      if (p.startsWith("/debts/edit")) return "Изменить долг";
       if (p === "/settings" || p === "/settings/") return "Настройки";
       if (p.startsWith("/settings/help")) return "Справка";
       if (p.startsWith("/settings/contacts")) return "Контакты";
@@ -43,6 +49,7 @@ export default defineComponent({
       if (p.startsWith("/settings/app-stats")) return "Статистика приложения";
       if (p.startsWith("/settings/bepaid-subscriptions")) return "Подписки bePaid";
       if (p.startsWith("/settings/send-message")) return "Сообщение от бота";
+      if (p.startsWith("/events")) return "События";
       return "Мои расходы";
     });
 

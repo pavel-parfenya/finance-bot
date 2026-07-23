@@ -15,6 +15,10 @@ import type {
   DebtDto,
   DebtCreateRequest,
   DebtUpdateRequest,
+  EventDto,
+  EventDetailDto,
+  EventCreateRequest,
+  EventUpdateRequest,
   CustomCategoryDto,
   CustomCategoryCreateRequest,
   CustomCategoryUpdateRequest,
@@ -408,6 +412,143 @@ export async function deleteDebt(id: number): Promise<{ ok?: boolean; error?: st
   const res = await fetch(`${BASE}/api/debts/${id}`, {
     method: "DELETE",
     headers: headers(),
+  });
+  return res.json();
+}
+
+// --- События -----------------------------------------------------------
+
+export async function fetchEvents(): Promise<{
+  events?: EventDto[];
+  error?: string;
+}> {
+  const res = await fetch(`${BASE}/api/events`, { headers: headers() });
+  return res.json();
+}
+
+export async function fetchEvent(
+  id: number
+): Promise<{ event?: EventDetailDto; error?: string }> {
+  const res = await fetch(`${BASE}/api/events/${id}`, { headers: headers() });
+  return res.json();
+}
+
+export async function createEvent(
+  body: EventCreateRequest
+): Promise<{ event?: EventDto; error?: string }> {
+  const res = await fetch(`${BASE}/api/events`, {
+    method: "POST",
+    headers: { ...headers(), "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+export async function updateEvent(
+  id: number,
+  body: EventUpdateRequest
+): Promise<{ event?: EventDetailDto; error?: string }> {
+  const res = await fetch(`${BASE}/api/events/${id}`, {
+    method: "PATCH",
+    headers: { ...headers(), "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+export async function deleteEvent(id: number): Promise<{ ok?: boolean; error?: string }> {
+  const res = await fetch(`${BASE}/api/events/${id}`, {
+    method: "DELETE",
+    headers: headers(),
+  });
+  return res.json();
+}
+
+export async function inviteToEvent(
+  id: number,
+  username: string
+): Promise<{ ok?: boolean; error?: string }> {
+  const res = await fetch(`${BASE}/api/events/${id}/invite`, {
+    method: "POST",
+    headers: { ...headers(), "Content-Type": "application/json" },
+    body: JSON.stringify({ username }),
+  });
+  return res.json();
+}
+
+export async function leaveEvent(id: number): Promise<{ ok?: boolean; error?: string }> {
+  const res = await fetch(`${BASE}/api/events/${id}/leave`, {
+    method: "POST",
+    headers: headers(),
+  });
+  return res.json();
+}
+
+export async function removeEventMember(
+  id: number,
+  userId: number
+): Promise<{ ok?: boolean; error?: string }> {
+  const res = await fetch(`${BASE}/api/events/${id}/members/${userId}`, {
+    method: "DELETE",
+    headers: headers(),
+  });
+  return res.json();
+}
+
+export async function linkTransactionToEvent(
+  id: number,
+  transactionId: number
+): Promise<{ ok?: boolean; error?: string }> {
+  const res = await fetch(`${BASE}/api/events/${id}/transactions/link`, {
+    method: "POST",
+    headers: { ...headers(), "Content-Type": "application/json" },
+    body: JSON.stringify({ transactionId }),
+  });
+  return res.json();
+}
+
+export async function deleteEventTransaction(
+  id: number,
+  txId: number
+): Promise<{ ok?: boolean; error?: string }> {
+  const res = await fetch(`${BASE}/api/events/${id}/transactions/${txId}`, {
+    method: "DELETE",
+    headers: headers(),
+  });
+  return res.json();
+}
+
+export async function setEventTransactionExcluded(
+  id: number,
+  txId: number,
+  excluded: boolean
+): Promise<{ ok?: boolean; error?: string }> {
+  const res = await fetch(`${BASE}/api/events/${id}/transactions/${txId}/exclude`, {
+    method: "POST",
+    headers: { ...headers(), "Content-Type": "application/json" },
+    body: JSON.stringify({ excluded }),
+  });
+  return res.json();
+}
+
+export async function settleEvent(
+  id: number
+): Promise<{ event?: EventDetailDto; error?: string }> {
+  const res = await fetch(`${BASE}/api/events/${id}/settle`, {
+    method: "POST",
+    headers: headers(),
+  });
+  return res.json();
+}
+
+export async function createDebtFromSettlement(
+  id: number,
+  toUserId: number
+): Promise<{ ok?: boolean; error?: string }> {
+  const res = await fetch(`${BASE}/api/events/${id}/settlement/debts`, {
+    method: "POST",
+    headers: { ...headers(), "Content-Type": "application/json" },
+    body: JSON.stringify({ toUserId }),
   });
   return res.json();
 }

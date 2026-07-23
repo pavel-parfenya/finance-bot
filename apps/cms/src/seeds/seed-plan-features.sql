@@ -16,7 +16,8 @@ FROM (VALUES
   ('advanced_analytics', 'Аналитика',           1),
   ('forecasts',          'Прогнозы трат',       2),
   ('debts',              'Долги',               3),
-  ('collaborative',      'Совместный бюджет',   4)
+  ('collaborative',      'Совместный бюджет',   4),
+  ('events',             'События',             5)
 ) AS v(key, label, ord)
 WHERE NOT EXISTS (SELECT 1 FROM features f WHERE f.key = v.key);
 
@@ -27,7 +28,8 @@ FROM (VALUES
   ('advanced_analytics', 'Аналитика',           1),
   ('forecasts',          'Прогнозы трат',       2),
   ('debts',              'Долги',               3),
-  ('collaborative',      'Совместный бюджет',   4)
+  ('collaborative',      'Совместный бюджет',   4),
+  ('events',             'События',             5)
 ) AS v(key, label, ord)
 WHERE f.key = v.key;
 
@@ -49,5 +51,5 @@ SELECT
 FROM pricings p
 JOIN features f
   ON p.plan_id IN ('pro_month', 'pro_year')
- AND f.key IN ('voice_input', 'advanced_analytics', 'forecasts', 'debts', 'collaborative')
+ AND f.key IN ('voice_input', 'advanced_analytics', 'forecasts', 'debts', 'collaborative', 'events')
 WHERE p.plan_id IS NOT NULL;

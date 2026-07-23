@@ -164,14 +164,9 @@ export default defineComponent({
       const ctx = canvasRef.value.getContext("2d");
       if (!ctx) return;
 
-      const textColor =
-        getComputedStyle(document.body)
-          .getPropertyValue("--tg-theme-text-color")
-          .trim() || "#111827";
-      const gridColor =
-        getComputedStyle(document.body)
-          .getPropertyValue("--tg-theme-hint-color")
-          .trim() || "#9ca3af";
+      const rootStyle = getComputedStyle(document.documentElement);
+      const textColor = rootStyle.getPropertyValue("--text").trim() || "#111827";
+      const gridColor = rootStyle.getPropertyValue("--text-muted").trim() || "#9ca3af";
 
       const labels = series.value.map((p) => formatDdMon(p.date));
       const mk = (

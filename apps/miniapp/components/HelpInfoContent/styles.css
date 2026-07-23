@@ -7,17 +7,15 @@
 .info-section--whats-new {
   position: relative;
   padding: 16px 16px 16px 18px;
-  border-radius: 14px;
-  border: 1px solid rgba(51, 144, 236, 0.35);
-  border-left: 4px solid var(--tg-theme-button-color, #3390ec);
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--brand);
   background: linear-gradient(
     135deg,
-    rgba(51, 144, 236, 0.14) 0%,
-    var(--tg-theme-secondary-bg-color, #f0f2f5) 58%
+    var(--brand-soft) 0%,
+    var(--surface-inset) 58%
   );
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.06) inset,
-    0 8px 24px rgba(51, 144, 236, 0.12);
+  box-shadow: var(--shadow-card);
 }
 
 .info-whats-new-kicker {
@@ -28,9 +26,9 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--tg-theme-button-text-color, #fff);
-  background: var(--tg-theme-button-color, #3390ec);
-  border-radius: 6px;
+  color: var(--on-brand);
+  background: var(--brand);
+  border-radius: var(--r-sm);
 }
 
 .info-whats-new-title {
@@ -38,13 +36,13 @@
   font-size: 16px;
   font-weight: 700;
   line-height: 1.25;
-  color: var(--tg-theme-text-color);
+  color: var(--text);
 }
 
 .info-whats-new-body {
   font-size: 13px;
   line-height: 1.5;
-  color: var(--tg-theme-text-color);
+  color: var(--text);
 }
 
 .info-whats-new-body p {
@@ -61,20 +59,20 @@
   margin-bottom: 6px !important;
   font-size: 12px;
   font-weight: 600;
-  color: var(--tg-theme-hint-color);
+  color: var(--text-muted);
 }
 
 .info-whats-new-example-desc {
   margin-bottom: 0 !important;
   font-size: 13px;
   line-height: 1.45;
-  color: var(--tg-theme-text-color);
+  color: var(--text);
   opacity: 0.92;
 }
 
 .info-whats-new-body strong {
   font-weight: 600;
-  color: var(--tg-theme-text-color);
+  color: var(--text);
 }
 
 .info-section-title {
@@ -86,7 +84,7 @@
 .info-section p {
   margin: 0 0 6px;
   font-size: 13px;
-  color: var(--tg-theme-hint-color, #65676b);
+  color: var(--text-muted);
   line-height: 1.4;
 }
 
@@ -98,8 +96,8 @@
 
 .info-example {
   font-size: 12px;
-  padding: 4px 10px;
-  border-radius: 12px;
-  background: var(--tg-theme-secondary-bg-color, #f0f2f5);
-  color: var(--tg-theme-text-color);
+  padding: 5px 10px;
+  border-radius: var(--pill);
+  background: var(--surface-inset);
+  color: var(--text);
 }

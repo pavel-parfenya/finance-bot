@@ -21,7 +21,8 @@ export interface MessageRouterDeps {
       text: string,
       username: string,
       defaultCurrency?: string | null,
-      customCategories?: Array<{ name: string; description: string }>
+      customCategories?: Array<{ name: string; description: string }>,
+      events?: Array<{ name: string; description: string; keywords: string }>
     ): Promise<Expense>;
   };
   purchaseAdviceParser?: {
@@ -41,7 +42,8 @@ export async function parseMessage(
   username: string,
   defaultCurrency: string | null | undefined,
   deps: MessageRouterDeps,
-  customCategories?: Array<{ name: string; description: string }>
+  customCategories?: Array<{ name: string; description: string }>,
+  events?: Array<{ name: string; description: string; keywords: string }>
 ): Promise<ParsedMessage | null> {
   const parsedDebt = await deps.debtParser.parse(text, defaultCurrency);
   if (parsedDebt) {
@@ -59,7 +61,8 @@ export async function parseMessage(
       text,
       username,
       defaultCurrency,
-      customCategories
+      customCategories,
+      events
     );
     return { type: parsed.type, data: parsed };
   } catch {

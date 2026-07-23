@@ -46,6 +46,26 @@ export class DebtsApiService {
     });
   }
 
+  /**
+   * Управлять долгом (редактировать/удалять) может любой участник —
+   * создатель, должник или кредитор, вне зависимости от того, кто кому должен.
+   * Создание же остаётся платной фичей (проверяется в create()).
+   */
+  private canManage(
+    debt: {
+      creatorUserId: number;
+      debtorUserId: number | null;
+      creditorUserId: number | null;
+    },
+    userId: number
+  ): boolean {
+    return (
+      debt.creatorUserId === userId ||
+      debt.debtorUserId === userId ||
+      debt.creditorUserId === userId
+    );
+  }
+
   private toDebtDto(
     d: Awaited<ReturnType<DebtRepository["findById"]>>,
     userId: number
@@ -88,7 +108,8 @@ export class DebtsApiService {
         : null,
       repaidAmount: Number(d.repaidAmount),
       status: d.status as "pending" | "active",
-      isMain: d.mainUserId === userId,
+      comment: (d as { comment?: string | null }).comment ?? null,
+      isMain: this.canManage(d, userId),
       isCreditor,
       createdAt:
         d.createdAt instanceof Date ? d.createdAt.toISOString() : String(d.createdAt),
@@ -180,6 +201,7 @@ export class DebtsApiService {
       repaidAmount: body.repaidAmount ?? 0,
       mainUserId,
       status,
+      comment: body.comment ?? null,
     });
 
     if (linkedUserTelegramId && debt.status === DebtStatus.Pending) {
@@ -210,7 +232,7 @@ export class DebtsApiService {
 
     const debt = await this.debtRepo.findById(id);
     if (!debt) return { error: "Долг не найден" };
-    if (debt.mainUserId !== resolved.userId)
+    if (!this.canManage(debt, resolved.userId))
       return { error: "Нет прав на редактирование" };
 
     const toUpdate: Parameters<DebtRepository["update"]>[1] = {};
@@ -409,7 +431,7 @@ export class DebtsApiService {
 
     const debt = await this.debtRepo.findById(id);
     if (!debt) return { error: "Долг не найден" };
-    if (debt.mainUserId !== resolved.userId) return { error: "Нет прав на удаление" };
+    if (!this.canManage(debt, resolved.userId)) return { error: "Нет прав на удаление" };
 
     const debtWithRelations = debt as {
       debtor?: { telegramId: number } | null;

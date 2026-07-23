@@ -18,6 +18,7 @@ import type {
   FeatureService,
   SubscriptionService,
   BillingTokenService,
+  EventService,
 } from "@finance-bot/server-core";
 import { createStartHandler } from "./handlers/start-handler";
 import { createHelpHandler } from "./handlers/help-handler";
@@ -27,6 +28,7 @@ import { createVoiceHandler } from "./handlers/voice-handler";
 import { createCancelExpenseHandler } from "./handlers/cancel-expense-handler";
 import { createCurrencyHandler, SET_CURRENCY_PREFIX } from "./handlers/currency-handler";
 import { createInviteHandler } from "./handlers/invite-handler";
+import { createEventInviteHandler } from "./handlers/event-invite-handler";
 import { createDebtCallbackHandler } from "./handlers/debt-handler";
 import { createAnalyticsOnboardHandler } from "./handlers/analytics-onboard-handler";
 import {
@@ -52,6 +54,7 @@ export interface BotDeps {
   weeklyForecastGenerator?: DeepSeekWeeklyForecast;
   inactiveUserNudgeGenerator?: DeepSeekInactiveUserNudge;
   customCategoryService: CustomCategoryService;
+  eventService: EventService;
   featureService: FeatureService;
   subscriptionService: SubscriptionService;
   /** Подписывает billing-JWT для ссылки «Сменить план» (страница оплаты сайта). */
@@ -81,6 +84,10 @@ export function createBot(token: string, depsWithoutBot: BotDeps): Bot {
   bot.callbackQuery(
     /^invite_(accept|decline|transfer|delete):(\d+)$/,
     createInviteHandler(deps)
+  );
+  bot.callbackQuery(
+    /^event_invite_(accept|decline):(\d+)$/,
+    createEventInviteHandler(deps)
   );
   bot.callbackQuery(
     /^debt_(confirm|reject|repaid_add|repaid_skip):/,

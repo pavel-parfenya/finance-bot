@@ -6,8 +6,10 @@ import { WhisperSpeechRecognizer } from "../infrastructure/whisper/whisper-speec
 import { TransactionRepository } from "../repositories/transaction-repository";
 import { InvitationRepository } from "../repositories/invitation-repository";
 import { DebtRepository } from "../repositories/debt-repository";
+import { EventRepository } from "../repositories/event-repository";
 import { UserService } from "../services/user/user-service";
 import { DebtService } from "../services/debt/debt-service";
+import { EventService } from "../services/event/event-service";
 import { WorkspaceService } from "../services/workspace/workspace-service";
 import { ExpenseService } from "../services/expense/expense-service";
 import { AnalyticsInsightService } from "../services/analytics-insight/analytics-insight-service";
@@ -33,6 +35,8 @@ export interface CoreServices {
   invitationRepo: InvitationRepository;
   debtService: DebtService;
   debtRepo: DebtRepository;
+  eventService: EventService;
+  eventRepo: EventRepository;
   debtParser: DeepSeekDebtParser;
   analyticsInsightService: AnalyticsInsightService;
   purchaseAdviceService: PurchaseAdviceService;
@@ -60,6 +64,7 @@ export function createCoreServices(config: Config, dataSource: DataSource): Core
   const transactionRepo = new TransactionRepository(dataSource);
   const invitationRepo = new InvitationRepository(dataSource);
   const debtRepo = new DebtRepository(dataSource);
+  const eventRepo = new EventRepository(dataSource);
   const userService = new UserService(dataSource);
   const workspaceService = new WorkspaceService(dataSource);
   const debtService = new DebtService(debtRepo, userService);
@@ -88,6 +93,14 @@ export function createCoreServices(config: Config, dataSource: DataSource): Core
     subscriptionService,
     strapiPlanConfig
   );
+  const eventService = new EventService({
+    eventRepo,
+    transactionRepo,
+    debtRepo,
+    userService,
+    workspaceService,
+    featureService,
+  });
 
   return {
     userService,
@@ -97,6 +110,8 @@ export function createCoreServices(config: Config, dataSource: DataSource): Core
     invitationRepo,
     debtService,
     debtRepo,
+    eventService,
+    eventRepo,
     debtParser,
     analyticsInsightService,
     purchaseAdviceService,

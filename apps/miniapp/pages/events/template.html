@@ -1,0 +1,72 @@
+<div>
+  <div v-if="loading" class="loading">Загрузка...</div>
+  <div v-else-if="error" class="error">{{ error }}</div>
+  <template v-else>
+    <button
+      type="button"
+      class="btn-add-event"
+      :class="{ 'is-locked': eventsLocked }"
+      @click="onAddClick"
+    >
+      <template v-if="eventsLocked">🔒 Создать событие (PRO)</template>
+      <template v-else>{{ showForm ? 'Отмена' : '+ Создать событие' }}</template>
+    </button>
+
+    <div v-if="showForm" class="event-form">
+      <input
+        v-model="formName"
+        type="text"
+        placeholder="Название события"
+        class="form-input"
+      />
+      <textarea
+        v-model="formDescription"
+        placeholder="Описание (для чего событие)"
+        class="form-input form-textarea"
+        rows="2"
+      ></textarea>
+      <input
+        v-model="formKeywords"
+        type="text"
+        placeholder="Ключевые слова через запятую"
+        class="form-input"
+      />
+      <div class="form-row-inline">
+        <span class="form-currency-label">Валюта расчёта</span>
+        <select v-model="formCurrency" class="form-select form-select-currency">
+          <option v-for="c in CURRENCIES" :key="c" :value="c">{{ c }}</option>
+        </select>
+      </div>
+      <button
+        type="button"
+        class="btn-submit"
+        :disabled="submitting"
+        @click="submitCreate"
+      >
+        Создать
+      </button>
+    </div>
+
+    <div
+      v-for="e in events"
+      :key="e.id"
+      class="event-card"
+      @click="openEvent(e.id)"
+    >
+      <div class="event-card-head">
+        <div class="event-name">{{ e.name }}</div>
+        <span v-if="e.status === 'settled'" class="event-badge">рассчитано</span>
+      </div>
+      <div v-if="e.description" class="event-desc">{{ e.description }}</div>
+      <div class="event-meta">
+        <span>{{ e.memberCount }} участн.</span>
+        <span>·</span>
+        <span>мои траты: {{ formatMoney(e.myTotal, e.currency) }}</span>
+      </div>
+    </div>
+
+    <div v-if="events.length === 0" class="empty">
+      Пока нет событий. Создайте событие, чтобы вести совместные траты компании.
+    </div>
+  </template>
+</div>

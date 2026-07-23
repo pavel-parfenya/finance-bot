@@ -32,10 +32,12 @@ services:
   # Создаёт схему strapi и запускает TypeORM-миграции. Seed НЕ запускается.
   # ---------------------------------------------------------------------------
   migrate:
+    # Использует образ api-стадии (в Dockerfile нет отдельной стадии migrate) —
+    # как в docker-compose.prod.yml. Гоняет скомпилированные миграции из dist.
     build:
       context: .
       dockerfile: Dockerfile
-      target: migrate
+      target: api
       x-bake: *zstd-bake
     restart: "no"
     env_file:
@@ -48,7 +50,7 @@ services:
       - -c
       - |
         node -e "const {Client}=require('pg');const c=new Client({connectionString:process.env.DATABASE_URL});c.connect().then(()=>c.query('CREATE SCHEMA IF NOT EXISTS strapi')).then(()=>c.end()).catch(e=>{console.error(e);process.exit(1)})"
-        npm run migrations
+        node /app/packages/server-core/dist/database/run-migrations.js
     depends_on:
       postgres:
         condition: service_healthy

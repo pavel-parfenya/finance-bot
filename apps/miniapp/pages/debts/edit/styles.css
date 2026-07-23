@@ -1,0 +1,173 @@
+.edit-page {
+  /* Запас снизу, чтобы кнопки можно было доскроллить из-под клавиатуры */
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.field {
+  display: block;
+}
+
+.field-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.field input,
+.field .select-styled {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.field input {
+  padding: 12px 14px;
+  border-radius: var(--r);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-inset);
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color var(--t-fast);
+}
+
+.field input:focus {
+  outline: none;
+  border-color: var(--brand);
+}
+
+.field input::placeholder {
+  color: var(--text-faint);
+}
+
+/* Нативный date на iOS игнорирует width без сброса appearance */
+.date-input {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.select-styled {
+  padding: 12px 40px 12px 14px;
+  border-radius: var(--r);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-inset);
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238b8fa8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  cursor: pointer;
+}
+
+.select-styled:focus {
+  outline: none;
+  border-color: var(--brand);
+}
+
+/* Подсказка у метки username */
+.label-info-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.label-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.label-info svg {
+  width: 14px;
+  height: 14px;
+}
+
+.tooltip-popover {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-6px);
+  padding: 8px 12px;
+  background: var(--surface-inset);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+  border-radius: 8px;
+  max-width: 240px;
+  width: max-content;
+  white-space: normal;
+  text-transform: none;
+  box-shadow: var(--shadow-pop);
+  z-index: 50;
+}
+
+.tooltip-popover::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--surface-inset);
+}
+
+.form-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.edit-actions button {
+  flex: 1;
+  padding: 13px;
+  border: none;
+  border-radius: var(--r);
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--t-fast);
+}
+
+.edit-actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.btn-cancel {
+  background: var(--surface-inset);
+  color: var(--text);
+}
+
+.btn-save {
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+.btn-save:active {
+  background: var(--brand-strong);
+}

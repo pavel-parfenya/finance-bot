@@ -5,7 +5,7 @@
 }
 
 .contacts-status {
-  color: var(--tg-theme-hint-color);
+  color: var(--text-muted);
   font-size: 14px;
 }
 
@@ -15,7 +15,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--tg-theme-hint-color);
+  color: var(--text-muted);
 }
 
 .contacts-list {
@@ -29,28 +29,28 @@
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  border-radius: var(--radius);
-  background: var(--tg-theme-secondary-bg-color, #f0f2f5);
-  color: var(--tg-theme-text-color);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: var(--r);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
   text-decoration: none;
-  transition: opacity 0.15s;
+  transition: background var(--t-fast);
   -webkit-tap-highlight-color: transparent;
 }
 
 .contacts-row:active {
-  opacity: 0.85;
+  background: var(--surface-inset);
 }
 
 .contacts-row-label {
   flex-shrink: 0;
   width: 72px;
   font-size: 13px;
-  color: var(--tg-theme-hint-color);
+  color: var(--text-muted);
 }
 
 .contacts-row-value {
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   overflow-wrap: anywhere;
 }

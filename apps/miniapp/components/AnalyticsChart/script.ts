@@ -11,22 +11,47 @@ import {
 Chart.register(DoughnutController, ArcElement, Legend, Tooltip);
 
 const REMAINDER_LABEL = "Остаток";
-const REMAINDER_GREEN = "#22c55e";
 
-const CATEGORY_COLORS = [
-  "#3B82F6",
-  "#F59E0B",
-  "#8B5CF6",
-  "#EC4899",
-  "#06B6D4",
-  "#F97316",
-  "#14B8A6",
-  "#A855F7",
-  "#E11D48",
-  "#0EA5E9",
+/* Категориальная палитра (валидирована скилом dataviz: CVD-safe и по контрасту
+   на обеих поверхностях). Порядок слотов — механизм CVD-безопасности, не косметика:
+   blue, green, magenta, yellow, aqua, orange, violet, red. Отдельные наборы под
+   тему, т.к. тёмные шаги подобраны под тёмную поверхность. */
+const CATEGORY_COLORS_LIGHT = [
+  "#2a78d6",
+  "#008300",
+  "#e87ba4",
+  "#eda100",
+  "#1baf7a",
+  "#eb6834",
+  "#4a3aa7",
+  "#e34948",
 ];
 
-const DISABLED_COLOR = "#64748b";
+const CATEGORY_COLORS_DARK = [
+  "#3987e5",
+  "#008300",
+  "#d55181",
+  "#c98500",
+  "#199e70",
+  "#d95926",
+  "#9085e9",
+  "#e66767",
+];
+
+const DISABLED_COLOR = "#8b8fa8";
+
+function isDarkTheme(): boolean {
+  const attr = document.documentElement.dataset.theme;
+  if (attr === "dark") return true;
+  if (attr === "light") return false;
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
+}
+
+/** Значение CSS-переменной темы с фолбэком. */
+function themeVar(name: string, fallback: string): string {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
 
 function createLegendCircle(color: string, disabled = false): HTMLCanvasElement {
   const size = 12;
@@ -66,16 +91,18 @@ export default defineComponent({
     }
 
     function resolveColors(items: ChartItem[]): { bg: string[]; solid: string[] } {
+      const palette = isDarkTheme() ? CATEGORY_COLORS_DARK : CATEGORY_COLORS_LIGHT;
+      const remainderColor = themeVar("--income", "#12924a");
       const bg: string[] = [];
       const solid: string[] = [];
       let colorIdx = 0;
 
       for (const item of items) {
         if (item.category === REMAINDER_LABEL) {
-          bg.push(REMAINDER_GREEN);
-          solid.push(REMAINDER_GREEN);
+          bg.push(remainderColor);
+          solid.push(remainderColor);
         } else {
-          const c = CATEGORY_COLORS[colorIdx % CATEGORY_COLORS.length];
+          const c = palette[colorIdx % palette.length] as string;
           colorIdx++;
           bg.push(c);
           solid.push(c);
@@ -89,18 +116,19 @@ export default defineComponent({
       const ctx = canvasRef.value.getContext("2d");
       if (!ctx) return;
 
-      const textColor =
-        getComputedStyle(document.body).getPropertyValue("--tg-theme-text-color") ||
-        "#e6edf3";
+      const textColor = themeVar("--text", "#111");
+      const mutedColor = themeVar("--text-muted", "#888");
+      // Разделители дуг = цвет поверхности карточки (2px «зазор» по спецификации марок).
+      const surfaceColor = themeVar("--surface", "#fff");
 
       const labels = props.items.map((x) => x.category);
       const data = props.items.map((x) => x.value);
       const { bg, solid } = resolveColors(props.items);
 
       const remainderIdx = labels.indexOf(REMAINDER_LABEL);
-      const borderWidths = labels.map((_, i) => (i === remainderIdx ? 4 : 1));
+      const borderWidths = labels.map((_, i) => (i === remainderIdx ? 4 : 2));
       const borderColors = labels.map((_, i) =>
-        i === remainderIdx ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.2)"
+        i === remainderIdx ? mutedColor : surfaceColor
       );
 
       chartInst = new Chart(ctx, {
@@ -150,7 +178,7 @@ export default defineComponent({
                         ? `${label}: ${value.toFixed(1)}%`
                         : `${label}: ${formatValue(value)}`,
                       fillStyle: hidden ? DISABLED_COLOR : color,
-                      fontColor: hidden ? "rgba(100,116,139,0.5)" : textColor,
+                      fontColor: hidden ? DISABLED_COLOR : textColor,
                       pointStyle: createLegendCircle(color, hidden),
                       hidden,
                       index: i,
@@ -183,8 +211,26 @@ export default defineComponent({
       }
     }
 
-    onMounted(() => initChart());
-    onUnmounted(destroyChart);
+    // Перерисовка при смене темы: цвета берутся из токенов на момент init.
+    let themeObserver: MutationObserver | null = null;
+
+    onMounted(() => {
+      initChart();
+      themeObserver = new MutationObserver(() => {
+        destroyChart();
+        initChart();
+      });
+      themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["data-theme"],
+      });
+    });
+
+    onUnmounted(() => {
+      themeObserver?.disconnect();
+      themeObserver = null;
+      destroyChart();
+    });
 
     watch(
       () => [props.items, props.formatAsPercent, props.interactive],

@@ -10,21 +10,22 @@
 }
 
 .modal {
-  background: var(--tg-theme-bg-color, #fff);
-  border-radius: var(--radius);
+  background: var(--surface);
+  border-radius: var(--r-lg);
   padding: 20px;
   width: 100%;
   max-width: 400px;
   max-height: 80vh;
   overflow-y: auto;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-pop);
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 
 .modal-header h3 {
@@ -36,12 +37,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px;
+  padding: 7px;
   border: none;
-  background: rgba(0, 0, 0, 0.06);
-  border-radius: 6px;
+  background: var(--surface-inset);
+  border-radius: var(--r-sm);
   cursor: pointer;
-  color: var(--tg-theme-hint-color);
+  color: var(--text-muted);
 }
 
 .btn-close svg {

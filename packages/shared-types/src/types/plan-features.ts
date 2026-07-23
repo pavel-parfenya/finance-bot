@@ -12,7 +12,8 @@ export type FeatureKey =
   | "advanced_analytics"
   | "forecasts"
   | "debts"
-  | "collaborative";
+  | "collaborative"
+  | "events";
 
 /** Все распознаваемые кодом ключи фич (для валидации/итерации). */
 export const RECOGNIZED_FEATURE_KEYS: readonly FeatureKey[] = [
@@ -21,6 +22,7 @@ export const RECOGNIZED_FEATURE_KEYS: readonly FeatureKey[] = [
   "forecasts",
   "debts",
   "collaborative",
+  "events",
 ] as const;
 
 /** Является ли строка распознаваемым ключом фичи. */

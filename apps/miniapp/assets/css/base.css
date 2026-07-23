@@ -1,0 +1,66 @@
+/* ============================================================================
+   Базовый слой: reset, оболочка страницы, типографика.
+   Использует токены из tokens.css. Подключается после токенов (см. main.css).
+   ============================================================================ */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  /* Плавный градиентный фон покрывает всю высоту вьюпорта под safe-area. */
+  background: var(--bg);
+}
+
+body {
+  margin: 0;
+  padding: var(--space-4);
+  padding-top: calc(var(--space-4) + var(--safe-top));
+  padding-bottom: calc(var(--space-6) + var(--safe));
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--text);
+  background: var(--bg-gradient) no-repeat;
+  background-color: var(--bg);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+/* Суммы и другие числовые данные — моноширинные цифры для ровных колонок. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+::selection {
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

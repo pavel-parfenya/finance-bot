@@ -3,8 +3,10 @@ import type { Config } from "../config";
 import { TransactionRepository } from "../repositories/transaction-repository";
 import { InvitationRepository } from "../repositories/invitation-repository";
 import { DebtRepository } from "../repositories/debt-repository";
+import { EventRepository } from "../repositories/event-repository";
 import { UserService } from "../services/user/user-service";
 import { WorkspaceService } from "../services/workspace/workspace-service";
+import { EventService } from "../services/event/event-service";
 import { CustomCategoryRepository } from "../repositories/custom-category-repository";
 import { CustomCategoryService } from "../services/custom-category/custom-category-service";
 import { AppStatsService } from "../services/app-stats/app-stats-service";
@@ -25,6 +27,7 @@ export interface ApiServices {
   transactionRepo: TransactionRepository;
   invitationRepo: InvitationRepository;
   debtRepo: DebtRepository;
+  eventService: EventService;
   customCategoryService: CustomCategoryService;
   appStatsService: AppStatsService;
   subscriptionService: SubscriptionService;
@@ -39,6 +42,7 @@ export function createApiServices(config: Config, dataSource: DataSource): ApiSe
   const transactionRepo = new TransactionRepository(dataSource);
   const invitationRepo = new InvitationRepository(dataSource);
   const debtRepo = new DebtRepository(dataSource);
+  const eventRepo = new EventRepository(dataSource);
   const userService = new UserService(dataSource);
   const workspaceService = new WorkspaceService(dataSource);
   const customCategoryRepo = new CustomCategoryRepository(dataSource);
@@ -53,6 +57,14 @@ export function createApiServices(config: Config, dataSource: DataSource): ApiSe
     subscriptionService,
     strapiPlanConfig
   );
+  const eventService = new EventService({
+    eventRepo,
+    transactionRepo,
+    debtRepo,
+    userService,
+    workspaceService,
+    featureService,
+  });
   // Уведомления супер-админу (SUPER_ADMIN_USERNAME) об оплатах/отменах подписок.
   const adminNotifyService = new AdminNotifyService(
     config.superAdminUsername,
@@ -80,6 +92,7 @@ export function createApiServices(config: Config, dataSource: DataSource): ApiSe
     transactionRepo,
     invitationRepo,
     debtRepo,
+    eventService,
     customCategoryService,
     appStatsService,
     subscriptionService,

@@ -42,6 +42,8 @@ export interface ParsedExpense {
   currency: string;
   store: string;
   type: TransactionType;
+  /** Название события, к которому относится трата (распознано LLM), или null. */
+  eventName?: string | null;
 }
 
 export interface Expense extends ParsedExpense {

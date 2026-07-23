@@ -1,11 +1,13 @@
 import { ref, computed } from "vue";
-import type { TransactionDto, TransactionFilters } from "@finance-bot/shared";
+import type { DebtDto, TransactionDto, TransactionFilters } from "@finance-bot/shared";
 
 const filtersOpen = ref(false);
 const filters = ref<TransactionFilters>({});
 const refreshTrigger = ref(0);
 /** Транзакция, открытая на странице редактирования (/table/edit). */
 const editingTransaction = ref<TransactionDto | null>(null);
+/** Долг, открытый на странице редактирования (/debts/edit). */
+const editingDebt = ref<DebtDto | null>(null);
 
 export function useAppState() {
   const activeFiltersCount = computed(() => {
@@ -28,6 +30,7 @@ export function useAppState() {
     filters,
     refreshTrigger,
     editingTransaction,
+    editingDebt,
     activeFiltersCount,
     triggerRefresh,
   };

@@ -1,0 +1,77 @@
+<div class="edit-page">
+  <form class="edit-form" @submit.prevent="save">
+    <label class="field">
+      <span class="field-label">Имя</span>
+      <input v-model="name" type="text" placeholder="Имя" />
+    </label>
+
+    <div class="field">
+      <span class="field-label">
+        {{ usernameLabel }}
+        <span class="label-info-wrap" @click.stop="tooltipOpen = !tooltipOpen">
+          <span class="label-info">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+          </span>
+          <span v-if="tooltipOpen" class="tooltip-popover">
+            Любой пользователь Telegram. Оставьте пустым, чтобы отвязать.
+          </span>
+        </span>
+      </span>
+      <input
+        v-model="linkedUsername"
+        type="text"
+        placeholder="@username"
+        autocomplete="off"
+      />
+    </div>
+
+    <label class="field">
+      <span class="field-label">Сумма</span>
+      <input
+        v-model="amount"
+        type="number"
+        inputmode="decimal"
+        step="0.01"
+        min="0"
+        placeholder="0"
+      />
+    </label>
+
+    <label class="field">
+      <span class="field-label">Валюта</span>
+      <select v-model="currency" class="select-styled">
+        <option v-for="c in CURRENCIES" :key="c" :value="c">{{ c }}</option>
+      </select>
+    </label>
+
+    <label class="field">
+      <span class="field-label">Возвращено</span>
+      <input
+        v-model="repaid"
+        type="number"
+        inputmode="decimal"
+        step="0.01"
+        min="0"
+        placeholder="0"
+      />
+    </label>
+
+    <label class="field">
+      <span class="field-label">Дедлайн</span>
+      <input v-model="deadline" type="date" class="date-input" />
+    </label>
+
+    <p v-if="error" class="form-error">{{ error }}</p>
+  </form>
+
+  <div class="edit-actions">
+    <button type="button" class="btn-cancel" @click="goBack">Отмена</button>
+    <button type="button" class="btn-save" :disabled="saving" @click="save">
+      {{ saving ? "Сохранение…" : "Сохранить" }}
+    </button>
+  </div>
+</div>

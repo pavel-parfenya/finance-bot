@@ -21,6 +21,8 @@ export class DebtRepository {
     repaidAmount?: number;
     status?: DebtStatus;
     mainUserId: number;
+    comment?: string | null;
+    eventId?: number | null;
   }): Promise<Debt> {
     const debt = this.repo.create({
       ...data,
@@ -35,6 +37,10 @@ export class DebtRepository {
       where: { id },
       relations: ["debtor", "creditor"],
     });
+  }
+
+  async findByEventId(eventId: number): Promise<Debt[]> {
+    return this.repo.find({ where: { eventId } });
   }
 
   async findByUserId(userId: number): Promise<Debt[]> {

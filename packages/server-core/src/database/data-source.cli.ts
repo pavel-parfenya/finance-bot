@@ -12,6 +12,9 @@ import { Subscription } from "./entities/subscription.entity";
 import { Transaction } from "./entities/transaction.entity";
 import { Invitation } from "./entities/invitation.entity";
 import { Debt } from "./entities/debt.entity";
+import { Event } from "./entities/event.entity";
+import { EventMember } from "./entities/event-member.entity";
+import { EventInvitation } from "./entities/event-invitation.entity";
 import { CustomCategory } from "./entities/custom-category.entity";
 import { AppUserStatsSnapshot } from "./entities/app-user-stats-snapshot.entity";
 
@@ -26,6 +29,9 @@ export const AppDataSource = new DataSource({
     Transaction,
     Invitation,
     Debt,
+    Event,
+    EventMember,
+    EventInvitation,
     CustomCategory,
     AppUserStatsSnapshot,
   ],

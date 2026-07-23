@@ -18,6 +18,7 @@ export type { AnalyticsVoice } from "./analytics/types";
 export { TransactionRepository } from "./repositories/transaction-repository";
 export { InvitationRepository } from "./repositories/invitation-repository";
 export { DebtRepository } from "./repositories/debt-repository";
+export { EventRepository } from "./repositories/event-repository";
 export { UserService, DEFAULT_ANALYTICS_TIMEZONE } from "./services/user/user-service";
 export { WorkspaceService } from "./services/workspace/workspace-service";
 export {
@@ -65,6 +66,13 @@ export {
 export { DeepSeekInactiveUserNudge } from "./infrastructure/deepseek/deepseek-inactive-user-nudge";
 export { userQualifiesForInactiveMonthNudge } from "./services/inactive-user-nudge-qualifies";
 export { DebtService } from "./services/debt/debt-service";
+export { EventService, EventError } from "./services/event/event-service";
+export type { EventErrorCode } from "./services/event/event-service";
+export type {
+  EventInviteResult,
+  EventInviteResponseResult,
+  EventDebtResult,
+} from "./services/event/event-service.types";
 export { DeepSeekDebtParser } from "./infrastructure/deepseek/deepseek-debt-parser";
 export { PurchaseAdviceService } from "./services/purchase-advice/purchase-advice-service";
 export {

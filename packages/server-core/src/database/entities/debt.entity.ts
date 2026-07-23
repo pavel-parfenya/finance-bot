@@ -51,6 +51,14 @@ export class Debt {
   @Column({ type: "decimal", precision: 12, scale: 2, default: 0 })
   repaidAmount: number;
 
+  /** Комментарий к долгу (например, «Долг за событие …»). */
+  @Column({ type: "varchar", nullable: true })
+  comment: string | null;
+
+  /** Событие, из расчёта которого создан долг (null — обычный долг). */
+  @Column({ type: "int", nullable: true })
+  eventId: number | null;
+
   @Column({ type: "enum", enum: DebtStatus, default: DebtStatus.Active })
   status: DebtStatus;
 

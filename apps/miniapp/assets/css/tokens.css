@@ -1,0 +1,175 @@
+/* ============================================================================
+   Дизайн-токены Mini App.
+
+   Единый источник правды по цвету/форме/типографике. Экраны и компоненты
+   обязаны ссылаться ТОЛЬКО на эти переменные, без хардкод-литералов цвета.
+
+   Темизация: атрибут data-theme на <html> ("light" | "dark") — его проставляет
+   plugins/telegram.client.ts по Telegram.colorScheme (с фолбэком на
+   prefers-color-scheme вне Telegram). Значение "light" ниже дублирует :root,
+   поэтому если атрибут не проставлен — приложение стартует в светлой теме.
+
+   Бренд-палитра взята с лендинга (apps/landing/tailwind.config.ts):
+   индиго #3f43b8 / #2e3290 / #e4e5f7, navy #171a3d, золото #d4af6a,
+   крем #f7f5ef, шрифт Inter.
+   ============================================================================ */
+
+:root {
+  /* --- Форма ------------------------------------------------------------ */
+  --r-sm: 10px;
+  --r: 14px;
+  --r-lg: 20px;
+  --pill: 999px;
+  /* Совместимость: экраны, ещё не переведённые на новые токены (Фаза 2),
+     продолжают ссылаться на --radius. */
+  --radius: var(--r);
+
+  /* --- Отступы ---------------------------------------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --gap: 12px;
+
+  /* --- Типографика ------------------------------------------------------ */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+
+  /* --- Safe-area (Telegram fullscreen, Bot API 8.0+) -------------------- */
+  --safe: env(safe-area-inset-bottom, 0px);
+  --safe-top: calc(
+    var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px)
+  );
+
+  /* --- Длительности анимаций ------------------------------------------- */
+  --t-fast: 0.15s;
+  --t: 0.2s;
+}
+
+/* ============================ Светлая тема ============================== */
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* Поверхности */
+  --bg: #f6f5ef;
+  --bg-gradient: radial-gradient(130% 70% at 50% 0%, #ffffff 0%, #f6f5ef 58%);
+  --surface: #ffffff;
+  --surface-inset: #f2f1ea;
+  --border: rgba(23, 26, 61, 0.09);
+  --border-strong: rgba(23, 26, 61, 0.14);
+
+  /* Текст */
+  --text: #171a3d;
+  --text-muted: #5a5f7d;
+  --text-faint: #8b8fa8;
+
+  /* Бренд / акцент */
+  --brand: #3f43b8;
+  --brand-strong: #2e3290;
+  --brand-soft: #e4e5f7;
+  --on-brand: #ffffff;
+
+  /* Золото (вторичный акцент) */
+  --gold: #b78a3d;
+  --gold-soft: #f4ead2;
+
+  /* Семантика: доход/расход/статусы */
+  --income: #12924a;
+  --income-soft: #dcf3e4;
+  --expense: #d12b2b;
+  --expense-soft: #fbe2e2;
+  --danger: #d12b2b;
+  --danger-soft: #fbe2e2;
+  --warning: #b45309;
+  --warning-soft: #fbedd6;
+  --info: #2563eb;
+  --info-soft: #dde8fd;
+
+  /* Тени (индиго-подтон, как на лендинге) */
+  --shadow-sm: 0 1px 2px rgba(23, 26, 61, 0.06);
+  --shadow-card: 0 1px 2px rgba(23, 26, 61, 0.05), 0 8px 24px rgba(23, 26, 61, 0.07);
+  --shadow-pop: 0 24px 60px -24px rgba(23, 26, 61, 0.32);
+}
+
+/* ============================ Тёмная тема ============================== */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Поверхности: глубокий navy из брендового #171a3d, лёгкий градиент сверху */
+  --bg: #0f1128;
+  --bg-gradient: radial-gradient(130% 70% at 50% 0%, #1b1f45 0%, #0f1128 56%);
+  --surface: #191c3c;
+  --surface-inset: #232750;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+
+  /* Текст */
+  --text: #eef0fb;
+  --text-muted: #9ea4c8;
+  --text-faint: #6b7099;
+
+  /* Бренд / акцент: индиго осветлён для контраста на navy */
+  --brand: #5b60ef;
+  --brand-strong: #7c80f5;
+  --brand-soft: rgba(99, 102, 244, 0.18);
+  --on-brand: #ffffff;
+
+  /* Золото */
+  --gold: #e0bd7a;
+  --gold-soft: rgba(224, 189, 122, 0.16);
+
+  /* Семантика */
+  --income: #34d399;
+  --income-soft: rgba(52, 211, 153, 0.16);
+  --expense: #f87171;
+  --expense-soft: rgba(248, 113, 113, 0.15);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.15);
+  --warning: #fbbf77;
+  --warning-soft: rgba(251, 191, 119, 0.15);
+  --info: #60a5fa;
+  --info-soft: rgba(96, 165, 250, 0.16);
+
+  /* Тени: на navy почти не видны, опора на контраст поверхностей + границу */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.36);
+  --shadow-pop: 0 24px 60px -20px rgba(0, 0, 0, 0.6);
+}
+
+/* Вне Telegram, если тема ещё не проставлена скриптом — уважаем системную. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --bg: #0f1128;
+    --bg-gradient: radial-gradient(130% 70% at 50% 0%, #1b1f45 0%, #0f1128 56%);
+    --surface: #191c3c;
+    --surface-inset: #232750;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.14);
+    --text: #eef0fb;
+    --text-muted: #9ea4c8;
+    --text-faint: #6b7099;
+    --brand: #5b60ef;
+    --brand-strong: #7c80f5;
+    --brand-soft: rgba(99, 102, 244, 0.18);
+    --gold: #e0bd7a;
+    --gold-soft: rgba(224, 189, 122, 0.16);
+    --income: #34d399;
+    --income-soft: rgba(52, 211, 153, 0.16);
+    --expense: #f87171;
+    --expense-soft: rgba(248, 113, 113, 0.15);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.15);
+    --warning: #fbbf77;
+    --warning-soft: rgba(251, 191, 119, 0.15);
+    --info: #60a5fa;
+    --info-soft: rgba(96, 165, 250, 0.16);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.36);
+    --shadow-pop: 0 24px 60px -20px rgba(0, 0, 0, 0.6);
+  }
+}

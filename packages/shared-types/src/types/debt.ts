@@ -12,7 +12,8 @@ export interface DebtDto {
   deadline: string | null;
   repaidAmount: number;
   status: "pending" | "active";
-  isMain: boolean; // может ли текущий пользователь редактировать
+  comment?: string | null;
+  isMain: boolean; // может ли текущий пользователь управлять (любой участник — должник или кредитор)
   isCreditor: boolean; // текущий пользователь — кредитор (мне должны)
   createdAt: string;
 }
@@ -30,6 +31,7 @@ export interface DebtCreateRequest {
   lentDate?: string | null;
   deadline?: string | null;
   repaidAmount?: number;
+  comment?: string | null;
 }
 
 export interface DebtUpdateRequest {

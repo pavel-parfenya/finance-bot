@@ -1,15 +1,15 @@
+/* Карточка транзакции. Базовые поверхность/скругление/тень берёт из
+   глобального примитива .card (assets/css/components.css); здесь — раскладка
+   строкой и типографика конкретной карточки. */
 .card {
-  background: var(--tg-theme-secondary-bg-color, #fff);
-  border-radius: var(--radius);
-  padding: 12px 16px;
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  padding: 14px var(--space-4);
+  border-radius: var(--r);
 }
 
 .card-main {
@@ -18,43 +18,46 @@
 }
 
 .card-desc {
-  font-weight: 500;
-  margin-bottom: 4px;
+  font-weight: 600;
+  margin-bottom: 3px;
   word-break: break-word;
+  color: var(--text);
 }
 
 .card-meta {
   font-size: 13px;
-  color: var(--tg-theme-hint-color, #65676b);
+  color: var(--text-muted);
 }
 
 .card-category {
   font-size: 12px;
-  color: var(--tg-theme-hint-color, #65676b);
+  color: var(--text-faint);
   margin-top: 2px;
 }
 
 .card-person {
   font-size: 12px;
-  color: var(--tg-theme-hint-color, #65676b);
+  color: var(--text-faint);
   margin-top: 2px;
 }
 
+/* Сумма: расход — нейтральный сильный текст, доход — зелёный с «+». */
 .card-amount {
   font-weight: 700;
   font-size: 17px;
   white-space: nowrap;
-  color: var(--tg-theme-button-color, #1877f2);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 
 .card-income .card-amount {
-  color: #22c55e;
+  color: var(--income);
 }
 
 .card-amount .currency {
   font-size: 12px;
-  font-weight: 500;
-  opacity: 0.85;
+  font-weight: 600;
+  opacity: 0.7;
   margin-left: 2px;
 }
 
@@ -70,35 +73,37 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   padding: 0;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   cursor: pointer;
   line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity var(--t-fast);
 }
 
 .btn-del svg,
 .btn-edit svg {
-  width: 14px;
-  height: 14px;
-}
-
-.btn-del {
-  background: rgba(248, 81, 73, 0.12);
-  color: #f85149;
-}
-
-.btn-del:active {
-  opacity: 0.8;
+  width: 15px;
+  height: 15px;
 }
 
 .btn-edit {
-  background: rgba(88, 166, 255, 0.12);
-  color: #58a6ff;
+  background: var(--brand-soft);
+  color: var(--brand);
 }
 
 .btn-edit:active {
-  opacity: 0.8;
+  opacity: 0.7;
+}
+
+.btn-del {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.btn-del:active {
+  opacity: 0.7;
 }

@@ -17,7 +17,8 @@
   display: block;
   margin-bottom: 6px;
   font-size: 13px;
-  color: var(--tg-theme-hint-color);
+  font-weight: 600;
+  color: var(--text-muted);
 }
 
 .field input,
@@ -27,17 +28,24 @@
   width: 100%;
   min-width: 0;
   max-width: 100%;
+  font-family: inherit;
   font-size: 15px;
-  color: var(--tg-theme-text-color);
+  color: var(--text);
 }
 
 .field input {
   padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: var(--tg-theme-secondary-bg-color);
+  border-radius: var(--r);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-inset);
   -webkit-appearance: none;
   appearance: none;
+  transition: border-color var(--t-fast);
+}
+
+.field input:focus {
+  outline: none;
+  border-color: var(--brand);
 }
 
 /* Нативный date на iOS игнорирует width без сброса appearance */
@@ -48,20 +56,25 @@
 
 .select-styled {
   padding: 12px 40px 12px 14px;
-  border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  background: var(--tg-theme-secondary-bg-color, #f0f2f5);
+  border-radius: var(--r);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-inset);
   -webkit-appearance: none;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2365676b' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238b8fa8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 14px center;
   cursor: pointer;
 }
 
+.select-styled:focus {
+  outline: none;
+  border-color: var(--brand);
+}
+
 .form-error {
   margin: 0;
-  color: #e53935;
+  color: var(--danger);
   font-size: 14px;
 }
 
@@ -75,10 +88,13 @@
   flex: 1;
   padding: 13px;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--r);
+  font-family: inherit;
   font-weight: 600;
   font-size: 15px;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--t-fast);
 }
 
 .edit-actions button:disabled {
@@ -87,11 +103,15 @@
 }
 
 .btn-cancel {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--tg-theme-text-color);
+  background: var(--surface-inset);
+  color: var(--text);
 }
 
 .btn-save {
-  background: var(--tg-theme-button-color);
-  color: var(--tg-theme-button-text-color);
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+.btn-save:active {
+  background: var(--brand-strong);
 }

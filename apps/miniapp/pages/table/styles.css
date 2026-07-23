@@ -1,17 +1,17 @@
 .loading,
 .empty {
-  padding: 32px 24px;
+  padding: 40px 24px;
   text-align: center;
-  color: var(--tg-theme-hint-color, #65676b);
+  color: var(--text-muted);
   font-size: 15px;
 }
 
 .error {
   padding: 14px 16px;
-  background: rgba(248, 81, 73, 0.15);
-  border-radius: var(--radius);
-  margin-bottom: 16px;
-  color: #f85149;
+  background: var(--danger-soft);
+  border-radius: var(--r);
+  margin-bottom: var(--space-4);
+  color: var(--danger);
   font-size: 14px;
 }
 
@@ -31,6 +31,6 @@
 .loading-more {
   padding: 16px;
   text-align: center;
-  color: var(--tg-theme-hint-color, #65676b);
+  color: var(--text-muted);
   font-size: 14px;
 }

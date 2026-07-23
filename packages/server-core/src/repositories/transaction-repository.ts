@@ -12,11 +12,13 @@ export class TransactionRepository {
   async save(
     workspaceId: number,
     userId: number,
-    expense: Expense
+    expense: Expense,
+    eventId?: number | null
   ): Promise<Transaction> {
     const transaction = this.repo.create({
       workspaceId,
       userId,
+      eventId: eventId ?? null,
       occurredAt: expense.date,
       description: expense.description,
       category: expense.category,
@@ -61,6 +63,52 @@ export class TransactionRepository {
 
   async deleteById(id: number): Promise<void> {
     await this.repo.delete(id);
+  }
+
+  // --- События -----------------------------------------------------------
+
+  /** Все траты события (с автором) для агрегированного списка. */
+  async findByEventId(eventId: number): Promise<Transaction[]> {
+    return this.repo.find({
+      where: { eventId },
+      relations: ["user"],
+      order: { occurredAt: "ASC", createdAt: "ASC" },
+    });
+  }
+
+  /** Одна трата события с автором. */
+  async findEventTransactionById(id: number): Promise<Transaction | null> {
+    return this.repo.findOne({ where: { id }, relations: ["user"] });
+  }
+
+  /** Привязать/отвязать трату от события (eventId = null — отвязка). */
+  async setEventId(id: number, eventId: number | null): Promise<void> {
+    await this.repo.update(id, { eventId });
+  }
+
+  /** Пометить/снять «исключить из расчёта». */
+  async setExcludedFromEvent(id: number, excluded: boolean): Promise<void> {
+    await this.repo.update(id, { excludedFromEvent: excluded });
+  }
+
+  /** Отвязать все траты пользователя от события (выход участника). */
+  async clearEventForUser(eventId: number, userId: number): Promise<void> {
+    await this.repo
+      .createQueryBuilder()
+      .update(Transaction)
+      .set({ eventId: null, excludedFromEvent: false })
+      .where("eventId = :eventId AND userId = :userId", { eventId, userId })
+      .execute();
+  }
+
+  /** Отвязать все траты от события (удаление события — траты остаются личными). */
+  async clearEventAll(eventId: number): Promise<void> {
+    await this.repo
+      .createQueryBuilder()
+      .update(Transaction)
+      .set({ eventId: null, excludedFromEvent: false })
+      .where("eventId = :eventId", { eventId })
+      .execute();
   }
 
   async transferToWorkspace(

@@ -37,6 +37,15 @@ export function createTextHandler(deps: BotDeps) {
       customCategories = undefined;
     }
 
+    let events:
+      | Array<{ name: string; description: string; keywords: string }>
+      | undefined;
+    try {
+      events = await deps.eventService.getActiveEventsContext(user.id);
+    } catch {
+      events = undefined;
+    }
+
     let parsed;
     try {
       parsed = await parseMessage(
@@ -48,7 +57,8 @@ export function createTextHandler(deps: BotDeps) {
           expenseService: deps.expenseService,
           purchaseAdviceParser: deps.purchaseAdviceParser,
         },
-        customCategories
+        customCategories,
+        events
       );
     } catch (error) {
       console.error("Ошибка распознавания сообщения:", error);

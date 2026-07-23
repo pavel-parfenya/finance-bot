@@ -21,9 +21,14 @@ export class ExpenseService {
     text: string,
     username: string,
     defaultCurrency?: string | null,
-    customCategories?: Array<{ name: string; description: string }>
+    customCategories?: Array<{ name: string; description: string }>,
+    events?: Array<{ name: string; description: string; keywords: string }>
   ): Promise<Expense> {
-    const parsed = await this.parser.parse(text, { defaultCurrency, customCategories });
+    const parsed = await this.parser.parse(text, {
+      defaultCurrency,
+      customCategories,
+      events,
+    });
     validateParsed(parsed);
     return {
       ...parsed,
@@ -41,9 +46,10 @@ export class ExpenseService {
     mimeType: string,
     username: string,
     defaultCurrency?: string | null,
-    customCategories?: Array<{ name: string; description: string }>
+    customCategories?: Array<{ name: string; description: string }>,
+    events?: Array<{ name: string; description: string; keywords: string }>
   ): Promise<Expense> {
     const text = await this.recognizeVoice(audioBuffer, mimeType);
-    return this.parseText(text, username, defaultCurrency, customCategories);
+    return this.parseText(text, username, defaultCurrency, customCategories, events);
   }
 }

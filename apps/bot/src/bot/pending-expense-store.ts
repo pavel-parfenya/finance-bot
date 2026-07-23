@@ -6,6 +6,7 @@ interface PendingEntry {
   userId: number;
   workspaceId: number;
   expense: Expense;
+  eventId: number | null;
   transactionRepo: TransactionRepository;
   timeoutId: NodeJS.Timeout;
 }
@@ -28,13 +29,14 @@ export function scheduleSave(
     chatId: number,
     messageId: number,
     expense: Expense
-  ) => void | Promise<void>
+  ) => void | Promise<void>,
+  eventId: number | null = null
 ): void {
   const k = key(chatId, messageId);
   const timeoutId = setTimeout(async () => {
     store.delete(k);
     try {
-      await transactionRepo.save(workspaceId, userId, expense);
+      await transactionRepo.save(workspaceId, userId, expense, eventId);
       await onAutoSave?.(chatId, messageId, expense);
     } catch (err) {
       console.error("Ошибка сохранения расхода:", err);
@@ -45,6 +47,7 @@ export function scheduleSave(
     userId,
     workspaceId,
     expense,
+    eventId,
     transactionRepo,
     timeoutId,
   });
@@ -70,7 +73,12 @@ export async function saveNow(
   clearTimeout(entry.timeoutId);
   store.delete(k);
   try {
-    await entry.transactionRepo.save(entry.workspaceId, entry.userId, entry.expense);
+    await entry.transactionRepo.save(
+      entry.workspaceId,
+      entry.userId,
+      entry.expense,
+      entry.eventId
+    );
     return {
       saved: true,
       expense: entry.expense,
