@@ -10,6 +10,8 @@ import { createBot } from "./bot/bot";
 import { configureBotAfterInit } from "./bootstrap-bot";
 // ⚠️ ВРЕМЕННЫЙ КОД — УДАЛИТЬ В СЛЕДУЮЩЕМ КОММИТЕ (импорт + вызов ниже + сам файл)
 import { runOneTimeProBroadcast } from "./one-time-pro-broadcast";
+// ⚠️ ВРЕМЕННЫЙ КОД — УДАЛИТЬ В СЛЕДУЮЩЕМ КОММИТЕ (импорт + вызов ниже + сам файл)
+import { runOneTimeEventsBroadcast } from "./one-time-events-broadcast";
 
 async function bootstrap(): Promise<void> {
   if (shouldEmbedTelegramBotInApi()) {
@@ -42,6 +44,14 @@ async function bootstrap(): Promise<void> {
     dataSource,
     miniAppUrl,
   }).catch((err) => console.error("[pro-broadcast] Ошибка рассылки:", err));
+
+  // ⚠️ ВРЕМЕННЫЙ КОД — УДАЛИТЬ В СЛЕДУЮЩЕМ КОММИТЕ: одноразовый анонс «События» всем пользователям.
+  void runOneTimeEventsBroadcast({
+    bot,
+    userService: core.userService,
+    dataSource,
+    miniAppUrl,
+  }).catch((err) => console.error("[events-broadcast] Ошибка рассылки:", err));
 
   const httpApp = express();
   httpApp.use(express.json({ limit: "10mb" }));
