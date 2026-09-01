@@ -11,16 +11,10 @@ const MIME_TO_EXT: Record<string, string> = {
 export class WhisperSpeechRecognizer implements ISpeechRecognizer {
   private readonly client: OpenAI;
 
-  /**
-   * @param proxySecret если задан — уходит в заголовке `X-Proxy-Secret` на каждый
-   *   запрос. Нужен, когда `baseUrl` указывает на Cloudflare Worker-прокси к Groq
-   *   (см. deploy/groq-proxy) с включённой проверкой секрета.
-   */
-  constructor(apiKey: string, baseUrl: string, proxySecret?: string | null) {
+  constructor(apiKey: string, baseUrl: string) {
     this.client = new OpenAI({
       apiKey,
       baseURL: baseUrl,
-      defaultHeaders: proxySecret ? { "X-Proxy-Secret": proxySecret } : undefined,
     });
   }
 

@@ -140,8 +140,6 @@ export const config = {
   whisper: {
     apiKey: requireEnv("WHISPER_API_KEY"),
     baseUrl: process.env["WHISPER_BASE_URL"] ?? "https://api.groq.com/openai/v1",
-    /** Секрет для Cloudflare Worker-прокси (X-Proxy-Secret). Пусто — не отправляется. */
-    proxySecret: process.env["WHISPER_PROXY_SECRET"] ?? null,
   },
   /** @username супер-админа: админ-аналитика в Mini App (без @) */
   superAdminUsername: process.env["SUPER_ADMIN_USERNAME"]?.replace(/^@/, "") ?? null,

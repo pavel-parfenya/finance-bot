@@ -58,8 +58,7 @@ export function createCoreServices(config: Config, dataSource: DataSource): Core
   const parser = new DeepSeekMessageParser(config.deepseek.apiKey);
   const recognizer = new WhisperSpeechRecognizer(
     config.whisper.apiKey,
-    config.whisper.baseUrl,
-    config.whisper.proxySecret
+    config.whisper.baseUrl
   );
 
   const transactionRepo = new TransactionRepository(dataSource);
