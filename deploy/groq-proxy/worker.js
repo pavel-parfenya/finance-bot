@@ -12,28 +12,21 @@
  *
  * Авторизация Groq (Bearer <GROQ_KEY>) приходит из приложения в заголовке
  * Authorization и просто пробрасывается дальше — ключ в воркере не хранится.
- *
- * Защита от чужого использования (открытый прокси): если в переменной
- * окружения PROXY_SECRET задано значение, воркер требует заголовок
- * X-Proxy-Secret с тем же значением. Пусто — проверка отключена.
+ * Воркер открытый: чтобы им воспользоваться, всё равно нужен валидный ключ Groq
+ * (чужой сожжёт свой лимит, не ваш).
  */
 const GROQ_ORIGIN = "https://api.groq.com";
 
 export default {
-  async fetch(request, env) {
-    if (env.PROXY_SECRET && request.headers.get("X-Proxy-Secret") !== env.PROXY_SECRET) {
-      return new Response("Forbidden", { status: 403 });
-    }
-
+  async fetch(request) {
     const incoming = new URL(request.url);
     const target = new URL(GROQ_ORIGIN);
     target.pathname = incoming.pathname;
     target.search = incoming.search;
 
-    // Копируем заголовки, кроме hop-by-hop и служебного секрета.
+    // Копируем заголовки, кроме hop-by-hop.
     const headers = new Headers(request.headers);
     headers.delete("host");
-    headers.delete("X-Proxy-Secret");
 
     const upstream = await fetch(target.toString(), {
       method: request.method,
