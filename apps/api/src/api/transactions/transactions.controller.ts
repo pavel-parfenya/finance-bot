@@ -3,6 +3,7 @@ import {
   Delete,
   Get,
   Patch,
+  Post,
   Query,
   UseGuards,
   Param,
@@ -95,6 +96,11 @@ export class TransactionsController {
       endDate || undefined,
       userIdNum && !isNaN(userIdNum) ? userIdNum : undefined
     );
+  }
+
+  @Post("export")
+  async export(@TelegramUser() user: ResolvedTelegramUser) {
+    return this.transactionsService.export(user);
   }
 
   @Patch(":id")

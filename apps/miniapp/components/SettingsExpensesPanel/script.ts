@@ -9,6 +9,7 @@ import {
   updateCustomCategory,
   deleteCustomCategory,
   fetchWorkspaceInfo,
+  exportTransactions,
 } from "~/api/client";
 import { useAppState } from "~/composables/useAppState";
 
@@ -50,6 +51,16 @@ export default defineComponent({
     onMounted(() => {
       load();
     });
+
+    const exportLoading = ref(false);
+    async function onExport() {
+      exportLoading.value = true;
+      const data = await exportTransactions().catch(() => ({
+        error: "Не удалось выгрузить",
+      }));
+      exportLoading.value = false;
+      alert(data.error ?? "Файл отправлен в чат с ботом");
+    }
 
     async function onCurrencyChange() {
       const data = await updateUserSettings({ defaultCurrency: defaultCurrency.value });
@@ -137,6 +148,8 @@ export default defineComponent({
       cancelEdit,
       saveEdit,
       removeCategory,
+      exportLoading,
+      onExport,
       CURRENCIES,
     };
   },

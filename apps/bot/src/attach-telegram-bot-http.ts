@@ -1,5 +1,5 @@
 import type { Application } from "express";
-import type { Bot } from "grammy";
+import { InputFile, type Bot } from "grammy";
 import { config } from "@finance-bot/server-core";
 
 /**
@@ -41,6 +41,53 @@ export function attachInternalTelegramSendRoute(app: Application, bot: Bot): voi
   });
 }
 
+/** API → бот: отправка файла (экспорт трат). Контент — UTF-8 строка. */
+export function attachInternalTelegramSendDocumentRoute(
+  app: Application,
+  bot: Bot
+): void {
+  app.post("/internal/telegram/send-document", async (req, res) => {
+    const secret = config.internalBotSecret;
+    if (!secret) {
+      res.status(503).json({ error: "INTERNAL_BOT_SECRET is not set" });
+      return;
+    }
+    if (req.headers.authorization !== `Bearer ${secret}`) {
+      res.status(401).end();
+      return;
+    }
+    const body = req.body as {
+      chatId?: number;
+      filename?: string;
+      content?: string;
+      caption?: string;
+    };
+    if (
+      typeof body.chatId !== "number" ||
+      typeof body.filename !== "string" ||
+      typeof body.content !== "string"
+    ) {
+      res
+        .status(400)
+        .json({ error: "Expected chatId (number), filename and content (string)" });
+      return;
+    }
+    try {
+      await bot.api.sendDocument(
+        body.chatId,
+        new InputFile(Buffer.from(body.content, "utf8"), body.filename),
+        body.caption ? { caption: body.caption } : {}
+      );
+      res.status(200).json({ ok: true });
+    } catch (err) {
+      console.error("internal/telegram/send-document:", err);
+      res.status(500).json({
+        error: err instanceof Error ? err.message : "sendDocument failed",
+      });
+    }
+  });
+}
+
 /** Webhook Telegram (только MODE=webhook). */
 function attachWebhookRoute(app: Application, bot: Bot): void {
   const { webhookPath, webhookSecret } = config;
@@ -65,6 +112,7 @@ function attachWebhookRoute(app: Application, bot: Bot): void {
 /** POST /webhook (если webhook) и POST /internal/telegram/send на том же Express, что и Nest (один URL в проде). */
 export function attachTelegramBotHttpRoutes(app: Application, bot: Bot): void {
   attachInternalTelegramSendRoute(app, bot);
+  attachInternalTelegramSendDocumentRoute(app, bot);
   if (config.mode !== "webhook") return;
   attachWebhookRoute(app, bot);
 }
