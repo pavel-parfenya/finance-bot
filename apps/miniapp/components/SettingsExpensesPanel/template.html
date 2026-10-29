@@ -16,6 +16,21 @@
   </section>
 
   <section class="settings-panel">
+    <h3 class="settings-panel-title">Экспорт</h3>
+    <button
+      type="button"
+      class="btn-cat-save"
+      :disabled="exportLoading"
+      @click="onExport"
+    >
+      {{ exportLoading ? "Отправляем…" : "Выгрузить все записи в CSV" }}
+    </button>
+    <p class="settings-hint">
+      Бот пришлёт файл в чат — он открывается в Excel и Google Таблицах
+    </p>
+  </section>
+
+  <section class="settings-panel">
     <h3 class="settings-panel-title">Свои категории</h3>
     <p class="settings-hint settings-hint--below-title">
       Бот будет использовать эти категории при анализе расходов

@@ -116,8 +116,10 @@ PAYMENT_MODE=paid
 
 TELEGRAM_BOT_TOKEN=<token>
 DEEPSEEK_API_KEY=<key>
-WHISPER_API_KEY=<key>
-WHISPER_BASE_URL=https://api.groq.com/openai/v1
+# STT — Cloudflare Workers AI, см. deploy/stt-worker/ (Groq блокирует белорусский IP).
+# WHISPER_API_KEY здесь — секрет воркера PROXY_SECRET, а не ключ Groq.
+WHISPER_API_KEY=<secret>
+WHISPER_BASE_URL=https://stt-worker.<subdomain>.workers.dev/openai/v1
 
 # Strapi-секреты
 STRAPI_APP_KEYS=k1,k2,k3,k4

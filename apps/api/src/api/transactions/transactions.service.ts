@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import type {
   TransactionFilters,
   TransactionDto,
@@ -13,9 +13,59 @@ import {
 } from "@finance-bot/server-core";
 import { buildAccess } from "../common/workspace-access";
 import type { ResolvedTelegramUser } from "../telegram/telegram-auth.types";
+import type { TelegramOutboundPort } from "../../di/telegram-outbound.port";
+import { TELEGRAM_OUTBOUND } from "../tokens";
 
 const EXCHANGE_API = "https://open.er-api.com/v6/latest/USD";
 const DEFAULT_PAGE_SIZE = 20;
+
+/** Поле CSV: в кавычках, если есть разделитель/кавычка/перенос. */
+function csvCell(v: string): string {
+  return /[;"\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+}
+
+/**
+ * CSV под Excel: BOM (иначе кириллица ломается), разделитель `;` (RU-локаль),
+ * дробная часть через запятую, чтобы Excel распознал число.
+ */
+export function transactionsToCsv(
+  rows: Array<{
+    occurredAt: Date | string;
+    type?: string;
+    category: string;
+    description: string;
+    amount: number | string;
+    currency: string;
+    store?: string;
+    personDisplayName?: string;
+  }>
+): string {
+  const header = [
+    "Дата",
+    "Тип",
+    "Категория",
+    "Описание",
+    "Сумма",
+    "Валюта",
+    "Магазин",
+    "Кто",
+  ];
+  const lines = rows.map((t) =>
+    [
+      new Date(t.occurredAt).toISOString().slice(0, 16).replace("T", " "),
+      t.type === "income" ? "Доход" : "Расход",
+      t.category,
+      t.description,
+      String(t.amount).replace(".", ","),
+      t.currency,
+      t.store ?? "",
+      t.personDisplayName ?? "",
+    ]
+      .map(csvCell)
+      .join(";")
+  );
+  return "\uFEFF" + [header.join(";"), ...lines].join("\r\n");
+}
 
 async function fetchExchangeRates(): Promise<Record<string, number>> {
   const res = await fetch(EXCHANGE_API);
@@ -30,8 +80,39 @@ async function fetchExchangeRates(): Promise<Record<string, number>> {
 export class TransactionsService {
   constructor(
     private readonly transactionRepo: TransactionRepository,
-    private readonly userService: UserService
+    private readonly userService: UserService,
+    @Inject(TELEGRAM_OUTBOUND) private readonly telegram: TelegramOutboundPort
   ) {}
+
+  /** Все траты/доходы пользователя (с учётом прав доступа) — CSV-файлом в чат с ботом. */
+  async export(
+    resolved: ResolvedTelegramUser
+  ): Promise<{ ok?: boolean; error?: string }> {
+    const user = await this.userService.findById(resolved.userId);
+    if (!user) return { error: "Пользователь не найден" };
+    const rows = await this.transactionRepo.findByWorkspaceIdsForPeriod(
+      resolved.workspaceIds,
+      new Date(0),
+      new Date(8640000000000000),
+      {},
+      undefined,
+      buildAccess(resolved.workspaceIds, resolved.fullAccessWorkspaceIds, resolved.userId)
+    );
+    if (rows.length === 0) return { error: "Нет записей для экспорта" };
+    const date = new Date().toISOString().slice(0, 10);
+    try {
+      await this.telegram.sendDocument(
+        Number(user.telegramId),
+        `transactions-${date}.csv`,
+        transactionsToCsv(rows),
+        `Экспорт: ${rows.length} записей. Время — UTC.`
+      );
+    } catch (err) {
+      console.error("transactions export:", err);
+      return { error: "Не удалось отправить файл. Попробуйте позже." };
+    }
+    return { ok: true };
+  }
 
   async list(
     resolved: ResolvedTelegramUser,

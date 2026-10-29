@@ -1,2 +1,2 @@
 /** Поднимайте при обновлении блока «Что нового» в мини-приложении. */
-export const INFO_CHANGELOG_VERSION = 5;
+export const INFO_CHANGELOG_VERSION = 6;

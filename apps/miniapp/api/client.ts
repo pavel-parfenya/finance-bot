@@ -140,6 +140,14 @@ export async function deleteTransaction(
   return res.json();
 }
 
+export async function exportTransactions(): Promise<{ ok?: boolean; error?: string }> {
+  const res = await fetch(`${BASE}/api/transactions/export`, {
+    method: "POST",
+    headers: headers(),
+  });
+  return res.json();
+}
+
 export async function fetchWorkspaceInfo(): Promise<WorkspaceInfo> {
   const res = await fetch(`${BASE}/api/workspace/info`, { headers: headers() });
   return res.json();

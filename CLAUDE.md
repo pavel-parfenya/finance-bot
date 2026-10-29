@@ -100,7 +100,7 @@ A single `.env` file at the repo root is loaded by both apps. Per-app overrides 
 | `DATABASE_URL` | PostgreSQL connection string |
 | `TELEGRAM_BOT_TOKEN` | grammY bot token |
 | `DEEPSEEK_API_KEY` | LLM for expense/debt parsing |
-| `WHISPER_API_KEY` / `WHISPER_BASE_URL` | STT (default: Groq) |
+| `WHISPER_API_KEY` / `WHISPER_BASE_URL` | STT (default: Groq; on prod — the Cloudflare Workers AI worker in `deploy/stt-worker/`, where the key is the worker's `PROXY_SECRET`) |
 | `PUBLIC_BASE_URL` / `RENDER_EXTERNAL_URL` | Mini App base URL |
 | `MODE` | `polling` (default) or `webhook` |
 | `EMBED_TELEGRAM_BOT` | `true` to run bot inside API process |

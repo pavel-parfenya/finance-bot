@@ -16,17 +16,30 @@ export class HttpTelegramOutboundAdapter implements TelegramOutboundPort {
     text: string,
     options?: { reply_markup?: unknown }
   ): Promise<void> {
+    const payload: Record<string, unknown> = { chatId, text };
+    if (options?.reply_markup != null) {
+      payload.replyMarkup = wireReplyMarkup(options.reply_markup);
+    }
+    await this.post("send", payload);
+  }
+
+  async sendDocument(
+    chatId: number,
+    filename: string,
+    content: string,
+    caption?: string
+  ): Promise<void> {
+    await this.post("send-document", { chatId, filename, content, caption });
+  }
+
+  private async post(route: string, payload: Record<string, unknown>): Promise<void> {
     const secret = config.internalBotSecret;
     if (!secret) {
       throw new Error(
         "INTERNAL_BOT_SECRET is required to send Telegram messages from the API service"
       );
     }
-    const payload: Record<string, unknown> = { chatId, text };
-    if (options?.reply_markup != null) {
-      payload.replyMarkup = wireReplyMarkup(options.reply_markup);
-    }
-    const res = await fetch(`${resolveBotServiceBaseUrl()}/internal/telegram/send`, {
+    const res = await fetch(`${resolveBotServiceBaseUrl()}/internal/telegram/${route}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -36,7 +49,7 @@ export class HttpTelegramOutboundAdapter implements TelegramOutboundPort {
     });
     if (!res.ok) {
       const errText = await res.text().catch(() => "");
-      throw new Error(`Bot service send failed: HTTP ${res.status} ${errText}`);
+      throw new Error(`Bot service ${route} failed: HTTP ${res.status} ${errText}`);
     }
   }
 }
