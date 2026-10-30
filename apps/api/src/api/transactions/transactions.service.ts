@@ -10,6 +10,7 @@ import {
   aggregateByCategoryAndCurrency,
   TransactionRepository,
   UserService,
+  DEFAULT_ANALYTICS_TIMEZONE,
 } from "@finance-bot/server-core";
 import { buildAccess } from "../common/workspace-access";
 import type { ResolvedTelegramUser } from "../telegram/telegram-auth.types";
@@ -38,8 +39,18 @@ export function transactionsToCsv(
     currency: string;
     store?: string;
     personDisplayName?: string;
-  }>
+  }>,
+  timeZone: string
 ): string {
+  // sv-SE даёт «YYYY-MM-DD HH:mm» — сортируемо и читается Excel'ем как дата.
+  const fmt = new Intl.DateTimeFormat("sv-SE", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
   const header = [
     "Дата",
     "Тип",
@@ -52,7 +63,7 @@ export function transactionsToCsv(
   ];
   const lines = rows.map((t) =>
     [
-      new Date(t.occurredAt).toISOString().slice(0, 16).replace("T", " "),
+      fmt.format(new Date(t.occurredAt)),
       t.type === "income" ? "Доход" : "Расход",
       t.category,
       t.description,
@@ -99,13 +110,14 @@ export class TransactionsService {
       buildAccess(resolved.workspaceIds, resolved.fullAccessWorkspaceIds, resolved.userId)
     );
     if (rows.length === 0) return { error: "Нет записей для экспорта" };
-    const date = new Date().toISOString().slice(0, 10);
+    const tz = user.analyticsTimezone?.trim() || DEFAULT_ANALYTICS_TIMEZONE;
+    const date = new Date().toLocaleDateString("sv-SE", { timeZone: tz });
     try {
       await this.telegram.sendDocument(
         Number(user.telegramId),
         `transactions-${date}.csv`,
-        transactionsToCsv(rows),
-        `Экспорт: ${rows.length} записей. Время — UTC.`
+        transactionsToCsv(rows, tz),
+        `Экспорт: ${rows.length} записей. Время — ${tz}.`
       );
     } catch (err) {
       console.error("transactions export:", err);
